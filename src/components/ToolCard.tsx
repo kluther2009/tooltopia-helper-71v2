@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Tool } from "lucide-react";
+import { Wrench } from "lucide-react";
 
 interface ToolCardProps {
   name: string;
@@ -12,7 +12,7 @@ export function ToolCard({ name, location, status }: ToolCardProps) {
     <Card className="p-4 bg-card hover:bg-card/80 transition-colors cursor-pointer">
       <div className="flex items-start gap-4">
         <div className="p-2 bg-primary/10 rounded-lg">
-          <Tool className="h-6 w-6 text-primary" />
+          <Wrench className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-lg">{name}</h3>

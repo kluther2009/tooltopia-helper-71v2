@@ -1,4 +1,4 @@
-import { Tool, Boxes, FolderOpen, ShoppingCart, Settings } from "lucide-react";
+import { Wrench, Boxes, FolderOpen, ShoppingCart, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  { title: "Tools", icon: Tool, url: "/" },
+  { title: "Tools", icon: Wrench, url: "/" },
   { title: "Storage", icon: Boxes, url: "/storage" },
   { title: "Projects", icon: FolderOpen, url: "/projects" },
   { title: "Shopping", icon: ShoppingCart, url: "/shopping" },
