@@ -2,15 +2,39 @@ import { Layout } from "@/components/Layout";
 import { ToolCard } from "@/components/ToolCard";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 const tools = [
-  { name: "Power Drill", location: "Garage Cabinet A", status: "available" },
-  { name: "Circular Saw", location: "Workshop", status: "in-use" },
-  { name: "Hammer Set", location: "Tool Box 2", status: "available" },
-  { name: "Measuring Tape", location: "Drawer 1", status: "maintenance" },
+  { 
+    name: "Power Drill", 
+    location: "Workshop > Cabinet A > Top Shelf", 
+    status: "available" 
+  },
+  { 
+    name: "Circular Saw", 
+    location: "Workshop > Storage Room > Tool Wall", 
+    status: "in-use" 
+  },
+  { 
+    name: "Hammer Set", 
+    location: "Garage > Tool Box 2", 
+    status: "available" 
+  },
+  { 
+    name: "Measuring Tape", 
+    location: "Workshop > Drawer 1", 
+    status: "maintenance" 
+  },
 ] as const;
 
 export default function Index() {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredTools = tools.filter(tool => 
+    tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    tool.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto">
@@ -19,14 +43,16 @@ export default function Index() {
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search tools..."
+              placeholder="Search tools or locations..."
               className="pl-10 bg-card border-gray-700"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tools.map((tool) => (
+          {filteredTools.map((tool) => (
             <ToolCard
               key={tool.name}
               name={tool.name}

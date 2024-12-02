@@ -15,22 +15,27 @@ import { useToast } from "@/components/ui/use-toast";
 
 export default function AddTool() {
   const [toolName, setToolName] = useState("");
-  const [location, setLocation] = useState("");
+  const [primaryLocation, setPrimaryLocation] = useState("");
+  const [subLocation, setSubLocation] = useState("");
+  const [specificLocation, setSpecificLocation] = useState("");
   const [status, setStatus] = useState("available");
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Here you would typically save the tool to your backend
+    const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
+    
     toast({
       title: "Tool Added",
-      description: `${toolName} has been added to your inventory.`,
+      description: `${toolName} has been added to ${fullLocation}`,
     });
 
     // Reset form
     setToolName("");
-    setLocation("");
+    setPrimaryLocation("");
+    setSubLocation("");
+    setSpecificLocation("");
     setStatus("available");
   };
 
@@ -56,14 +61,36 @@ export default function AddTool() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="primaryLocation">Primary Location</Label>
                 <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter storage location"
+                  id="primaryLocation"
+                  value={primaryLocation}
+                  onChange={(e) => setPrimaryLocation(e.target.value)}
+                  placeholder="e.g., Workshop"
                   className="bg-card border-gray-700"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subLocation">Sub Location (Optional)</Label>
+                <Input
+                  id="subLocation"
+                  value={subLocation}
+                  onChange={(e) => setSubLocation(e.target.value)}
+                  placeholder="e.g., Cabinet A"
+                  className="bg-card border-gray-700"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="specificLocation">Specific Location (Optional)</Label>
+                <Input
+                  id="specificLocation"
+                  value={specificLocation}
+                  onChange={(e) => setSpecificLocation(e.target.value)}
+                  placeholder="e.g., Top Shelf"
+                  className="bg-card border-gray-700"
                 />
               </div>
 

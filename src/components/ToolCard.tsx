@@ -8,6 +8,8 @@ interface ToolCardProps {
 }
 
 export function ToolCard({ name, location, status }: ToolCardProps) {
+  const locationParts = location.split(" > ");
+
   return (
     <Card className="p-4 bg-card hover:bg-card/80 transition-colors cursor-pointer">
       <div className="flex items-start gap-4">
@@ -16,7 +18,14 @@ export function ToolCard({ name, location, status }: ToolCardProps) {
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-lg">{name}</h3>
-          <p className="text-sm text-gray-400">{location}</p>
+          <div className="flex flex-col gap-1">
+            {locationParts.map((part, index) => (
+              <p key={index} className="text-sm text-gray-400 flex items-center">
+                {index > 0 && <span className="ml-2">↳</span>}
+                <span className={`${index > 0 ? "ml-2" : ""}`}>{part}</span>
+              </p>
+            ))}
+          </div>
           <div className="mt-2">
             <span className={`px-2 py-1 rounded-full text-xs ${
               status === "available" ? "bg-green-500/20 text-green-400" :
