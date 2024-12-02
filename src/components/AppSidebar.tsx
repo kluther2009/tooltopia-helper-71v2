@@ -13,7 +13,7 @@ import {
 const menuItems = [
   { title: "Tools", icon: Wrench, url: "/" },
   { title: "Storage", icon: Boxes, url: "/storage" },
-  { title: "Projects", icon: FolderOpen, url: "/projects" },
+  { title: "Add new tool", icon: FolderOpen, url: "/add-tool" },
   { title: "Shopping", icon: ShoppingCart, url: "/shopping" },
   { title: "Settings", icon: Settings, url: "/settings" },
 ];
