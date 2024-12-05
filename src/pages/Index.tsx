@@ -9,24 +9,24 @@ const tools = [
   { 
     name: "Power Drill", 
     location: "Workshop > Cabinet A > Top Shelf", 
-    status: "available" 
+    status: "available" as const
   },
   { 
     name: "Circular Saw", 
     location: "Workshop > Storage Room > Tool Wall", 
-    status: "in-use" 
+    status: "in-use" as const
   },
   { 
     name: "Hammer Set", 
     location: "Garage > Tool Box 2", 
-    status: "available" 
+    status: "available" as const
   },
   { 
     name: "Measuring Tape", 
     location: "Workshop > Drawer 1", 
-    status: "maintenance" 
+    status: "maintenance" as const
   },
-] as const;
+];
 
 export default function Index() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,7 +36,6 @@ export default function Index() {
     tool.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Group tools by primary location (first part of location string)
   const groupedTools = filteredTools.reduce((acc, tool) => {
     const primaryLocation = tool.location.split(" > ")[0];
     if (!acc[primaryLocation]) {
@@ -65,7 +64,7 @@ export default function Index() {
         <div className="space-y-8">
           {Object.entries(groupedTools).map(([location, locationTools]) => (
             <Card key={location} className="p-6 bg-card/50">
-              <h2 className="text-xl font-semibold mb-4 text-left">{location}</h2>
+              <h2 className="text-xl font-semibold mb-4">{location}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {locationTools.map((tool) => (
                   <ToolCard
@@ -78,6 +77,11 @@ export default function Index() {
               </div>
             </Card>
           ))}
+          {Object.keys(groupedTools).length === 0 && (
+            <div className="text-center py-8 text-gray-400">
+              No tools found matching your search.
+            </div>
+          )}
         </div>
       </div>
     </Layout>
