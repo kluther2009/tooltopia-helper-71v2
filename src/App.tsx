@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import AddTool from "./pages/AddTool";
 import Storage from "./pages/Storage";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/add-tool" element={<AddTool />} />
           <Route path="/storage" element={<Storage />} />
           <Route path="/settings" element={<Settings />} />
