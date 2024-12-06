@@ -55,7 +55,7 @@ export default function AddTool() {
                   value={toolName}
                   onChange={(e) => setToolName(e.target.value)}
                   placeholder="Enter tool name"
-                  className="bg-card border-gray-700"
+                  className="bg-background text-foreground"
                   required
                 />
               </div>
@@ -67,7 +67,7 @@ export default function AddTool() {
                   value={primaryLocation}
                   onChange={(e) => setPrimaryLocation(e.target.value)}
                   placeholder="e.g., Workshop"
-                  className="bg-card border-gray-700"
+                  className="bg-background text-foreground"
                   required
                 />
               </div>
@@ -79,7 +79,7 @@ export default function AddTool() {
                   value={subLocation}
                   onChange={(e) => setSubLocation(e.target.value)}
                   placeholder="e.g., Cabinet A"
-                  className="bg-card border-gray-700"
+                  className="bg-background text-foreground"
                 />
               </div>
 
@@ -90,17 +90,17 @@ export default function AddTool() {
                   value={specificLocation}
                   onChange={(e) => setSpecificLocation(e.target.value)}
                   placeholder="e.g., Top Shelf"
-                  className="bg-card border-gray-700"
+                  className="bg-background text-foreground"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="bg-card border-gray-700">
+                  <SelectTrigger className="bg-background text-foreground border-input">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background text-foreground border-input">
                     <SelectItem value="available">Available</SelectItem>
                     <SelectItem value="in-use">In Use</SelectItem>
                     <SelectItem value="maintenance">Maintenance</SelectItem>
