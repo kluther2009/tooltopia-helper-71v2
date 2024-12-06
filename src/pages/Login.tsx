@@ -20,11 +20,17 @@ export default function Login() {
   return (
     <Layout>
       <div className="max-w-md mx-auto mt-8">
-        <div className="space-y-6">
+        <div className="space-y-8 bg-card p-8 rounded-lg shadow-lg border border-border">
           <div className="space-y-2 text-center">
-            <h1 className="text-3xl font-bold">Login</h1>
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold text-primary mb-2">
+                Tool Inventory System
+              </h2>
+              <div className="h-1 w-20 bg-primary mx-auto rounded" />
+            </div>
+            <h1 className="text-3xl font-bold">Welcome Back</h1>
             <p className="text-muted-foreground">
-              Enter your credentials to access your account
+              Sign in to access your tool inventory
             </p>
           </div>
 
@@ -40,6 +46,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="bg-background"
               />
             </div>
             <div className="space-y-2">
@@ -52,9 +59,10 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="bg-background"
               />
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
               Sign In
             </Button>
           </form>
