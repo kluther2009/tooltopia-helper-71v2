@@ -54,7 +54,7 @@ export default function Index() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search tools or locations..."
-              className="pl-10 bg-card border-gray-700"
+              className="pl-10 bg-background text-foreground border-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
