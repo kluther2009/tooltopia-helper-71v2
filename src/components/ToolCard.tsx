@@ -79,7 +79,7 @@ export function ToolCard({ id, name, location, status, onLocationUpdate }: ToolC
                       onChange={(e) => setNewLocation(e.target.value)}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Use " > " to separate location levels (e.g., Workshop > Cabinet A > Top Shelf)
+                      Use &quot; {`>`} &quot; to separate location levels (e.g., Workshop {`>`} Cabinet A {`>`} Top Shelf)
                     </p>
                   </div>
                   <Button onClick={handleUpdateLocation} className="w-full">
