@@ -2,40 +2,33 @@ import { Layout } from "@/components/Layout";
 import { ToolCard } from "@/components/ToolCard";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-
-const tools = [
-  { 
-    name: "Power Drill", 
-    location: "Workshop > Cabinet A > Top Shelf", 
-    status: "available" as const
-  },
-  { 
-    name: "Circular Saw", 
-    location: "Workshop > Storage Room > Tool Wall", 
-    status: "in-use" as const
-  },
-  { 
-    name: "Hammer Set", 
-    location: "Garage > Tool Box 2", 
-    status: "available" as const
-  },
-  { 
-    name: "Measuring Tape", 
-    location: "Workshop > Drawer 1", 
-    status: "maintenance" as const
-  },
-];
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Index() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [tools, setTools] = useState<any[]>([]);
+
+  const fetchTools = async () => {
+    const { data, error } = await supabase
+      .from('tools')
+      .select('*');
+    
+    if (!error && data) {
+      setTools(data);
+    }
+  };
+
+  useEffect(() => {
+    fetchTools();
+  }, []);
 
   const filteredTools = tools
     .filter(tool => 
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.location.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically by name
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <Layout>
@@ -56,10 +49,12 @@ export default function Index() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTools.map((tool) => (
             <ToolCard
-              key={tool.name}
+              key={tool.id}
+              id={tool.id}
               name={tool.name}
               location={tool.location}
               status={tool.status}
+              onLocationUpdate={fetchTools}
             />
           ))}
           {filteredTools.length === 0 && (
