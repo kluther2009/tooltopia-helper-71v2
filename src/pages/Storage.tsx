@@ -4,8 +4,15 @@ import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Tool {
+  id: string;
+  name: string;
+  location: string;
+  status: "available" | "in-use" | "maintenance";
+}
+
 export default function Storage() {
-  const [tools, setTools] = useState<any[]>([]);
+  const [tools, setTools] = useState<Tool[]>([]);
 
   const fetchTools = async () => {
     const { data } = await supabase
@@ -25,7 +32,7 @@ export default function Storage() {
     }
     acc[primaryLocation].push(tool);
     return acc;
-  }, {} as Record<string, typeof tools>);
+  }, {} as Record<string, Tool[]>);
 
   return (
     <Layout>
@@ -43,7 +50,7 @@ export default function Storage() {
                     id={tool.id}
                     name={tool.name}
                     location={tool.location}
-                    status={tool.status as "available" | "in-use" | "maintenance"}
+                    status={tool.status}
                     onLocationUpdate={fetchTools}
                   />
                 ))}
