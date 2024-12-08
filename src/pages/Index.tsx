@@ -54,7 +54,6 @@ export default function Index() {
               name={tool.name}
               location={tool.location}
               status={tool.status}
-              onLocationUpdate={fetchTools}
             />
           ))}
           {filteredTools.length === 0 && (

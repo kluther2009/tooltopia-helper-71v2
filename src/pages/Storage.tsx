@@ -20,7 +20,6 @@ export default function Storage() {
       .select('*');
     
     if (data) {
-      // Transform the data to ensure status matches our Tool interface
       const transformedTools = data.map(tool => ({
         id: tool.id,
         name: tool.name,
@@ -61,7 +60,6 @@ export default function Storage() {
                     name={tool.name}
                     location={tool.location}
                     status={tool.status}
-                    onLocationUpdate={fetchTools}
                   />
                 ))}
               </div>
