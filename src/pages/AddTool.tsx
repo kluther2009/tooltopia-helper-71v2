@@ -12,6 +12,8 @@ import {
 import { Layout } from "@/components/Layout";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export default function AddTool() {
   const [toolName, setToolName] = useState("");
@@ -20,11 +22,41 @@ export default function AddTool() {
   const [specificLocation, setSpecificLocation] = useState("");
   const [status, setStatus] = useState("available");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
+    
+    console.log('Attempting to insert tool with data:', {
+      name: toolName,
+      location: fullLocation,
+      status
+    });
+
+    const { data, error } = await supabase
+      .from('tools')
+      .insert([
+        {
+          name: toolName,
+          location: fullLocation,
+          status
+        }
+      ])
+      .select();
+
+    if (error) {
+      console.error('Error inserting tool:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add tool. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('Tool inserted successfully:', data);
     
     toast({
       title: "Tool Added",
@@ -37,6 +69,9 @@ export default function AddTool() {
     setSubLocation("");
     setSpecificLocation("");
     setStatus("available");
+    
+    // Navigate back to tools list
+    navigate('/');
   };
 
   return (
