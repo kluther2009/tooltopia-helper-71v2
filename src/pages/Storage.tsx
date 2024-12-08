@@ -18,7 +18,17 @@ export default function Storage() {
     const { data } = await supabase
       .from('tools')
       .select('*');
-    if (data) setTools(data);
+    
+    if (data) {
+      // Transform the data to ensure status matches our Tool interface
+      const transformedTools = data.map(tool => ({
+        id: tool.id,
+        name: tool.name,
+        location: tool.location,
+        status: tool.status as "available" | "in-use" | "maintenance"
+      }));
+      setTools(transformedTools);
+    }
   };
 
   useEffect(() => {
@@ -57,6 +67,11 @@ export default function Storage() {
               </div>
             </Card>
           ))}
+          {Object.keys(groupedTools).length === 0 && (
+            <div className="text-center py-8 text-gray-400">
+              No tools found.
+            </div>
+          )}
         </div>
       </div>
     </Layout>
