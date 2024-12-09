@@ -21,13 +21,13 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
           <Wrench className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between w-full">
             <h3 className="font-semibold text-lg text-gray-900">{name}</h3>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate(`/edit-tool/${id}`)}
-              className="h-8 w-8"
+              className="h-8 w-8 min-w-[2rem]"
             >
               <Edit2 className="h-4 w-4 text-black" />
             </Button>
