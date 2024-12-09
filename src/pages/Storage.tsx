@@ -5,6 +5,7 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { useToast } from "@/hooks/use-toast";
 import { ToolList } from "@/components/ToolList";
 import { MoveToolDialog } from "@/components/MoveToolDialog";
+import { Card } from "@/components/ui/card";
 
 interface Tool {
   id: string;
@@ -117,7 +118,7 @@ export default function Storage() {
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto">
+      <Card className="max-w-7xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-8">Storage Locations</h1>
         
         <DragDropContext 
@@ -158,7 +159,7 @@ export default function Storage() {
             }
           }}
         />
-      </div>
+      </Card>
     </Layout>
   );
 }

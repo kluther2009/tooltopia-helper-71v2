@@ -2,6 +2,7 @@ import { Layout } from "@/components/Layout";
 import { ToolCard } from "@/components/ToolCard";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,7 +33,7 @@ export default function Index() {
 
   return (
     <Layout>
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4">
+      <Card className="w-full max-w-7xl mx-auto p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold">Tool Manager</h1>
           <div className="relative w-full sm:w-64">
@@ -62,7 +63,7 @@ export default function Index() {
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </Layout>
   );
 }
