@@ -7,30 +7,27 @@ export const useLogout = () => {
 
   const handleLogout = async () => {
     try {
-      // First check if we have a session
-      const { data: { session } } = await supabase.auth.getSession();
+      // First attempt to kill all sessions
+      await supabase.auth.signOut({ scope: 'global' });
       
-      // Sign out with scope: 'global' to kill all sessions
-      const { error } = await supabase.auth.signOut({
-        scope: 'global'
-      });
-
-      if (error) {
-        console.error("Logout error:", error);
-        toast.error("Error logging out");
-        return;
-      }
-
-      // Clear any local storage items that might be persisting the session
+      // Force clear all storage
       localStorage.clear();
+      sessionStorage.clear();
       
-      toast.success("Logged out successfully");
-      navigate("/login");
+      // Clear any cookies
+      document.cookie.split(";").forEach((cookie) => {
+        document.cookie = cookie
+          .replace(/^ +/, "")
+          .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
+      });
+      
+      // Force reload the page to clear any remaining state
+      window.location.href = '/login';
     } catch (error) {
       console.error("Error during logout:", error);
       toast.error("Error logging out");
-      // Redirect to login anyway as a fallback
-      navigate("/login");
+      // Force reload to login anyway
+      window.location.href = '/login';
     }
   };
 
