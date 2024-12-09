@@ -55,9 +55,9 @@ export function AppSidebar() {
             <Button
               variant={location.pathname === route.href ? "default" : "ghost"}
               className={cn(
-                "w-full justify-start text-card-foreground hover:bg-sidebar-accent",
+                "w-full justify-start text-white hover:text-white",
                 isCollapsed && "justify-center",
-                location.pathname === route.href && "bg-sidebar-accent"
+                location.pathname === route.href && "bg-primary"
               )}
             >
               <route.icon className="h-5 w-5" />

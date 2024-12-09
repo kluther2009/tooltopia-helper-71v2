@@ -3,25 +3,19 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings2, Bell, Moon, Globe } from "lucide-react";
+import { Settings2, Bell, Globe } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useDarkMode } from "@/contexts/DarkModeContext";
 
 export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [language, setLanguage] = useState("en");
-  const { darkMode, setDarkMode } = useDarkMode();
 
   const handleSettingChange = (setting: string, value: boolean | string) => {
     switch (setting) {
       case "emailNotifications":
         setEmailNotifications(value as boolean);
         toast.success("Notification preferences updated");
-        break;
-      case "darkMode":
-        setDarkMode(value as boolean);
-        toast.success("Theme preference updated");
         break;
       case "language":
         setLanguage(value as string);
@@ -39,30 +33,6 @@ export default function Settings() {
         </div>
 
         <div className="space-y-6">
-          {/* Appearance Section */}
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Moon className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Appearance</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Dark Mode</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Toggle dark mode appearance
-                  </p>
-                </div>
-                <Switch
-                  checked={darkMode}
-                  onCheckedChange={(checked) =>
-                    handleSettingChange("darkMode", checked)
-                  }
-                />
-              </div>
-            </div>
-          </Card>
-
           {/* Notifications Section */}
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-6">

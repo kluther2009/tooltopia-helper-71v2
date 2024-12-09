@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 
 interface DarkModeContextType {
   darkMode: boolean;
@@ -8,32 +8,15 @@ interface DarkModeContextType {
 const DarkModeContext = createContext<DarkModeContextType | undefined>(undefined);
 
 export function DarkModeProvider({ children }: { children: React.ReactNode }) {
-  const [darkMode, setDarkMode] = useState(true); // Changed default to true
-
   useEffect(() => {
-    const isDark = localStorage.getItem("darkMode") === "true" || 
-      (!localStorage.getItem("darkMode") && true); // Changed to default to true
-    
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    document.documentElement.classList.add("dark");
   }, []);
 
-  const handleDarkModeChange = (value: boolean) => {
-    setDarkMode(value);
-    localStorage.setItem("darkMode", String(value));
-    if (value) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
+  // Provide dummy setDarkMode function since we're not using it anymore
+  const handleDarkModeChange = () => {};
 
   return (
-    <DarkModeContext.Provider value={{ darkMode, setDarkMode: handleDarkModeChange }}>
+    <DarkModeContext.Provider value={{ darkMode: true, setDarkMode: handleDarkModeChange }}>
       {children}
     </DarkModeContext.Provider>
   );
