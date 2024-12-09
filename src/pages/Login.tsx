@@ -40,7 +40,7 @@ export default function Login() {
   }, [navigate]);
 
   if (isLoading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   return (
@@ -78,6 +78,8 @@ export default function Login() {
                 button: "text-white",
                 input: "bg-transparent border-border text-foreground",
                 label: "text-foreground",
+                message: "text-foreground",
+                anchor: "text-primary hover:text-primary/80",
               },
             }}
             providers={[]}
