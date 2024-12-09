@@ -29,7 +29,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
               onClick={() => navigate(`/edit-tool/${id}`)}
               className="h-8 w-8"
             >
-              <Edit2 className="h-4 w-4" />
+              <Edit2 className="h-4 w-4 text-black" />
             </Button>
           </div>
           <div className="flex flex-col gap-1">
