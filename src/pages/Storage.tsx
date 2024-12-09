@@ -4,7 +4,17 @@ import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Tool {
   id: string;
@@ -13,9 +23,16 @@ interface Tool {
   status: "available" | "in-use" | "maintenance";
 }
 
+interface DragConfirmation {
+  toolId: string;
+  destinationLocation: string;
+  tool: Tool | null;
+}
+
 export default function Storage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const { toast } = useToast();
+  const [dragConfirmation, setDragConfirmation] = useState<DragConfirmation | null>(null);
 
   const fetchTools = async () => {
     const { data } = await supabase
@@ -37,15 +54,6 @@ export default function Storage() {
     fetchTools();
   }, []);
 
-  const groupedTools = tools.reduce((acc, tool) => {
-    const primaryLocation = tool.location.split(" > ")[0];
-    if (!acc[primaryLocation]) {
-      acc[primaryLocation] = [];
-    }
-    acc[primaryLocation].push(tool);
-    return acc;
-  }, {} as Record<string, Tool[]>);
-
   const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
@@ -57,6 +65,24 @@ export default function Storage() {
     const toolId = result.draggableId;
     const tool = tools.find(t => t.id === toolId);
     
+    if (!tool) return;
+
+    // If the tool has sub-locations, show the confirmation dialog
+    if (tool.location.includes(">")) {
+      setDragConfirmation({
+        toolId,
+        destinationLocation,
+        tool
+      });
+      return;
+    }
+
+    // If no sub-locations, proceed with the update
+    await updateToolLocation(toolId, destinationLocation);
+  };
+
+  const updateToolLocation = async (toolId: string, destinationLocation: string) => {
+    const tool = tools.find(t => t.id === toolId);
     if (!tool) return;
 
     // Keep any sub-locations from the original location
@@ -91,6 +117,15 @@ export default function Storage() {
     // Refresh the tools list
     fetchTools();
   };
+
+  const groupedTools = tools.reduce((acc, tool) => {
+    const primaryLocation = tool.location.split(" > ")[0];
+    if (!acc[primaryLocation]) {
+      acc[primaryLocation] = [];
+    }
+    acc[primaryLocation].push(tool);
+    return acc;
+  }, {} as Record<string, Tool[]>);
 
   return (
     <Layout>
@@ -144,6 +179,34 @@ export default function Storage() {
             )}
           </div>
         </DragDropContext>
+
+        <AlertDialog 
+          open={!!dragConfirmation} 
+          onOpenChange={() => setDragConfirmation(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Update Tool Location</AlertDialogTitle>
+              <AlertDialogDescription>
+                This tool has sub-locations. Moving it to a new location will keep its current sub-locations.
+                Please make sure to update the sub-locations if needed after moving the tool.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (dragConfirmation) {
+                    updateToolLocation(dragConfirmation.toolId, dragConfirmation.destinationLocation);
+                    setDragConfirmation(null);
+                  }
+                }}
+              >
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
