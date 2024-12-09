@@ -4,19 +4,14 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings2, Bell, Moon, Globe } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { useDarkMode } from "@/contexts/DarkModeContext";
 
 export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("en");
-
-  // Initialize dark mode state from localStorage
-  useEffect(() => {
-    const isDark = localStorage.getItem("darkMode") === "true";
-    setDarkMode(isDark);
-  }, []);
+  const { darkMode, setDarkMode } = useDarkMode();
 
   const handleSettingChange = (setting: string, value: boolean | string) => {
     switch (setting) {
@@ -26,12 +21,6 @@ export default function Settings() {
         break;
       case "darkMode":
         setDarkMode(value as boolean);
-        localStorage.setItem("darkMode", String(value));
-        if (value) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
         toast.success("Theme preference updated");
         break;
       case "language":

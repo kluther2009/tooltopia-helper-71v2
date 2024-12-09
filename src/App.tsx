@@ -2,98 +2,24 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import Index from "./pages/Index";
-import AddTool from "./pages/AddTool";
-import EditTool from "./pages/EditTool";
-import Storage from "./pages/Storage";
-import Settings from "./pages/Settings";
-import Login from "./pages/Login";
+import { BrowserRouter } from "react-router-dom";
+import { DarkModeProvider } from "@/contexts/DarkModeContext";
+import { AppRoutes } from "@/routes/AppRoutes";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-    });
-  }, []);
-
-  if (isAuthenticated === null) {
-    return null; // Loading state
-  }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
-
 const App = () => {
-  // Initialize dark mode from localStorage or system preference
-  useEffect(() => {
-    const isDark = localStorage.getItem("darkMode") === "true" || 
-      (!localStorage.getItem("darkMode") && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/add-tool"
-              element={
-                <ProtectedRoute>
-                  <AddTool />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/edit-tool/:id"
-              element={
-                <ProtectedRoute>
-                  <EditTool />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/storage"
-              element={
-                <ProtectedRoute>
-                  <Storage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <DarkModeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </DarkModeProvider>
     </QueryClientProvider>
   );
 };
