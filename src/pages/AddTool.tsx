@@ -29,10 +29,23 @@ export default function AddTool() {
     
     const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
     
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to add a tool.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     console.log('Attempting to insert tool with data:', {
       name: toolName,
       location: fullLocation,
-      status
+      status,
+      user_id: user.id
     });
 
     const { data, error } = await supabase
@@ -41,7 +54,8 @@ export default function AddTool() {
         {
           name: toolName,
           location: fullLocation,
-          status
+          status,
+          user_id: user.id // Add the user_id here
         }
       ])
       .select();
