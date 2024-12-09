@@ -14,9 +14,12 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const navigate = useNavigate();
   const locationParts = location.split(" > ");
 
+  console.log('Rendering ToolCard for:', name);
+  console.log('Edit icon should be black');
+
   return (
     <Card className="p-4 bg-gray-200 border-2 border-black hover:bg-gray-300 transition-colors">
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 w-full">
         <div className="p-2 bg-primary/10 rounded-lg">
           <Wrench className="h-6 w-6 text-primary" />
         </div>
@@ -27,7 +30,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
               variant="ghost"
               size="icon"
               onClick={() => navigate(`/edit-tool/${id}`)}
-              className="h-8 w-8 min-w-[2rem]"
+              className="h-8 w-8 min-w-[2rem] !p-0"
             >
               <Edit2 className="h-4 w-4 text-black" />
             </Button>
