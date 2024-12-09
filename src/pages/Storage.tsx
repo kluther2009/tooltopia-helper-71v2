@@ -1,20 +1,10 @@
 import { Layout } from "@/components/Layout";
-import { ToolCard } from "@/components/ToolCard";
-import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { DragDropContext } from "@hello-pangea/dnd";
 import { useToast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ToolList } from "@/components/ToolList";
+import { MoveToolDialog } from "@/components/MoveToolDialog";
 
 interface Tool {
   id: string;
@@ -33,6 +23,7 @@ export default function Storage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const { toast } = useToast();
   const [dragConfirmation, setDragConfirmation] = useState<DragConfirmation | null>(null);
+  const [draggingOver, setDraggingOver] = useState<string | null>(null);
 
   const fetchTools = async () => {
     const { data } = await supabase
@@ -55,6 +46,7 @@ export default function Storage() {
   }, []);
 
   const handleDragEnd = async (result: any) => {
+    setDraggingOver(null);
     if (!result.destination) return;
 
     const sourceLocation = result.source.droppableId;
@@ -67,7 +59,6 @@ export default function Storage() {
     
     if (!tool) return;
 
-    // If the tool has sub-locations, show the confirmation dialog
     if (tool.location.includes(">")) {
       setDragConfirmation({
         toolId,
@@ -77,7 +68,6 @@ export default function Storage() {
       return;
     }
 
-    // If no sub-locations, proceed with the update
     await updateToolLocation(toolId, destinationLocation);
   };
 
@@ -85,7 +75,6 @@ export default function Storage() {
     const tool = tools.find(t => t.id === toolId);
     if (!tool) return;
 
-    // Keep any sub-locations from the original location
     const locationParts = tool.location.split(" > ");
     const subLocationA = locationParts[1] || null;
     const subLocationB = locationParts[2] || null;
@@ -114,7 +103,6 @@ export default function Storage() {
       description: `Moved ${tool.name} to ${destinationLocation}`,
     });
 
-    // Refresh the tools list
     fetchTools();
   };
 
@@ -132,45 +120,25 @@ export default function Storage() {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Storage Locations</h1>
         
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DragDropContext 
+          onDragEnd={handleDragEnd}
+          onDragUpdate={(update) => {
+            if (update.destination) {
+              setDraggingOver(update.destination.droppableId);
+            } else {
+              setDraggingOver(null);
+            }
+          }}
+        >
           <div className="space-y-8">
             {Object.entries(groupedTools).map(([location, locationTools]) => (
-              <Droppable key={location} droppableId={location}>
-                {(provided) => (
-                  <Card 
-                    className="p-6 bg-card/50"
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                  >
-                    <h2 className="text-xl font-semibold mb-4">{location}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {locationTools.map((tool, index) => (
-                        <Draggable 
-                          key={tool.id} 
-                          draggableId={tool.id} 
-                          index={index}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                            >
-                              <ToolCard
-                                id={tool.id}
-                                name={tool.name}
-                                location={tool.location}
-                                status={tool.status}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  </Card>
-                )}
-              </Droppable>
+              <div key={location}>
+                <ToolList
+                  location={location}
+                  tools={locationTools}
+                  isDraggingOver={draggingOver === location}
+                />
+              </div>
             ))}
             {Object.keys(groupedTools).length === 0 && (
               <div className="text-center py-8 text-gray-400">
@@ -180,33 +148,16 @@ export default function Storage() {
           </div>
         </DragDropContext>
 
-        <AlertDialog 
-          open={!!dragConfirmation} 
-          onOpenChange={() => setDragConfirmation(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Update Tool Location</AlertDialogTitle>
-              <AlertDialogDescription>
-                This tool has sub-locations. Moving it to a new location will keep its current sub-locations.
-                Please make sure to update the sub-locations if needed after moving the tool.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (dragConfirmation) {
-                    updateToolLocation(dragConfirmation.toolId, dragConfirmation.destinationLocation);
-                    setDragConfirmation(null);
-                  }
-                }}
-              >
-                Continue
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <MoveToolDialog
+          isOpen={!!dragConfirmation}
+          onClose={() => setDragConfirmation(null)}
+          onConfirm={() => {
+            if (dragConfirmation) {
+              updateToolLocation(dragConfirmation.toolId, dragConfirmation.destinationLocation);
+              setDragConfirmation(null);
+            }
+          }}
+        />
       </div>
     </Layout>
   );
