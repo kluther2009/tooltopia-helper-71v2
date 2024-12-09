@@ -24,7 +24,7 @@ export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
       }`}
     >
       <h2 className="text-xl font-semibold mb-4">{location}</h2>
-      <ScrollArea className="h-[calc(100vh-200px)] w-full">
+      <ScrollArea className="h-[440px] w-full">
         <Droppable droppableId={location}>
           {(provided) => (
             <div
