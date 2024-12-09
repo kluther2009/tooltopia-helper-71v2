@@ -15,7 +15,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const locationParts = location.split(" > ");
 
   return (
-    <Card className="p-4 bg-gray-100 border-2 border-black hover:bg-gray-200 transition-colors">
+    <Card className="p-4 bg-gray-200 border-2 border-black hover:bg-gray-300 transition-colors">
       <div className="flex items-start gap-4">
         <div className="p-2 bg-primary/10 rounded-lg">
           <Wrench className="h-6 w-6 text-primary" />
