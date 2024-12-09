@@ -66,9 +66,9 @@ export function AppSidebar() {
         ))}
       </div>
       <Button
-        variant="ghost"
+        variant="destructive"
         className={cn(
-          "w-full justify-start text-destructive hover:text-destructive",
+          "w-full justify-start bg-red-500 hover:bg-red-600 text-white",
           isCollapsed && "justify-center"
         )}
         onClick={handleLogout}
