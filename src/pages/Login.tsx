@@ -65,6 +65,7 @@ export default function Login() {
                   colors: {
                     brand: 'hsl(var(--primary))',
                     brandAccent: 'hsl(var(--primary))',
+                    brandButtonText: "white",
                   },
                 },
               },
