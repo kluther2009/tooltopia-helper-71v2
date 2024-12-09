@@ -1,92 +1,103 @@
-import { Layout } from "@/components/Layout";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    // Check current auth session
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          navigate("/");
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        navigate("/");
-      }
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    checkSession();
-
-    // Cleanup subscription
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  if (isLoading) {
-    return null;
-  }
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } else {
+      navigate("/");
+    }
+    setLoading(false);
+  };
 
   return (
-    <Layout>
-      <div className="w-full max-w-md mx-auto px-4 mt-4 sm:mt-8">
-        <div className="space-y-6 bg-card p-6 sm:p-8 rounded-lg shadow-lg border border-border">
-          <div className="space-y-2 text-center">
-            <div className="mb-6">
-              <h2 className="text-xl sm:text-2xl font-semibold text-primary mb-2">
-                Tool Inventory System
-              </h2>
-              <div className="h-1 w-16 sm:w-20 bg-primary mx-auto rounded" />
-            </div>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-primary">
+            Tool Inventory System
+          </h1>
+          <div className="h-1 w-24 bg-primary mx-auto rounded-full" />
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-lg text-card-foreground">
+              Email address
+            </label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Your email"
+              className="w-full bg-background/50 text-card-foreground border-card-foreground/20"
+              required
+            />
           </div>
 
-          <Auth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#f97316',
-                    brandAccent: '#f97316',
-                    brandButtonText: "white",
-                    inputText: "white",
-                    inputBackground: "transparent",
-                    inputBorder: "hsl(var(--border))",
-                    inputLabelText: "white",
-                    messageText: "white",
-                  },
-                },
-              },
-              className: {
-                button: "text-white w-full py-2",
-                input: "bg-transparent border-border text-foreground w-full p-2 text-base",
-                label: "text-foreground text-sm",
-                message: "text-foreground text-sm",
-                anchor: "text-primary hover:text-primary/80 text-sm",
-                container: "w-full",
-              },
-            }}
-            providers={[]}
-          />
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-lg text-card-foreground">
+              Your Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Your password"
+              className="w-full bg-background/50 text-card-foreground border-card-foreground/20"
+              required
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full text-lg py-6"
+            disabled={loading}
+          >
+            {loading ? "Signing in..." : "Sign in"}
+          </Button>
+        </form>
+
+        <div className="space-y-4 text-center">
+          <a
+            href="#forgot-password"
+            className="block text-muted-foreground hover:text-card-foreground transition-colors"
+          >
+            Forgot your password?
+          </a>
+          <a
+            href="#sign-up"
+            className="block text-muted-foreground hover:text-card-foreground transition-colors"
+          >
+            Don't have an account? Sign up
+          </a>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }
