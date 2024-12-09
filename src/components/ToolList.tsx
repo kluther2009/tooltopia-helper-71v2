@@ -19,7 +19,7 @@ interface ToolListProps {
 export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
   return (
     <Card 
-      className={`p-6 bg-white shadow-sm transition-colors duration-200 ${
+      className={`p-6 bg-white border border-gray-200 transition-colors duration-200 ${
         isDraggingOver ? "bg-primary/5" : ""
       }`}
     >

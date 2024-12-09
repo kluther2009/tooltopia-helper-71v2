@@ -118,7 +118,7 @@ export default function Storage() {
 
   return (
     <Layout>
-      <Card className="max-w-7xl mx-auto p-6 bg-white shadow-sm">
+      <Card className="max-w-7xl mx-auto p-6 bg-white">
         <h1 className="text-3xl font-bold mb-8 text-gray-900">Storage Locations</h1>
         
         <DragDropContext 
