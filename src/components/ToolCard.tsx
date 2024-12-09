@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Wrench, Edit2 } from "lucide-react";
+import { Wrench, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -15,7 +15,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const locationParts = location.split(" > ");
 
   console.log('Rendering ToolCard for:', name);
-  console.log('Edit icon should be black');
+  console.log('Edit icon color should be #000000');
 
   return (
     <Card className="p-4 bg-gray-200 border-2 border-black hover:bg-gray-300 transition-colors">
@@ -30,9 +30,9 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
               variant="ghost"
               size="icon"
               onClick={() => navigate(`/edit-tool/${id}`)}
-              className="h-8 w-8 min-w-[2rem] !p-0"
+              className="h-8 w-8 min-w-[2rem] !p-0 hover:bg-transparent"
             >
-              <Edit2 className="h-4 w-4 text-black" />
+              <Edit className="h-4 w-4" style={{ color: '#000000' }} />
             </Button>
           </div>
           <div className="flex flex-col gap-1">
