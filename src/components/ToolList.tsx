@@ -1,6 +1,7 @@
 import { ToolCard } from "@/components/ToolCard";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Tool {
   id: string;
@@ -23,39 +24,41 @@ export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
       }`}
     >
       <h2 className="text-xl font-semibold mb-4">{location}</h2>
-      <Droppable droppableId={location}>
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {tools.map((tool, index) => (
-              <Draggable 
-                key={tool.id} 
-                draggableId={tool.id} 
-                index={index}
-              >
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    <ToolCard
-                      id={tool.id}
-                      name={tool.name}
-                      location={tool.location}
-                      status={tool.status}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
+      <ScrollArea className="h-[500px] rounded-md">
+        <Droppable droppableId={location}>
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-1"
+            >
+              {tools.map((tool, index) => (
+                <Draggable 
+                  key={tool.id} 
+                  draggableId={tool.id} 
+                  index={index}
+                >
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                    >
+                      <ToolCard
+                        id={tool.id}
+                        name={tool.name}
+                        location={tool.location}
+                        status={tool.status}
+                      />
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </ScrollArea>
     </Card>
   );
 }
