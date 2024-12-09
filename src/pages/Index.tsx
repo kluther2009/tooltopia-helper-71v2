@@ -33,9 +33,9 @@ export default function Index() {
 
   return (
     <Layout>
-      <Card className="w-full max-w-7xl mx-auto p-6">
+      <Card className="w-full max-w-7xl mx-auto p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold">Tool Manager</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-left w-full">Tool Manager</h1>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -47,7 +47,7 @@ export default function Index() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {filteredTools.map((tool) => (
             <ToolCard
               key={tool.id}

@@ -14,23 +14,20 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const navigate = useNavigate();
   const locationParts = location.split(" > ");
 
-  console.log('Rendering ToolCard for:', name);
-  console.log('Edit icon should be visible and black');
-
   return (
-    <Card className="p-4 bg-gray-200 border-2 border-black hover:bg-gray-300 transition-colors">
-      <div className="flex items-start gap-4 w-full">
-        <div className="p-2 bg-primary/10 rounded-lg">
-          <Wrench className="h-6 w-6 text-primary" />
+    <Card className="p-3 sm:p-4 bg-gray-200 border-2 border-black hover:bg-gray-300 transition-colors">
+      <div className="flex items-start gap-3 sm:gap-4 w-full">
+        <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+          <Wrench className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
         </div>
-        <div className="flex-1">
-          <div className="flex items-start justify-between w-full">
-            <h3 className="font-semibold text-lg text-gray-900">{name}</h3>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between w-full gap-2">
+            <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">{name}</h3>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate(`/edit-tool/${id}`)}
-              className="h-8 w-8 min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+              className="h-8 w-8 min-w-[2rem] !p-0 hover:bg-transparent bg-transparent shrink-0"
             >
               <Pencil 
                 className="h-4 w-4" 
@@ -44,7 +41,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
           </div>
           <div className="flex flex-col gap-1">
             {locationParts.map((part, index) => (
-              <p key={index} className="text-sm text-gray-500 flex items-center">
+              <p key={index} className="text-xs sm:text-sm text-gray-500 flex items-center truncate">
                 {index > 0 && <span className="ml-2">↳</span>}
                 <span className={`${index > 0 ? "ml-2" : ""}`}>{part}</span>
               </p>
