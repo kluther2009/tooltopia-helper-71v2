@@ -55,7 +55,7 @@ export function AppSidebar() {
             <Button
               variant={location.pathname === route.href ? "default" : "ghost"}
               className={cn(
-                "w-full justify-start font-medium !text-white hover:bg-sidebar-accent",
+                "w-full justify-start text-card-foreground hover:bg-sidebar-accent",
                 isCollapsed && "justify-center",
                 location.pathname === route.href && "bg-sidebar-accent"
               )}
@@ -69,7 +69,7 @@ export function AppSidebar() {
       <Button
         variant="destructive"
         className={cn(
-          "w-full justify-start bg-red-600 hover:bg-red-700 !text-white",
+          "w-full justify-start bg-red-600 hover:bg-red-700 text-white",
           isCollapsed && "justify-center"
         )}
         onClick={handleLogout}
