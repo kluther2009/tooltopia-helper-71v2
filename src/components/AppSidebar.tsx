@@ -73,7 +73,7 @@ export function AppSidebar() {
         )}
         onClick={handleLogout}
       >
-        <LogOut />
+        <LogOut className="h-4 w-4" />
         {!isCollapsed && <span className="ml-2">Logout</span>}
       </Button>
     </aside>
