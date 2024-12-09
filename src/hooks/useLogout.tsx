@@ -10,20 +10,20 @@ export const useLogout = () => {
       // First check if we have a session
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
-        // If no session exists, just redirect to login
-        navigate("/login");
-        return;
-      }
+      // Sign out with scope: 'global' to kill all sessions
+      const { error } = await supabase.auth.signOut({
+        scope: 'global'
+      });
 
-      // If we have a session, attempt to sign out
-      const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Logout error:", error);
         toast.error("Error logging out");
         return;
       }
 
+      // Clear any local storage items that might be persisting the session
+      localStorage.clear();
+      
       toast.success("Logged out successfully");
       navigate("/login");
     } catch (error) {
