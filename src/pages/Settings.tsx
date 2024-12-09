@@ -12,9 +12,10 @@ export default function Settings() {
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("en");
 
-  // Initialize dark mode state from document class
+  // Initialize dark mode state from localStorage
   useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains("dark"));
+    const isDark = localStorage.getItem("darkMode") === "true";
+    setDarkMode(isDark);
   }, []);
 
   const handleSettingChange = (setting: string, value: boolean | string) => {
@@ -25,6 +26,7 @@ export default function Settings() {
         break;
       case "darkMode":
         setDarkMode(value as boolean);
+        localStorage.setItem("darkMode", String(value));
         if (value) {
           document.documentElement.classList.add("dark");
         } else {
