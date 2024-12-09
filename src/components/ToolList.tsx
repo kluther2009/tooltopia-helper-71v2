@@ -23,30 +23,39 @@ export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
       }`}
     >
       <h2 className="text-xl font-semibold mb-4">{location}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tools.map((tool, index) => (
-          <Draggable 
-            key={tool.id} 
-            draggableId={tool.id} 
-            index={index}
+      <Droppable droppableId={location}>
+        {(provided) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                {...provided.dragHandleProps}
+            {tools.map((tool, index) => (
+              <Draggable 
+                key={tool.id} 
+                draggableId={tool.id} 
+                index={index}
               >
-                <ToolCard
-                  id={tool.id}
-                  name={tool.name}
-                  location={tool.location}
-                  status={tool.status}
-                />
-              </div>
-            )}
-          </Draggable>
-        ))}
-      </div>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    <ToolCard
+                      id={tool.id}
+                      name={tool.name}
+                      location={tool.location}
+                      status={tool.status}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
     </Card>
   );
 }
