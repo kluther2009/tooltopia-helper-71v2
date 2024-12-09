@@ -7,16 +7,30 @@ export const useLogout = () => {
 
   const handleLogout = async () => {
     try {
+      // First check if we have a session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // If no session exists, just redirect to login
+        navigate("/login");
+        return;
+      }
+
+      // If we have a session, attempt to sign out
       const { error } = await supabase.auth.signOut();
       if (error) {
+        console.error("Logout error:", error);
         toast.error("Error logging out");
         return;
       }
+
       toast.success("Logged out successfully");
       navigate("/login");
     } catch (error) {
-      console.error("Error logging out:", error);
+      console.error("Error during logout:", error);
       toast.error("Error logging out");
+      // Redirect to login anyway as a fallback
+      navigate("/login");
     }
   };
 
