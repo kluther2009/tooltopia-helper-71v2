@@ -59,8 +59,9 @@ export default function Storage() {
     
     if (!tool) return;
 
-    // Update the tool's location
-    const newLocation = destinationLocation + tool.location.substring(tool.location.indexOf(">"));
+    // Keep any sub-locations from the original location
+    const locationParts = tool.location.split(" > ");
+    const newLocation = destinationLocation + (locationParts.length > 1 ? " > " + locationParts.slice(1).join(" > ") : "");
     
     const { error } = await supabase
       .from('tools')
