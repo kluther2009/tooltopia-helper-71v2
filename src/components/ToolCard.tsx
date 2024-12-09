@@ -1,5 +1,7 @@
 import { Card } from "@/components/ui/card";
-import { Wrench } from "lucide-react";
+import { Wrench, Edit2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface ToolCardProps {
   id: string;
@@ -8,7 +10,8 @@ interface ToolCardProps {
   status: "available" | "in-use" | "maintenance";
 }
 
-export function ToolCard({ name, location, status }: ToolCardProps) {
+export function ToolCard({ id, name, location, status }: ToolCardProps) {
+  const navigate = useNavigate();
   const locationParts = location.split(" > ");
 
   return (
@@ -20,6 +23,14 @@ export function ToolCard({ name, location, status }: ToolCardProps) {
         <div className="flex-1">
           <div className="flex items-start justify-between">
             <h3 className="font-semibold text-lg">{name}</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(`/edit-tool/${id}`)}
+              className="h-8 w-8"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
           </div>
           <div className="flex flex-col gap-1">
             {locationParts.map((part, index) => (
