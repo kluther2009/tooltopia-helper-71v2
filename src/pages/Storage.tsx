@@ -26,7 +26,7 @@ export default function Storage() {
       const transformedTools = data.map(tool => ({
         id: tool.id,
         name: tool.name,
-        location: tool.location,
+        location: `${tool.location}${tool.sub_location_a ? ` > ${tool.sub_location_a}` : ''}${tool.sub_location_b ? ` > ${tool.sub_location_b}` : ''}`,
         status: tool.status as "available" | "in-use" | "maintenance"
       }));
       setTools(transformedTools);
@@ -61,11 +61,16 @@ export default function Storage() {
 
     // Keep any sub-locations from the original location
     const locationParts = tool.location.split(" > ");
-    const newLocation = destinationLocation + (locationParts.length > 1 ? " > " + locationParts.slice(1).join(" > ") : "");
-    
+    const subLocationA = locationParts[1] || null;
+    const subLocationB = locationParts[2] || null;
+
     const { error } = await supabase
       .from('tools')
-      .update({ location: newLocation })
+      .update({ 
+        location: destinationLocation,
+        sub_location_a: subLocationA,
+        sub_location_b: subLocationB
+      })
       .eq('id', toolId);
 
     if (error) {
