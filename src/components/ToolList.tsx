@@ -19,11 +19,11 @@ interface ToolListProps {
 export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
   return (
     <Card 
-      className={`p-6 bg-card/50 transition-colors duration-200 ${
-        isDraggingOver ? "bg-primary/10" : ""
+      className={`p-6 bg-white shadow-sm transition-colors duration-200 ${
+        isDraggingOver ? "bg-primary/5" : ""
       }`}
     >
-      <h2 className="text-xl font-semibold mb-4">{location}</h2>
+      <h2 className="text-xl font-semibold mb-4 text-gray-900">{location}</h2>
       <ScrollArea className="h-[440px] w-full">
         <Droppable droppableId={location}>
           {(provided) => (

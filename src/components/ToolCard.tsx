@@ -15,14 +15,14 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const locationParts = location.split(" > ");
 
   return (
-    <Card className="p-4 bg-card hover:bg-card/80 transition-colors">
+    <Card className="p-4 bg-white hover:bg-gray-50 transition-colors shadow-sm">
       <div className="flex items-start gap-4">
         <div className="p-2 bg-primary/10 rounded-lg">
           <Wrench className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
           <div className="flex items-start justify-between">
-            <h3 className="font-semibold text-lg">{name}</h3>
+            <h3 className="font-semibold text-lg text-gray-900">{name}</h3>
             <Button
               variant="ghost"
               size="icon"
@@ -34,7 +34,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
           </div>
           <div className="flex flex-col gap-1">
             {locationParts.map((part, index) => (
-              <p key={index} className="text-sm text-gray-400 flex items-center">
+              <p key={index} className="text-sm text-gray-500 flex items-center">
                 {index > 0 && <span className="ml-2">↳</span>}
                 <span className={`${index > 0 ? "ml-2" : ""}`}>{part}</span>
               </p>
@@ -42,9 +42,9 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
           </div>
           <div className="mt-2">
             <span className={`px-2 py-1 rounded-full text-xs ${
-              status === "available" ? "bg-green-500/20 text-green-400" :
-              status === "in-use" ? "bg-blue-500/20 text-blue-400" :
-              "bg-yellow-500/20 text-yellow-400"
+              status === "available" ? "bg-green-100 text-green-700" :
+              status === "in-use" ? "bg-blue-100 text-blue-700" :
+              "bg-yellow-100 text-yellow-700"
             }`}>
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </span>

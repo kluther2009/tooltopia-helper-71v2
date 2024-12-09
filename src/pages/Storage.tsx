@@ -118,8 +118,8 @@ export default function Storage() {
 
   return (
     <Layout>
-      <Card className="max-w-7xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-8">Storage Locations</h1>
+      <Card className="max-w-7xl mx-auto p-6 bg-white shadow-sm">
+        <h1 className="text-3xl font-bold mb-8 text-gray-900">Storage Locations</h1>
         
         <DragDropContext 
           onDragEnd={handleDragEnd}
@@ -142,7 +142,7 @@ export default function Storage() {
               </div>
             ))}
             {Object.keys(groupedTools).length === 0 && (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-gray-500">
                 No tools found.
               </div>
             )}
