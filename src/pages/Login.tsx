@@ -63,11 +63,21 @@ export default function Login() {
               variables: {
                 default: {
                   colors: {
-                    brand: 'hsl(var(--primary))',
-                    brandAccent: 'hsl(var(--primary))',
+                    brand: '#f97316',
+                    brandAccent: '#f97316',
                     brandButtonText: "white",
+                    inputText: "white",
+                    inputBackground: "transparent",
+                    inputBorder: "hsl(var(--border))",
+                    inputLabelText: "white",
+                    messageText: "white",
                   },
                 },
+              },
+              className: {
+                button: "text-white",
+                input: "bg-transparent border-border text-foreground",
+                label: "text-foreground",
               },
             }}
             providers={[]}
