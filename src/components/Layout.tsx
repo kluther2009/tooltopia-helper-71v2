@@ -6,9 +6,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background relative">
         <AppSidebar />
-        <main className="flex-1 p-6 animate-fade-in">
+        <main className="flex-1 p-4 sm:p-6 animate-fade-in">
           {children}
-          <div className="fixed bottom-4 right-4 text-sm text-muted-foreground">
+          <div className="fixed bottom-2 sm:bottom-4 right-2 sm:right-4 text-xs sm:text-sm text-muted-foreground">
             Developed by K.Luther
           </div>
         </main>

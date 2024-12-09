@@ -45,14 +45,14 @@ export default function Login() {
 
   return (
     <Layout>
-      <div className="max-w-md mx-auto mt-8">
-        <div className="space-y-8 bg-card p-8 rounded-lg shadow-lg border border-border">
+      <div className="w-full max-w-md mx-auto px-4 mt-4 sm:mt-8">
+        <div className="space-y-6 bg-card p-6 sm:p-8 rounded-lg shadow-lg border border-border">
           <div className="space-y-2 text-center">
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-primary mb-2">
+            <div className="mb-6">
+              <h2 className="text-xl sm:text-2xl font-semibold text-primary mb-2">
                 Tool Inventory System
               </h2>
-              <div className="h-1 w-20 bg-primary mx-auto rounded" />
+              <div className="h-1 w-16 sm:w-20 bg-primary mx-auto rounded" />
             </div>
           </div>
 
@@ -75,11 +75,12 @@ export default function Login() {
                 },
               },
               className: {
-                button: "text-white",
-                input: "bg-transparent border-border text-foreground",
-                label: "text-foreground",
-                message: "text-foreground",
-                anchor: "text-primary hover:text-primary/80",
+                button: "text-white w-full py-2",
+                input: "bg-transparent border-border text-foreground w-full p-2 text-base",
+                label: "text-foreground text-sm",
+                message: "text-foreground text-sm",
+                anchor: "text-primary hover:text-primary/80 text-sm",
+                container: "w-full",
               },
             }}
             providers={[]}
