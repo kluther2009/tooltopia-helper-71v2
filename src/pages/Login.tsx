@@ -2,20 +2,46 @@ import { Layout } from "@/components/Layout";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.onAuthStateChange((event, session) => {
+    // Check current auth session
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         navigate("/");
       }
     });
+
+    checkSession();
+
+    // Cleanup subscription
+    return () => subscription.unsubscribe();
   }, [navigate]);
+
+  if (isLoading) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <Layout>
