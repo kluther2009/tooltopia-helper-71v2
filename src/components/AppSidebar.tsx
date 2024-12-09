@@ -7,7 +7,8 @@ import {
   LayoutGrid,
   Settings,
   BoxSelect,
-  LogOut
+  LogOut,
+  Plus
 } from "lucide-react";
 
 const routes = [
@@ -15,6 +16,11 @@ const routes = [
     label: "Dashboard",
     icon: LayoutGrid,
     href: "/",
+  },
+  {
+    label: "Add Tool",
+    icon: Plus,
+    href: "/add-tool",
   },
   {
     label: "Storage",
