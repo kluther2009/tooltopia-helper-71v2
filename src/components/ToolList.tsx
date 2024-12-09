@@ -24,13 +24,13 @@ export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
       }`}
     >
       <h2 className="text-xl font-semibold mb-4">{location}</h2>
-      <ScrollArea className="h-[500px] rounded-md">
+      <ScrollArea className="h-[calc(100vh-200px)] w-full" scrollBarClassName="left-1">
         <Droppable droppableId={location}>
           {(provided) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-1"
+              className="grid grid-cols-1 gap-4 pr-4"
             >
               {tools.map((tool, index) => (
                 <Draggable 
