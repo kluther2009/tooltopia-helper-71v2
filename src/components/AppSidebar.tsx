@@ -29,15 +29,17 @@ const routes = [
 ];
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const { handleLogout } = useLogout();
+
+  const isCollapsed = state === "collapsed";
 
   return (
     <aside
       className={cn(
         "flex h-screen",
-        collapsed ? "w-16" : "w-56",
+        isCollapsed ? "w-16" : "w-56",
         "flex-col gap-4 border-r border-border bg-card p-2 transition-all duration-300"
       )}
     >
@@ -48,11 +50,11 @@ export function AppSidebar() {
               variant={location.pathname === route.href ? "default" : "ghost"}
               className={cn(
                 "w-full justify-start",
-                collapsed && "justify-center"
+                isCollapsed && "justify-center"
               )}
             >
               <route.icon />
-              {!collapsed && <span className="ml-2">{route.label}</span>}
+              {!isCollapsed && <span className="ml-2">{route.label}</span>}
             </Button>
           </Link>
         ))}
@@ -61,12 +63,12 @@ export function AppSidebar() {
         variant="ghost"
         className={cn(
           "w-full justify-start text-destructive hover:text-destructive",
-          collapsed && "justify-center"
+          isCollapsed && "justify-center"
         )}
         onClick={handleLogout}
       >
         <LogOut />
-        {!collapsed && <span className="ml-2">Logout</span>}
+        {!isCollapsed && <span className="ml-2">Logout</span>}
       </Button>
     </aside>
   );
