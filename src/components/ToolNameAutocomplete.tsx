@@ -28,10 +28,11 @@ export function ToolNameAutocomplete({
 }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
 
-  // Ensure tools is always an array and filter based on the current value
-  const filteredTools = Array.isArray(tools) ? tools.filter((tool) => 
-    tool.tool_name.toLowerCase().includes((value || "").toLowerCase())
-  ) : []
+  // Ensure tools is an array and filter based on the current value
+  const safeTools = Array.isArray(tools) ? tools : []
+  const filteredTools = safeTools.filter((tool) => 
+    tool.tool_name.toLowerCase().includes(value.toLowerCase())
+  )
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -47,11 +48,11 @@ export function ToolNameAutocomplete({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command shouldFilter={false}>
+        <Command>
           <CommandInput 
             placeholder="Search tool..." 
-            value={value || ""}
-            onValueChange={onValueChange}
+            value={value}
+            onValueChange={(newValue) => onValueChange(newValue || "")}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           {filteredTools.length > 0 && (
