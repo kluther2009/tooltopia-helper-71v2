@@ -21,12 +21,16 @@ interface ToolNameAutocompleteProps {
   onValueChange: (value: string) => void
 }
 
-export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolNameAutocompleteProps) {
+export function ToolNameAutocomplete({ 
+  tools = [], 
+  value = "", 
+  onValueChange 
+}: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
-  const [searchValue, setSearchValue] = useState("")
 
-  const filteredTools = tools.filter((tool) => 
-    tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
+  // Ensure tools is always an array and filter based on the current value
+  const filteredTools = (tools || []).filter((tool) => 
+    tool.tool_name.toLowerCase().includes(value.toLowerCase())
   )
 
   return (
@@ -46,11 +50,8 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
         <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Search tool..." 
-            value={searchValue}
-            onValueChange={(search) => {
-              setSearchValue(search)
-              onValueChange(search)
-            }}
+            value={value}
+            onValueChange={onValueChange}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           <CommandGroup>
@@ -60,7 +61,6 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
                 value={tool.tool_name}
                 onSelect={(currentValue) => {
                   onValueChange(currentValue)
-                  setSearchValue(currentValue)
                   setOpen(false)
                 }}
               >
