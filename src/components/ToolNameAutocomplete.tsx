@@ -47,13 +47,11 @@ export function ToolNameAutocomplete({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Search tool..." 
             value={value || ""}
-            onValueChange={(newValue) => {
-              onValueChange(newValue)
-            }}
+            onValueChange={onValueChange}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           {filteredTools.length > 0 && (
