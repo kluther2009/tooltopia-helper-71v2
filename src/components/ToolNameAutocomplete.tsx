@@ -32,6 +32,7 @@ export function ToolNameAutocomplete({
   // Ensure tools is always an array and filter based on search
   const filteredTools = useMemo(() => {
     const safeTools = Array.isArray(tools) ? tools : []
+    if (!searchValue) return safeTools
     return safeTools.filter((tool) => 
       tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
     )
