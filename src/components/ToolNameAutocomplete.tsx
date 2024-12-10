@@ -23,6 +23,7 @@ interface ToolNameAutocompleteProps {
 
 export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState(value)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -41,8 +42,11 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
         <Command>
           <CommandInput 
             placeholder="Search tool..." 
-            value={value}
-            onValueChange={onValueChange}
+            value={searchValue}
+            onValueChange={(search) => {
+              setSearchValue(search)
+              onValueChange(search)
+            }}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           <CommandGroup>
@@ -52,6 +56,7 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
                 value={tool.tool_name}
                 onSelect={(currentValue) => {
                   onValueChange(currentValue)
+                  setSearchValue(currentValue)
                   setOpen(false)
                 }}
               >
