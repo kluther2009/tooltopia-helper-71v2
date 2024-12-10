@@ -39,7 +39,7 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Search tool..." 
             value={searchValue}
@@ -50,7 +50,7 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           <CommandGroup>
-            {(tools || []).map((tool) => (
+            {tools.map((tool) => (
               <CommandItem
                 key={tool.tool_name}
                 value={tool.tool_name}
