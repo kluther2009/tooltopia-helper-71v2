@@ -55,28 +55,26 @@ export function ToolNameAutocomplete({
             onValueChange={(newValue) => onValueChange(newValue || "")}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
-          {filteredTools.length > 0 && (
-            <CommandGroup>
-              {filteredTools.map((tool) => (
-                <CommandItem
-                  key={tool.tool_name}
-                  value={tool.tool_name}
-                  onSelect={(currentValue) => {
-                    onValueChange(currentValue)
-                    setOpen(false)
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === tool.tool_name ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {tool.tool_name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
+          <CommandGroup>
+            {filteredTools.map((tool) => (
+              <CommandItem
+                key={tool.tool_name}
+                value={tool.tool_name}
+                onSelect={(currentValue) => {
+                  onValueChange(currentValue)
+                  setOpen(false)
+                }}
+              >
+                <Check
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    value === tool.tool_name ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                {tool.tool_name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
         </Command>
       </PopoverContent>
     </Popover>
