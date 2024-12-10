@@ -47,33 +47,35 @@ export function ToolNameAutocomplete({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command shouldFilter={false}>
+        <Command>
           <CommandInput 
             placeholder="Search tool..." 
             value={value}
             onValueChange={onValueChange}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
-          <CommandGroup>
-            {filteredTools.map((tool) => (
-              <CommandItem
-                key={tool.tool_name}
-                value={tool.tool_name}
-                onSelect={(currentValue) => {
-                  onValueChange(currentValue)
-                  setOpen(false)
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === tool.tool_name ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {tool.tool_name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {filteredTools.length > 0 && (
+            <CommandGroup>
+              {filteredTools.map((tool) => (
+                <CommandItem
+                  key={tool.tool_name}
+                  value={tool.tool_name}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === tool.tool_name ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {tool.tool_name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </Command>
       </PopoverContent>
     </Popover>
