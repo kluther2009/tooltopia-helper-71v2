@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -27,9 +27,20 @@ export function ToolNameAutocomplete({
   onValueChange 
 }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
 
-  // Ensure tools is always an array
-  const safeTools = Array.isArray(tools) ? tools : []
+  // Ensure tools is always an array and filter based on search
+  const filteredTools = useMemo(() => {
+    const safeTools = Array.isArray(tools) ? tools : []
+    return safeTools.filter((tool) => 
+      tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
+    )
+  }, [tools, searchValue])
+
+  const handleInputChange = (search: string) => {
+    setSearchValue(search)
+    onValueChange(search)
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -45,21 +56,22 @@ export function ToolNameAutocomplete({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Search tool..." 
-            value={value}
-            onValueChange={onValueChange}
+            value={searchValue}
+            onValueChange={handleInputChange}
           />
           <CommandEmpty>No tool found. Continue typing to add new.</CommandEmpty>
-          {safeTools.length > 0 && (
+          {filteredTools.length > 0 && (
             <CommandGroup>
-              {safeTools.map((tool) => (
+              {filteredTools.map((tool) => (
                 <CommandItem
                   key={tool.tool_name}
                   value={tool.tool_name}
                   onSelect={(currentValue) => {
                     onValueChange(currentValue)
+                    setSearchValue(currentValue)
                     setOpen(false)
                   }}
                 >
