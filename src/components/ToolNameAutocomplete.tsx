@@ -27,6 +27,17 @@ export function ToolNameAutocomplete({
   onValueChange 
 }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState(value)
+
+  // Ensure tools is always an array and filter based on search
+  const filteredTools = tools.filter((tool) => 
+    tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
+  )
+
+  const handleValueChange = (newValue: string) => {
+    setSearchValue(newValue)
+    onValueChange(newValue)
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -45,12 +56,12 @@ export function ToolNameAutocomplete({
         <Command>
           <CommandInput 
             placeholder="Search tool..." 
-            value={value}
-            onValueChange={onValueChange}
+            value={searchValue}
+            onValueChange={handleValueChange}
           />
           <CommandEmpty>No tool found. Continue typing to add new.</CommandEmpty>
           <CommandGroup>
-            {tools.map((tool) => (
+            {filteredTools.map((tool) => (
               <CommandItem
                 key={tool.tool_name}
                 value={tool.tool_name}
