@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils"
 
 interface ToolNameAutocompleteProps {
-  tools: { tool_name: string }[]
+  tools?: { tool_name: string }[]
   value: string
   onValueChange: (value: string) => void
 }
@@ -27,17 +27,9 @@ export function ToolNameAutocomplete({
   onValueChange 
 }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
-  const [searchValue, setSearchValue] = useState(value)
 
-  // Ensure tools is always an array and filter based on search
-  const filteredTools = tools.filter((tool) => 
-    tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
-  )
-
-  const handleValueChange = (newValue: string) => {
-    setSearchValue(newValue)
-    onValueChange(newValue)
-  }
+  // Ensure tools is always an array
+  const safeTools = Array.isArray(tools) ? tools : []
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -56,30 +48,32 @@ export function ToolNameAutocomplete({
         <Command>
           <CommandInput 
             placeholder="Search tool..." 
-            value={searchValue}
-            onValueChange={handleValueChange}
+            value={value}
+            onValueChange={onValueChange}
           />
           <CommandEmpty>No tool found. Continue typing to add new.</CommandEmpty>
-          <CommandGroup>
-            {filteredTools.map((tool) => (
-              <CommandItem
-                key={tool.tool_name}
-                value={tool.tool_name}
-                onSelect={(currentValue) => {
-                  onValueChange(currentValue)
-                  setOpen(false)
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === tool.tool_name ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {tool.tool_name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {safeTools.length > 0 && (
+            <CommandGroup>
+              {safeTools.map((tool) => (
+                <CommandItem
+                  key={tool.tool_name}
+                  value={tool.tool_name}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === tool.tool_name ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {tool.tool_name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </Command>
       </PopoverContent>
     </Popover>
