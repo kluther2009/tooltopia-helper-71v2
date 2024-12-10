@@ -23,6 +23,11 @@ interface ToolNameAutocompleteProps {
 
 export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
+
+  const filteredTools = tools.filter((tool) => 
+    tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
+  )
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -38,23 +43,24 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command filter={(value, search) => {
-          if (value.toLowerCase().includes(search.toLowerCase())) return 1
-          return 0
-        }}>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Search tool..." 
-            value={value}
-            onValueChange={onValueChange}
+            value={searchValue}
+            onValueChange={(search) => {
+              setSearchValue(search)
+              onValueChange(search)
+            }}
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           <CommandGroup>
-            {tools.map((tool) => (
+            {filteredTools.map((tool) => (
               <CommandItem
                 key={tool.tool_name}
                 value={tool.tool_name}
                 onSelect={(currentValue) => {
                   onValueChange(currentValue)
+                  setSearchValue(currentValue)
                   setOpen(false)
                 }}
               >
