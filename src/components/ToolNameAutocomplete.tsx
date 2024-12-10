@@ -21,7 +21,7 @@ interface ToolNameAutocompleteProps {
   onValueChange: (value: string) => void
 }
 
-export function ToolNameAutocomplete({ tools, value, onValueChange }: ToolNameAutocompleteProps) {
+export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -46,7 +46,7 @@ export function ToolNameAutocomplete({ tools, value, onValueChange }: ToolNameAu
           />
           <CommandEmpty>No tool found. Type to add new.</CommandEmpty>
           <CommandGroup>
-            {tools?.map((tool) => (
+            {(tools || []).map((tool) => (
               <CommandItem
                 key={tool.tool_name}
                 value={tool.tool_name}
