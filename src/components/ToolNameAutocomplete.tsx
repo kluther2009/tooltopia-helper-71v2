@@ -38,7 +38,10 @@ export function ToolNameAutocomplete({ tools = [], value, onValueChange }: ToolN
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
+        <Command filter={(value, search) => {
+          if (value.toLowerCase().includes(search.toLowerCase())) return 1
+          return 0
+        }}>
           <CommandInput 
             placeholder="Search tool..." 
             value={value}
