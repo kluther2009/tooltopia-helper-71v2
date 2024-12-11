@@ -48,15 +48,25 @@ export default function Index() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
-          {filteredTools.map((tool) => (
-            <ToolCard
-              key={tool.id}
-              id={tool.id}
-              name={tool.name}
-              location={tool.location}
-              status={tool.status}
-            />
-          ))}
+          {filteredTools.map((tool) => {
+            const locationDisplay = [
+              tool.location,
+              tool.sub_location_a,
+              tool.sub_location_b
+            ]
+              .filter(Boolean)
+              .join(" > ");
+
+            return (
+              <ToolCard
+                key={tool.id}
+                id={tool.id}
+                name={`${tool.name} (${locationDisplay})`}
+                location={tool.location}
+                status={tool.status}
+              />
+            );
+          })}
           {filteredTools.length === 0 && (
             <div className="col-span-full text-center py-4 sm:py-8 text-gray-400 text-sm">
               No tools found matching your search.
