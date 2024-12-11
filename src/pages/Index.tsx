@@ -35,7 +35,7 @@ export default function Index() {
     <Layout>
       <Card className="w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full text-black">ToolTrackerHub</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full text-white">ToolTrackerHub</h1>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-black h-4 w-4" />
             <Input
