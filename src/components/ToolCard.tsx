@@ -85,25 +85,12 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
 
   return (
     <Card className="p-2 sm:p-3 bg-gray-200 border border-black hover:bg-gray-300 transition-colors">
-      <div className="flex items-center justify-between gap-2 sm:gap-3">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-gray-900 shrink-0" />
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate flex-1">{name}</h3>
-            <span
-              className={`px-2 py-0.5 text-xs sm:text-sm rounded-full whitespace-nowrap ${
-                status === "available"
-                  ? "bg-green-100 text-green-800"
-                  : status === "in-use"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-yellow-100 text-yellow-800"
-              }`}
-            >
-              {status}
-            </span>
-          </div>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-gray-900 shrink-0" />
+        <div className="min-w-0 flex-grow">
+          <h3 className="font-semibold text-sm sm:text-base text-gray-900">{name}</h3>
         </div>
-        <div className="flex gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -151,6 +138,17 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          <span
+            className={`px-2 py-0.5 text-xs sm:text-sm rounded-full whitespace-nowrap ${
+              status === "available"
+                ? "bg-green-100 text-green-800"
+                : status === "in-use"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {status}
+          </span>
         </div>
       </div>
     </Card>
