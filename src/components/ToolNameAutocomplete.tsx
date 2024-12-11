@@ -10,10 +10,11 @@ interface ToolNameAutocompleteProps {
 export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [inputValue, setInputValue] = useState(value)
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (!value) {
+      if (!inputValue) {
         setSuggestions([])
         return
       }
@@ -21,7 +22,7 @@ export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompl
       const { data, error } = await supabase
         .from('tools_reference')
         .select('tool_name')
-        .ilike('tool_name', `%${value}%`)
+        .ilike('tool_name', `%${inputValue}%`)
         .limit(5)
 
       if (error) {
@@ -40,29 +41,24 @@ export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompl
       )
 
       setSuggestions(uniqueTools)
+      setOpen(true)
     }
 
     fetchSuggestions()
-  }, [value])
+  }, [inputValue])
 
   return (
-    <Command 
-      className="rounded-lg border border-input"
-      onValueChange={(value) => {
-        onValueChange(value)
-        setOpen(true)
-      }}
-    >
+    <Command className="rounded-lg border border-input">
       <CommandInput
-        value={value}
+        value={inputValue}
         onValueChange={(value) => {
+          setInputValue(value)
           onValueChange(value)
-          setOpen(true)
         }}
         placeholder="Type a tool name..."
         className="h-9"
       />
-      {open && suggestions.length > 0 && (
+      {suggestions.length > 0 && open && (
         <CommandGroup className="max-h-48 overflow-y-auto">
           <CommandEmpty>No tools found.</CommandEmpty>
           {suggestions.map((suggestion) => (
@@ -70,6 +66,7 @@ export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompl
               key={suggestion}
               value={suggestion}
               onSelect={(currentValue) => {
+                setInputValue(currentValue)
                 onValueChange(currentValue)
                 setOpen(false)
               }}
