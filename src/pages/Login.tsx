@@ -36,8 +36,8 @@ export default function Login() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
       <div className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl sm:text-5xl font-bold text-primary mb-4 font-serif tracking-wider">
+        <div className="text-center space-y-6">
+          <h1 className="text-5xl sm:text-6xl font-bold text-white mb-8 font-serif tracking-wider">
             ToolTrackerHub
           </h1>
           <h2 className="text-3xl sm:text-4xl font-bold text-primary">
