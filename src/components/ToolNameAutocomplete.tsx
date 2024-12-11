@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input"
-import { FormItem, FormLabel } from "@/components/ui/form"
+import { Label } from "@/components/ui/label"
 
 interface ToolNameAutocompleteProps {
   value: string
@@ -8,15 +8,16 @@ interface ToolNameAutocompleteProps {
 
 export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompleteProps) {
   return (
-    <FormItem className="space-y-2">
-      <FormLabel htmlFor="toolName">Tool Name</FormLabel>
+    <div className="space-y-2">
+      <Label htmlFor="toolName">Tool Name</Label>
       <Input
         id="toolName"
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
         placeholder="Enter tool name..."
-        className="bg-background text-foreground border-input"
+        className="bg-background text-foreground"
+        required
       />
-    </FormItem>
+    </div>
   )
 }
