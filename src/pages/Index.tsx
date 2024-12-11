@@ -1,6 +1,6 @@
 import { Layout } from "@/components/Layout";
 import { ToolCard } from "@/components/ToolCard";
-import { Search } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -49,19 +49,33 @@ export default function Index() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
           {filteredTools.map((tool) => {
-            const locationDisplay = [
+            const locations = [
               tool.location,
               tool.sub_location_a,
               tool.sub_location_b
-            ]
-              .filter(Boolean)
-              .join(" > ");
+            ].filter(Boolean);
+
+            const displayName = (
+              <div className="space-y-1">
+                <div>{tool.name}</div>
+                {locations.map((loc, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center text-xs text-gray-500"
+                    style={{ marginLeft: `${index * 12}px` }}
+                  >
+                    <MapPin className="h-3 w-3 mr-1" />
+                    {loc}
+                  </div>
+                ))}
+              </div>
+            );
 
             return (
               <ToolCard
                 key={tool.id}
                 id={tool.id}
-                name={`${tool.name} (${locationDisplay})`}
+                name={displayName}
                 location={tool.location}
                 status={tool.status}
               />

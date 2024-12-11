@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 
 interface ToolCardProps {
   id: string;
-  name: string;
+  name: string | React.ReactNode;
   location: string;
   status: "available" | "in-use" | "maintenance";
 }
@@ -30,12 +30,10 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -67,7 +65,6 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
         description: "Failed to delete tool",
         variant: "destructive",
       });
-      // If unauthorized, redirect to login
       if (error.code === '401') {
         navigate('/login');
       }
@@ -79,7 +76,6 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
       description: "Tool deleted successfully",
     });
 
-    // Force a page reload to refresh the tool list
     window.location.reload();
   };
 
@@ -98,15 +94,19 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
 
   return (
     <Card className="p-2 sm:p-3 bg-gray-200 border border-black hover:bg-gray-300 transition-colors">
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="flex items-start gap-2 sm:gap-3 min-w-0">
         <Wrench 
-          className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" 
+          className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-1" 
           style={{ color: getWrenchColor() }}
         />
         <div className="flex-1 min-w-[120px] pr-2">
-          <h3 className="font-semibold text-sm sm:text-base text-gray-900 break-words">
-            {name.replace(/[\r\n]+/g, ' ')}
-          </h3>
+          {typeof name === 'string' ? (
+            <h3 className="font-semibold text-sm sm:text-base text-gray-900 break-words">
+              {name.replace(/[\r\n]+/g, ' ')}
+            </h3>
+          ) : (
+            name
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button
@@ -145,7 +145,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Tool</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete {name}? This action cannot be undone.
+                  Are you sure you want to delete this tool? This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
