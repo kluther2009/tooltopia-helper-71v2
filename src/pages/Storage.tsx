@@ -26,6 +26,15 @@ interface GroupedTools {
   };
 }
 
+// Array of background colors for main location cards
+const locationColors = [
+  'bg-[#9b87f5]',  // Primary Purple
+  'bg-[#F97316]',  // Bright Orange
+  'bg-[#0EA5E9]',  // Ocean Blue
+  'bg-[#D946EF]',  // Magenta Pink
+  'bg-[#8B5CF6]',  // Vivid Purple
+];
+
 export default function Storage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const { toast } = useToast();
@@ -145,9 +154,12 @@ export default function Storage() {
           }}
         >
           <div className="space-y-8">
-            {Object.entries(groupedTools).map(([mainLocation, subLocations]) => (
-              <Card key={mainLocation} className="p-6 bg-[#F4D03F] border border-gray-200">
-                <h2 className="text-2xl font-semibold mb-6 text-gray-900">{mainLocation}</h2>
+            {Object.entries(groupedTools).map(([mainLocation, subLocations], index) => (
+              <Card 
+                key={mainLocation} 
+                className={`p-6 ${locationColors[index % locationColors.length]} border border-gray-200 bg-opacity-90 hover:bg-opacity-100 transition-all duration-200`}
+              >
+                <h2 className="text-2xl font-semibold mb-6 text-white">{mainLocation}</h2>
                 <div className="grid gap-6">
                   {Object.entries(subLocations).map(([subLocation, locationTools]) => (
                     <div key={`${mainLocation}-${subLocation}`}>
