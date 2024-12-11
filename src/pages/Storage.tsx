@@ -20,6 +20,12 @@ interface DragConfirmation {
   tool: Tool | null;
 }
 
+interface GroupedTools {
+  [location: string]: {
+    [subLocation: string]: Tool[];
+  };
+}
+
 export default function Storage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const { toast } = useToast();
@@ -107,14 +113,21 @@ export default function Storage() {
     fetchTools();
   };
 
-  const groupedTools = tools.reduce((acc, tool) => {
-    const primaryLocation = tool.location.split(" > ")[0];
-    if (!acc[primaryLocation]) {
-      acc[primaryLocation] = [];
+  // Group tools by main location and sub-location
+  const groupedTools = tools.reduce((acc: GroupedTools, tool) => {
+    const [mainLocation, subLocation = "General"] = tool.location.split(" > ");
+    
+    if (!acc[mainLocation]) {
+      acc[mainLocation] = {};
     }
-    acc[primaryLocation].push(tool);
+    
+    if (!acc[mainLocation][subLocation]) {
+      acc[mainLocation][subLocation] = [];
+    }
+    
+    acc[mainLocation][subLocation].push(tool);
     return acc;
-  }, {} as Record<string, Tool[]>);
+  }, {});
 
   return (
     <Layout>
@@ -132,14 +145,21 @@ export default function Storage() {
           }}
         >
           <div className="space-y-8">
-            {Object.entries(groupedTools).map(([location, locationTools]) => (
-              <div key={location}>
-                <ToolList
-                  location={location}
-                  tools={locationTools}
-                  isDraggingOver={draggingOver === location}
-                />
-              </div>
+            {Object.entries(groupedTools).map(([mainLocation, subLocations]) => (
+              <Card key={mainLocation} className="p-6 bg-[#F4D03F] border border-gray-200">
+                <h2 className="text-2xl font-semibold mb-6 text-gray-900">{mainLocation}</h2>
+                <div className="grid gap-6">
+                  {Object.entries(subLocations).map(([subLocation, locationTools]) => (
+                    <div key={`${mainLocation}-${subLocation}`}>
+                      <ToolList
+                        location={`${mainLocation}${subLocation !== "General" ? ` > ${subLocation}` : ''}`}
+                        tools={locationTools}
+                        isDraggingOver={draggingOver === `${mainLocation}${subLocation !== "General" ? ` > ${subLocation}` : ''}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Card>
             ))}
             {Object.keys(groupedTools).length === 0 && (
               <div className="text-center py-8 text-gray-500">
