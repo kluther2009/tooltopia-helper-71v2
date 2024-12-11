@@ -27,7 +27,6 @@ interface ToolCardProps {
 export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const locationParts = location.split(" > ");
   const [session, setSession] = useState(null);
 
   useEffect(() => {
@@ -142,17 +141,6 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-          </div>
-          <div className="flex flex-col gap-0.5 sm:gap-1">
-            {locationParts.map((part, index) => (
-              <span
-                key={index}
-                className="text-xs sm:text-sm text-gray-600 truncate"
-                style={{ marginLeft: `${index * 0.5}rem` }}
-              >
-                {part}
-              </span>
-            ))}
           </div>
           <div className="mt-1 sm:mt-2">
             <span
