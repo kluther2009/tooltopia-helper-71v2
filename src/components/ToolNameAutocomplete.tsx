@@ -26,12 +26,18 @@ export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompl
 
       if (error) {
         console.error('Error fetching suggestions:', error)
+        setSuggestions([])
         return
       }
 
-      // Extract unique tool names from the response
-      const uniqueTools = Array.from(new Set(data.map(item => item.tool_name)))
-        .filter((name): name is string => name !== null)
+      // Extract unique tool names from the response and ensure we have valid data
+      const uniqueTools = Array.from(
+        new Set(
+          (data || [])
+            .map(item => item?.tool_name)
+            .filter((name): name is string => typeof name === 'string' && name.length > 0)
+        )
+      )
 
       setSuggestions(uniqueTools)
     }
@@ -40,14 +46,23 @@ export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompl
   }, [value])
 
   return (
-    <Command className="rounded-lg border border-input">
+    <Command 
+      className="rounded-lg border border-input"
+      onValueChange={(value) => {
+        onValueChange(value)
+        setOpen(true)
+      }}
+    >
       <CommandInput
         value={value}
-        onValueChange={onValueChange}
+        onValueChange={(value) => {
+          onValueChange(value)
+          setOpen(true)
+        }}
         placeholder="Type a tool name..."
         className="h-9"
       />
-      {open && (
+      {open && suggestions.length > 0 && (
         <CommandGroup className="max-h-48 overflow-y-auto">
           <CommandEmpty>No tools found.</CommandEmpty>
           {suggestions.map((suggestion) => (
