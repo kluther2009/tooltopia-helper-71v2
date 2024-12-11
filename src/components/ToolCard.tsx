@@ -85,76 +85,70 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
 
   return (
     <Card className="p-2 sm:p-3 bg-gray-200 border border-black hover:bg-gray-300 transition-colors">
-      <div className="flex items-start gap-2 sm:gap-3">
-        <div className="shrink-0">
-          <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-gray-900" />
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-gray-900 shrink-0" />
+          <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{name}</h3>
+          <span
+            className={`inline-block px-2 py-0.5 text-xs sm:text-sm rounded-full shrink-0 ${
+              status === "available"
+                ? "bg-green-100 text-green-800"
+                : status === "in-use"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {status}
+          </span>
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between w-full gap-2">
-            <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{name}</h3>
-            <div className="flex gap-1">
+        <div className="flex gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/edit-tool/${id}`)}
+            className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+          >
+            <Pencil 
+              className="h-3 w-3 sm:h-4 sm:w-4" 
+              style={{ 
+                color: '#000000',
+                fill: 'none',
+                strokeWidth: 2.5
+              }} 
+            />
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(`/edit-tool/${id}`)}
-                className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent shrink-0"
+                className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
               >
-                <Pencil 
+                <Trash2 
                   className="h-3 w-3 sm:h-4 sm:w-4" 
                   style={{ 
-                    color: '#000000',
+                    color: '#EF4444',
                     fill: 'none',
                     strokeWidth: 2.5
                   }} 
                 />
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent shrink-0"
-                  >
-                    <Trash2 
-                      className="h-3 w-3 sm:h-4 sm:w-4" 
-                      style={{ 
-                        color: '#EF4444',
-                        fill: 'none',
-                        strokeWidth: 2.5
-                      }} 
-                    />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Tool</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete {name}? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </div>
-          <div className="mt-1 sm:mt-2">
-            <span
-              className={`inline-block px-2 py-0.5 text-xs sm:text-sm rounded-full ${
-                status === "available"
-                  ? "bg-green-100 text-green-800"
-                  : status === "in-use"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-yellow-100 text-yellow-800"
-              }`}
-            >
-              {status}
-            </span>
-          </div>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Tool</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete {name}? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </Card>

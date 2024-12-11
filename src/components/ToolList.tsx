@@ -26,7 +26,7 @@ export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
       <h3 className="text-lg font-semibold mb-4 text-gray-900">
         {location.includes(" > ") ? location.split(" > ")[1] : location}
       </h3>
-      <ScrollArea className="h-[320px] w-full">
+      <ScrollArea className="h-auto max-h-[320px] w-full">
         <Droppable droppableId={location}>
           {(provided) => (
             <div
