@@ -22,27 +22,8 @@ export default function AddTool() {
   const [subLocation, setSubLocation] = useState("")
   const [specificLocation, setSpecificLocation] = useState("")
   const [status, setStatus] = useState("available")
-  const [tools, setTools] = useState<{ tool_name: string }[]>([])
   const { toast } = useToast()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    fetchTools()
-  }, [])
-
-  const fetchTools = async () => {
-    const { data, error } = await supabase
-      .from('tools_reference')
-      .select('tool_name')
-      .not('tool_name', 'is', null)
-
-    if (error) {
-      console.error('Error fetching tools:', error)
-      return
-    }
-
-    setTools(data || [])
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,14 +103,10 @@ export default function AddTool() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="toolName">Tool Name</Label>
-                <ToolNameAutocomplete
-                  tools={tools}
-                  value={toolName}
-                  onValueChange={setToolName}
-                />
-              </div>
+              <ToolNameAutocomplete
+                value={toolName}
+                onValueChange={setToolName}
+              />
 
               <ToolLocationFields
                 primaryLocation={primaryLocation}
