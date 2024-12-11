@@ -10,24 +10,25 @@ interface ToolNameAutocompleteProps {
 export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompleteProps) {
   const [open, setOpen] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
-  const [inputValue, setInputValue] = useState(value)
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (!inputValue) {
+      if (!value) {
         setSuggestions([])
+        setOpen(false)
         return
       }
 
       const { data, error } = await supabase
         .from('tools_reference')
         .select('tool_name')
-        .ilike('tool_name', `%${inputValue}%`)
+        .ilike('tool_name', `%${value}%`)
         .limit(5)
 
       if (error) {
         console.error('Error fetching suggestions:', error)
         setSuggestions([])
+        setOpen(false)
         return
       }
 
@@ -41,39 +42,38 @@ export function ToolNameAutocomplete({ value, onValueChange }: ToolNameAutocompl
       )
 
       setSuggestions(uniqueTools)
-      setOpen(true)
+      setOpen(uniqueTools.length > 0)
     }
 
     fetchSuggestions()
-  }, [inputValue])
+  }, [value])
 
   return (
     <Command className="rounded-lg border border-input">
       <CommandInput
-        value={inputValue}
-        onValueChange={(value) => {
-          setInputValue(value)
-          onValueChange(value)
-        }}
+        value={value}
+        onValueChange={onValueChange}
         placeholder="Type a tool name..."
         className="h-9"
       />
-      {suggestions.length > 0 && open && (
+      {open && (
         <CommandGroup className="max-h-48 overflow-y-auto">
-          <CommandEmpty>No tools found.</CommandEmpty>
-          {suggestions.map((suggestion) => (
-            <CommandItem
-              key={suggestion}
-              value={suggestion}
-              onSelect={(currentValue) => {
-                setInputValue(currentValue)
-                onValueChange(currentValue)
-                setOpen(false)
-              }}
-            >
-              {suggestion}
-            </CommandItem>
-          ))}
+          {suggestions.length === 0 ? (
+            <CommandEmpty>No tools found.</CommandEmpty>
+          ) : (
+            suggestions.map((suggestion) => (
+              <CommandItem
+                key={suggestion}
+                value={suggestion}
+                onSelect={(currentValue) => {
+                  onValueChange(currentValue)
+                  setOpen(false)
+                }}
+              >
+                {suggestion}
+              </CommandItem>
+            ))
+          )}
         </CommandGroup>
       )}
     </Command>
