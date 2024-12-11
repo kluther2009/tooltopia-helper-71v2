@@ -29,19 +29,18 @@ export function ToolNameAutocomplete({
   const [open, setOpen] = useState(false)
   const [searchValue, setSearchValue] = useState("")
 
-  // Ensure tools is always an array and filter based on search
-  const filteredTools = useMemo(() => {
-    const safeTools = Array.isArray(tools) ? tools : []
-    if (!searchValue) return safeTools
-    return safeTools.filter((tool) => 
-      tool.tool_name.toLowerCase().includes(searchValue.toLowerCase())
-    )
-  }, [tools, searchValue])
-
   const handleInputChange = (search: string) => {
     setSearchValue(search)
     onValueChange(search)
   }
+
+  const filteredTools = useMemo(() => {
+    if (!Array.isArray(tools)) return []
+    if (!searchValue) return tools
+    return tools.filter((tool) => 
+      tool?.tool_name?.toLowerCase().includes(searchValue.toLowerCase())
+    )
+  }, [tools, searchValue])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -57,7 +56,7 @@ export function ToolNameAutocomplete({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} className="w-full">
           <CommandInput 
             placeholder="Search tool..." 
             value={searchValue}
