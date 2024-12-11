@@ -35,12 +35,12 @@ export default function Index() {
     <Layout>
       <Card className="w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full">Tool Manager</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full text-black">Tool Manager</h1>
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-black h-4 w-4" />
             <Input
               placeholder="Search tools..."
-              className="pl-8 sm:pl-10 bg-background text-foreground border-input w-full text-sm"
+              className="pl-8 sm:pl-10 bg-background text-black border-input w-full text-sm font-bold"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -57,14 +57,14 @@ export default function Index() {
 
             const displayName = (
               <div className="space-y-1">
-                <div>{tool.name}</div>
+                <div className="font-bold text-black">{tool.name}</div>
                 {locations.map((loc, index) => (
                   <div 
                     key={index} 
-                    className="flex items-center text-xs text-gray-500"
+                    className="flex items-center text-xs font-bold text-black"
                     style={{ marginLeft: `${index * 12}px` }}
                   >
-                    <MapPin className="h-3 w-3 mr-1" />
+                    <MapPin className="h-3 w-3 mr-1 text-black" />
                     {loc}
                   </div>
                 ))}
@@ -82,7 +82,7 @@ export default function Index() {
             );
           })}
           {filteredTools.length === 0 && (
-            <div className="col-span-full text-center py-4 sm:py-8 text-gray-400 text-sm">
+            <div className="col-span-full text-center py-4 sm:py-8 text-black font-bold text-sm">
               No tools found matching your search.
             </div>
           )}
