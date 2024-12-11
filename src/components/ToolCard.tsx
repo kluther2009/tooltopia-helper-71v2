@@ -87,8 +87,10 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
     <Card className="p-2 sm:p-3 bg-gray-200 border border-black hover:bg-gray-300 transition-colors">
       <div className="flex items-center gap-2 sm:gap-3">
         <Wrench className="h-4 w-4 sm:h-5 sm:w-5 text-gray-900 shrink-0" />
-        <div className="min-w-0 flex-grow">
-          <h3 className="font-semibold text-sm sm:text-base text-gray-900">{name}</h3>
+        <div className="flex-1 min-w-0 pr-2">
+          <h3 className="font-semibold text-sm sm:text-base text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+            {name.replace(/[\r\n]+/g, ' ')}
+          </h3>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button
