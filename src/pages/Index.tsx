@@ -47,7 +47,7 @@ export default function Index() {
             {tool.sub_location_a}
           </div>
         )}
-        {tool.sub_location_b && (
+        {tool.sub_location_b && tool.sub_location_a && (
           <div className="flex items-center text-xs font-bold text-gray-700 ml-6">
             <MapPin className="h-3 w-3 mr-1" />
             {tool.sub_location_b}
