@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -8,8 +8,8 @@ import { Upload, Camera } from "lucide-react"
 import { PhotoCard } from "./photos/PhotoCard"
 import { PhotoViewerDialog } from "./photos/PhotoViewerDialog"
 import { LocationPhoto } from "@/types/photos"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import { CameraDialog } from "./photos/CameraDialog"
+import { LocationInputDialog } from "./photos/LocationInputDialog"
 
 export function LocationPhotoManager() {
   const [photos, setPhotos] = useState<LocationPhoto[]>([])
@@ -21,8 +21,6 @@ export function LocationPhotoManager() {
   const [locationInput, setLocationInput] = useState("")
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [isCameraOpen, setIsCameraOpen] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -56,8 +54,8 @@ export function LocationPhotoManager() {
     setLocationInput("")
   }
 
-  const handleUploadConfirm = async () => {
-    if (!pendingFile || !locationInput.trim() || !userId) {
+  const handleUploadConfirm = async (location: string) => {
+    if (!pendingFile || !location.trim() || !userId) {
       toast.error('Please provide a location name')
       return
     }
@@ -78,7 +76,7 @@ export function LocationPhotoManager() {
       const { error: dbError } = await supabase
         .from('location_photos')
         .insert({
-          location: locationInput.trim(),
+          location: location.trim(),
           file_path: filePath,
           user_id: userId
         })
@@ -120,56 +118,11 @@ export function LocationPhotoManager() {
     }
   }
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // Use back camera if available
-      })
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        streamRef.current = stream
-      }
-      setIsCameraOpen(true)
-    } catch (error) {
-      toast.error('Unable to access camera')
-      console.error('Camera error:', error)
-    }
+  const handleCameraCapture = (file: File) => {
+    setPendingFile(file)
+    setIsLocationDialogOpen(true)
+    setLocationInput("")
   }
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
-    }
-    setIsCameraOpen(false)
-  }
-
-  const capturePhoto = async () => {
-    if (!videoRef.current || !streamRef.current) return
-
-    const canvas = document.createElement('canvas')
-    canvas.width = videoRef.current.videoWidth
-    canvas.height = videoRef.current.videoHeight
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    ctx.drawImage(videoRef.current, 0, 0)
-    
-    canvas.toBlob(async (blob) => {
-      if (!blob) return
-      
-      const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' })
-      setPendingFile(file)
-      setIsLocationDialogOpen(true)
-      stopCamera()
-    }, 'image/jpeg')
-  }
-
-  useEffect(() => {
-    return () => {
-      stopCamera() // Cleanup camera on unmount
-    }
-  }, [])
 
   return (
     <div className="space-y-6">
@@ -180,7 +133,7 @@ export function LocationPhotoManager() {
             <Upload className="h-4 w-4 mr-2" />
             Upload Photo
           </Button>
-          <Button variant="outline" onClick={startCamera}>
+          <Button variant="outline" onClick={() => setIsCameraOpen(true)}>
             <Camera className="h-4 w-4 mr-2" />
             Take Photo
           </Button>
@@ -195,26 +148,11 @@ export function LocationPhotoManager() {
         />
       </div>
 
-      <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Take Photo</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <Button onClick={capturePhoto} className="w-full">
-              Capture Photo
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CameraDialog
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCapture}
+      />
 
       <ScrollArea className="h-[500px]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -238,39 +176,17 @@ export function LocationPhotoManager() {
         onOpenChange={setIsViewerOpen}
       />
 
-      <Dialog open={isLocationDialogOpen} onOpenChange={(open) => {
-        if (!open) {
+      <LocationInputDialog
+        isOpen={isLocationDialogOpen}
+        onClose={() => {
+          setIsLocationDialogOpen(false)
           setPendingFile(null)
           setLocationInput("")
-        }
-        setIsLocationDialogOpen(open)
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter Location Name</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                value={locationInput}
-                onChange={(e) => setLocationInput(e.target.value)}
-                placeholder="Enter the location name"
-                autoFocus
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsLocationDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUploadConfirm} disabled={!locationInput.trim()}>
-              Upload Photo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }}
+        onConfirm={handleUploadConfirm}
+        locationInput={locationInput}
+        setLocationInput={setLocationInput}
+      />
     </div>
   )
 }
