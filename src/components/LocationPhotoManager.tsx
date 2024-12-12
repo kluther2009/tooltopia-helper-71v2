@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +21,17 @@ export function LocationPhotoManager() {
   const [selectedPhoto, setSelectedPhoto] = useState<LocationPhoto | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get the current user's ID when component mounts
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getCurrentUser();
+    fetchPhotos();
+  }, []);
 
   const fetchPhotos = async () => {
     const { data, error } = await supabase
@@ -48,6 +59,11 @@ export function LocationPhotoManager() {
     }
 
     try {
+      // Check if user is authenticated
+      if (!userId) {
+        throw new Error('You must be logged in to upload photos');
+      }
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
 
@@ -58,12 +74,13 @@ export function LocationPhotoManager() {
 
       if (uploadError) throw uploadError;
 
-      // Save photo metadata to database
+      // Save photo metadata to database with user_id
       const { error: dbError } = await supabase
         .from('location_photos')
         .insert({
           location,
           file_path: filePath,
+          user_id: userId // Include the user_id in the insert
         });
 
       if (dbError) throw dbError;
