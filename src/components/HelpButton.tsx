@@ -92,7 +92,7 @@ export function HelpButton() {
         <Button
           variant="ghost"
           size="icon"
-          className="fixed bottom-8 right-8 h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg"
+          className="fixed top-4 right-4 h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg z-50"
         >
           <HelpCircle className="h-5 w-5" />
         </Button>
