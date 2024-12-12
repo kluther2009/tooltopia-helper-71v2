@@ -53,10 +53,25 @@ export function HelpButton() {
             <>
               <p className="mb-4">Storage management screen guide:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>View and manage all storage locations</li>
-                <li>See which tools are stored in each location</li>
-                <li>Organize tools by moving them between locations</li>
-                <li>Monitor storage capacity and utilization</li>
+                <li>Switch between "Tools" and "Photos" tabs to manage different aspects</li>
+                <li>Tools tab:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>View and manage all storage locations</li>
+                    <li>See which tools are stored in each location</li>
+                    <li>Click the photo icon next to a location to view its photos</li>
+                    <li>Organize tools by dragging them between locations</li>
+                  </ul>
+                </li>
+                <li>Photos tab:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>Click "Upload Photo" to add new location photos</li>
+                    <li>Enter a clear, descriptive location name for each photo</li>
+                    <li>Use high-quality, well-lit photos that clearly show the location</li>
+                    <li>Photos help team members identify correct tool locations</li>
+                    <li>Click any photo to view it in full size</li>
+                    <li>Delete photos using the trash icon if they're outdated</li>
+                  </ul>
+                </li>
               </ul>
             </>
           )
