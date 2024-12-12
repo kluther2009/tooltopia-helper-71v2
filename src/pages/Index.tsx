@@ -63,10 +63,10 @@ export default function Index() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full text-white">ToolTrackerHub</h1>
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-black h-4 w-4" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
             <Input
               placeholder="Search tools..."
-              className="pl-8 sm:pl-10 bg-background text-black border-input w-full text-sm font-bold"
+              className="pl-8 sm:pl-10 bg-white text-gray-900 border-input w-full text-sm font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -84,7 +84,7 @@ export default function Index() {
             />
           ))}
           {filteredTools.length === 0 && (
-            <div className="col-span-full text-center py-4 sm:py-8 text-black font-bold text-sm">
+            <div className="col-span-full text-center py-4 sm:py-8 text-white font-bold text-sm">
               No tools found matching your search.
             </div>
           )}
