@@ -93,7 +93,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
   };
 
   return (
-    <Card className="p-2 sm:p-3 bg-gray-200 border border-black hover:bg-gray-300 transition-colors">
+    <Card className="p-2 sm:p-3 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm">
       <div className="flex items-start gap-2 sm:gap-3 min-w-0">
         <Wrench 
           className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-1" 
@@ -118,7 +118,7 @@ export function ToolCard({ id, name, location, status }: ToolCardProps) {
             <Pencil 
               className="h-3 w-3 sm:h-4 sm:w-4" 
               style={{ 
-                color: '#000000',
+                color: '#64748b',
                 fill: 'none',
                 strokeWidth: 2.5
               }} 
