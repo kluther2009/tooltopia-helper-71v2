@@ -53,10 +53,18 @@ export function useTools() {
       const tool = tools.find(t => t.id === toolId);
       if (!tool) return;
 
-      const locationParts = destinationLocation.split(" > ");
+      // Split the destination location into its components
+      const locationParts = destinationLocation.split(" > ").map(part => part.trim());
       const mainLocation = locationParts[0];
       const subLocationA = locationParts[1] || null;
       const subLocationB = locationParts[2] || null;
+
+      console.log('Updating tool location:', {
+        toolId,
+        mainLocation,
+        subLocationA,
+        subLocationB
+      });
 
       const { error } = await supabase
         .from('tools')
