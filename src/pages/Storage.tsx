@@ -26,13 +26,12 @@ interface GroupedTools {
   };
 }
 
-// Array of background colors for main location cards
 const locationColors = [
-  'bg-[#9b87f5]',  // Primary Purple
-  'bg-[#F97316]',  // Bright Orange
-  'bg-[#0EA5E9]',  // Ocean Blue
-  'bg-[#D946EF]',  // Magenta Pink
-  'bg-[#8B5CF6]',  // Vivid Purple
+  'bg-[#9b87f5]',
+  'bg-[#F97316]',
+  'bg-[#0EA5E9]',
+  'bg-[#D946EF]',
+  'bg-[#8B5CF6]',
 ];
 
 export default function Storage() {
@@ -42,18 +41,37 @@ export default function Storage() {
   const [draggingOver, setDraggingOver] = useState<string | null>(null);
 
   const fetchTools = async () => {
-    const { data } = await supabase
-      .from('tools')
-      .select('*');
-    
-    if (data) {
-      const transformedTools = data.map(tool => ({
-        id: tool.id,
-        name: tool.name,
-        location: `${tool.location}${tool.sub_location_a ? ` > ${tool.sub_location_a}` : ''}${tool.sub_location_b ? ` > ${tool.sub_location_b}` : ''}`,
-        status: tool.status as "available" | "in-use" | "maintenance"
-      }));
-      setTools(transformedTools);
+    try {
+      const { data, error } = await supabase
+        .from('tools')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching tools:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch tools",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data) {
+        const transformedTools = data.map(tool => ({
+          id: tool.id,
+          name: tool.name,
+          location: `${tool.location}${tool.sub_location_a ? ` > ${tool.sub_location_a}` : ''}${tool.sub_location_b ? ` > ${tool.sub_location_b}` : ''}`,
+          status: tool.status as "available" | "in-use" | "maintenance"
+        }));
+        setTools(transformedTools);
+      }
+    } catch (error) {
+      console.error('Error in fetchTools:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while fetching tools",
+        variant: "destructive"
+      });
     }
   };
 
@@ -88,38 +106,48 @@ export default function Storage() {
   };
 
   const updateToolLocation = async (toolId: string, destinationLocation: string) => {
-    const tool = tools.find(t => t.id === toolId);
-    if (!tool) return;
+    try {
+      const tool = tools.find(t => t.id === toolId);
+      if (!tool) return;
 
-    const locationParts = tool.location.split(" > ");
-    const subLocationA = locationParts[1] || null;
-    const subLocationB = locationParts[2] || null;
+      const locationParts = destinationLocation.split(" > ");
+      const mainLocation = locationParts[0];
+      const subLocationA = locationParts[1] || null;
+      const subLocationB = locationParts[2] || null;
 
-    const { error } = await supabase
-      .from('tools')
-      .update({ 
-        location: destinationLocation,
-        sub_location_a: subLocationA,
-        sub_location_b: subLocationB
-      })
-      .eq('id', toolId);
+      const { error } = await supabase
+        .from('tools')
+        .update({ 
+          location: mainLocation,
+          sub_location_a: subLocationA,
+          sub_location_b: subLocationB
+        })
+        .eq('id', toolId);
 
-    if (error) {
-      console.error('Error updating tool location:', error);
+      if (error) {
+        console.error('Error updating tool location:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update tool location",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `Moved ${tool.name} to ${destinationLocation}`,
+      });
+
+      fetchTools();
+    } catch (error) {
+      console.error('Error in updateToolLocation:', error);
       toast({
         title: "Error",
-        description: "Failed to update tool location",
+        description: "An unexpected error occurred while updating tool location",
         variant: "destructive"
       });
-      return;
     }
-
-    toast({
-      title: "Success",
-      description: `Moved ${tool.name} to ${destinationLocation}`,
-    });
-
-    fetchTools();
   };
 
   // Group tools by main location and sub-location
