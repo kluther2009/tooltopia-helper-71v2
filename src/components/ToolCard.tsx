@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
+import { Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { DeleteToolDialog } from "./tool/DeleteToolDialog";
@@ -12,15 +12,27 @@ interface ToolCardProps {
   status: "available" | "in-use" | "maintenance";
 }
 
-export function ToolCard({ id, name, status }: ToolCardProps) {
+export function ToolCard({ id, name, location, status }: ToolCardProps) {
   const navigate = useNavigate();
+
+  const renderLocation = () => {
+    if (typeof name === 'string') {
+      return (
+        <div className="font-semibold text-sm sm:text-base text-gray-900">
+          {name}
+        </div>
+      );
+    }
+
+    return name;
+  };
 
   return (
     <Card className="p-2 sm:p-3 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm">
       <div className="flex items-start gap-2 sm:gap-3">
         <ToolStatusIcon status={status} />
         <div className="flex-1 min-w-0">
-          {name}
+          {renderLocation()}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button

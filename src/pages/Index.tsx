@@ -24,13 +24,6 @@ export default function Index() {
     fetchTools();
   }, []);
 
-  const filteredTools = tools
-    .filter(tool => 
-      tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.location.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
-
   const formatLocationDisplay = (tool: any) => {
     return (
       <div className="space-y-1">
@@ -56,6 +49,13 @@ export default function Index() {
       </div>
     );
   };
+
+  const filteredTools = tools
+    .filter(tool => 
+      tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tool.location.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <Layout>
