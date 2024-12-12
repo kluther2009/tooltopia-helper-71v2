@@ -19,15 +19,18 @@ export function LocationSection({
     <Card className={`p-6 ${colorClass} border border-gray-200 bg-opacity-90 hover:bg-opacity-100 transition-all duration-200`}>
       <h2 className="text-2xl font-semibold mb-6 text-white">{mainLocation}</h2>
       <div className="grid gap-6">
-        {Object.entries(subLocations).map(([subLocation, locationTools]) => (
-          <div key={`${mainLocation}-${subLocation}`}>
-            <ToolList
-              location={`${mainLocation}${subLocation !== "General" ? ` > ${subLocation}` : ''}`}
-              tools={locationTools}
-              isDraggingOver={isDraggingOver === `${mainLocation}${subLocation !== "General" ? ` > ${subLocation}` : ''}`}
-            />
-          </div>
-        ))}
+        {Object.entries(subLocations).map(([subLocation, locationTools]) => {
+          const fullLocation = `${mainLocation}${subLocation !== "General" ? ` > ${subLocation}` : ''}`;
+          return (
+            <div key={`${mainLocation}-${subLocation}`}>
+              <ToolList
+                location={fullLocation}
+                tools={locationTools}
+                isDraggingOver={isDraggingOver === fullLocation}
+              />
+            </div>
+          );
+        })}
       </div>
     </Card>
   );
