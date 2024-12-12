@@ -32,34 +32,25 @@ export default function Index() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const formatLocationDisplay = (tool: any) => {
-    const locations = [];
-    
-    // Add main location
-    if (tool.location) {
-      locations.push(tool.location);
-    }
-    
-    // Add sub-locations if they exist
-    if (tool.sub_location_a) {
-      locations.push(tool.sub_location_a);
-    }
-    if (tool.sub_location_b) {
-      locations.push(tool.sub_location_b);
-    }
-
     return (
       <div className="space-y-1">
         <div className="font-bold text-black">{tool.name}</div>
-        {locations.map((loc, index) => (
-          <div 
-            key={index} 
-            className="flex items-center text-xs font-bold text-black"
-            style={{ marginLeft: `${index * 12}px` }}
-          >
+        <div className="flex items-center text-xs font-bold text-black">
+          <MapPin className="h-3 w-3 mr-1 text-black" />
+          {tool.location}
+        </div>
+        {tool.sub_location_a && (
+          <div className="flex items-center text-xs font-bold text-black ml-3">
             <MapPin className="h-3 w-3 mr-1 text-black" />
-            {loc}
+            {tool.sub_location_a}
           </div>
-        ))}
+        )}
+        {tool.sub_location_b && (
+          <div className="flex items-center text-xs font-bold text-black ml-6">
+            <MapPin className="h-3 w-3 mr-1 text-black" />
+            {tool.sub_location_b}
+          </div>
+        )}
       </div>
     );
   };
