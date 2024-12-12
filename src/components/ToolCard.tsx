@@ -17,9 +17,9 @@ export function ToolCard({ id, name, status }: ToolCardProps) {
 
   return (
     <Card className="p-2 sm:p-3 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm">
-      <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+      <div className="flex items-start gap-2 sm:gap-3">
         <ToolStatusIcon status={status} />
-        <div className="flex-1 min-w-[120px] pr-2">
+        <div className="flex-1 min-w-0">
           {name}
         </div>
         <div className="flex items-center gap-1 shrink-0">
