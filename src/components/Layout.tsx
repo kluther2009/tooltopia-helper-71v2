@@ -1,5 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { HelpButton } from "./HelpButton";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="fixed bottom-2 sm:bottom-4 right-2 sm:right-4 text-xs sm:text-sm text-card-foreground/70">
             Developed by K.Luther
           </div>
+          <HelpButton />
         </main>
       </div>
     </SidebarProvider>
