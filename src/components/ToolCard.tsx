@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
+import { Pencil, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { DeleteToolDialog } from "./tool/DeleteToolDialog";
@@ -25,7 +25,22 @@ export function ToolCard({ id, name, status }: ToolCardProps) {
               {name.replace(/[\r\n]+/g, ' ')}
             </h3>
           ) : (
-            name
+            <div className="space-y-1">
+              <div className="font-semibold text-sm sm:text-base text-gray-900">
+                {(name as any).props.children[0].props.children}
+              </div>
+              {(name as any).props.children.slice(1).map((locationElement: any, index: number) => (
+                <div 
+                  key={index}
+                  className={`flex items-center text-xs font-bold text-gray-700 ${
+                    index === 1 ? 'ml-3' : index === 2 ? 'ml-6' : ''
+                  }`}
+                >
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {locationElement.props.children[2]}
+                </div>
+              ))}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
