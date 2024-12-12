@@ -8,6 +8,8 @@ import { Upload } from "lucide-react"
 import { PhotoCard } from "./photos/PhotoCard"
 import { PhotoViewerDialog } from "./photos/PhotoViewerDialog"
 import { LocationPhoto } from "@/types/photos"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 export function LocationPhotoManager() {
   const [photos, setPhotos] = useState<LocationPhoto[]>([])
@@ -15,6 +17,9 @@ export function LocationPhotoManager() {
   const [isUploading, setIsUploading] = useState(false)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false)
+  const [locationInput, setLocationInput] = useState("")
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -39,35 +44,38 @@ export function LocationPhotoManager() {
     setPhotos(data)
   }
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setIsUploading(true)
-    const location = prompt('Enter location name for this photo:')
-    if (!location) {
-      setIsUploading(false)
+    setPendingFile(file)
+    setIsLocationDialogOpen(true)
+    setLocationInput("")
+  }
+
+  const handleUploadConfirm = async () => {
+    if (!pendingFile || !locationInput.trim() || !userId) {
+      toast.error('Please provide a location name')
       return
     }
 
-    try {
-      if (!userId) {
-        throw new Error('You must be logged in to upload photos')
-      }
+    setIsLocationDialogOpen(false)
+    setIsUploading(true)
 
-      const fileExt = file.name.split('.').pop()
+    try {
+      const fileExt = pendingFile.name.split('.').pop()
       const filePath = `${crypto.randomUUID()}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
         .from('location-photos')
-        .upload(filePath, file)
+        .upload(filePath, pendingFile)
 
       if (uploadError) throw uploadError
 
       const { error: dbError } = await supabase
         .from('location_photos')
         .insert({
-          location,
+          location: locationInput.trim(),
           file_path: filePath,
           user_id: userId
         })
@@ -81,6 +89,8 @@ export function LocationPhotoManager() {
       console.error('Upload error:', error)
     } finally {
       setIsUploading(false)
+      setPendingFile(null)
+      setLocationInput("")
     }
   }
 
@@ -120,7 +130,7 @@ export function LocationPhotoManager() {
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={handleFileUpload}
+          onChange={handleFileSelect}
           disabled={isUploading}
         />
       </div>
@@ -146,6 +156,40 @@ export function LocationPhotoManager() {
         isOpen={isViewerOpen}
         onOpenChange={setIsViewerOpen}
       />
+
+      <Dialog open={isLocationDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setPendingFile(null)
+          setLocationInput("")
+        }
+        setIsLocationDialogOpen(open)
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Location Name</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={locationInput}
+                onChange={(e) => setLocationInput(e.target.value)}
+                placeholder="Enter the location name"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLocationDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUploadConfirm} disabled={!locationInput.trim()}>
+              Upload Photo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
