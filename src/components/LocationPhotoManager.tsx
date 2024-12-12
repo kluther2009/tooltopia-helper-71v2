@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
-import { Upload } from "lucide-react"
+import { Upload, Camera } from "lucide-react"
 import { PhotoCard } from "./photos/PhotoCard"
 import { PhotoViewerDialog } from "./photos/PhotoViewerDialog"
 import { LocationPhoto } from "@/types/photos"
@@ -20,6 +20,9 @@ export function LocationPhotoManager() {
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false)
   const [locationInput, setLocationInput] = useState("")
   const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -117,14 +120,71 @@ export function LocationPhotoManager() {
     }
   }
 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera if available
+      })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        streamRef.current = stream
+      }
+      setIsCameraOpen(true)
+    } catch (error) {
+      toast.error('Unable to access camera')
+      console.error('Camera error:', error)
+    }
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    setIsCameraOpen(false)
+  }
+
+  const capturePhoto = async () => {
+    if (!videoRef.current || !streamRef.current) return
+
+    const canvas = document.createElement('canvas')
+    canvas.width = videoRef.current.videoWidth
+    canvas.height = videoRef.current.videoHeight
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.drawImage(videoRef.current, 0, 0)
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) return
+      
+      const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' })
+      setPendingFile(file)
+      setIsLocationDialogOpen(true)
+      stopCamera()
+    }, 'image/jpeg')
+  }
+
+  useEffect(() => {
+    return () => {
+      stopCamera() // Cleanup camera on unmount
+    }
+  }, [])
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Location Photos</h2>
-        <Button variant="outline" onClick={() => document.getElementById('photo-upload')?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          Upload Photo
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => document.getElementById('photo-upload')?.click()}>
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Photo
+          </Button>
+          <Button variant="outline" onClick={startCamera}>
+            <Camera className="h-4 w-4 mr-2" />
+            Take Photo
+          </Button>
+        </div>
         <Input
           id="photo-upload"
           type="file"
@@ -134,6 +194,27 @@ export function LocationPhotoManager() {
           disabled={isUploading}
         />
       </div>
+
+      <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Take Photo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <Button onClick={capturePhoto} className="w-full">
+              Capture Photo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ScrollArea className="h-[500px]">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
