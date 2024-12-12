@@ -9,8 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { useState } from "react"
-import { useToast } from "@/components/ui/use-toast"
+import { useState, useRef } from "react"
+import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useNavigate } from "react-router-dom"
 import { ToolNameAutocomplete } from "@/components/ToolNameAutocomplete"
@@ -24,6 +24,22 @@ export default function AddTool() {
   const [status, setStatus] = useState("available")
   const { toast } = useToast()
   const navigate = useNavigate()
+  const toolNameInputRef = useRef<HTMLInputElement>(null)
+
+  const checkToolExists = async (name: string) => {
+    const { data, error } = await supabase
+      .from('tools')
+      .select('name')
+      .ilike('name', name.trim())
+      .single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
+      console.error('Error checking tool name:', error)
+      return false
+    }
+
+    return !!data
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,6 +50,18 @@ export default function AddTool() {
         description: "Tool name is required",
         variant: "destructive"
       })
+      toolNameInputRef.current?.focus()
+      return
+    }
+
+    const toolExists = await checkToolExists(toolName)
+    if (toolExists) {
+      toast({
+        title: "Error",
+        description: "This tool already exists",
+        variant: "destructive"
+      })
+      toolNameInputRef.current?.focus()
       return
     }
 
@@ -97,6 +125,7 @@ export default function AddTool() {
               <ToolNameAutocomplete
                 value={toolName}
                 onValueChange={setToolName}
+                inputRef={toolNameInputRef}
               />
 
               <ToolLocationFields
