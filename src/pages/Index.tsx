@@ -32,25 +32,39 @@ export default function Index() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const formatLocationDisplay = (tool: any) => {
-    return (
-      <div className="space-y-1">
-        <div className="font-bold text-black">{tool.name}</div>
-        <div className="flex items-center text-xs font-bold text-black">
-          <MapPin className="h-3 w-3 mr-1 text-black" />
+    const locations = [];
+    locations.push(tool.name);
+    
+    if (tool.location) {
+      locations.push(
+        <div key="location" className="flex items-center text-xs font-bold text-gray-700">
+          <MapPin className="h-3 w-3 mr-1" />
           {tool.location}
         </div>
-        {tool.sub_location_a && (
-          <div className="flex items-center text-xs font-bold text-black ml-3">
-            <MapPin className="h-3 w-3 mr-1 text-black" />
-            {tool.sub_location_a}
-          </div>
-        )}
-        {tool.sub_location_b && (
-          <div className="flex items-center text-xs font-bold text-black ml-6">
-            <MapPin className="h-3 w-3 mr-1 text-black" />
-            {tool.sub_location_b}
-          </div>
-        )}
+      );
+    }
+    
+    if (tool.sub_location_a) {
+      locations.push(
+        <div key="sub_a" className="flex items-center text-xs font-bold text-gray-700 ml-3">
+          <MapPin className="h-3 w-3 mr-1" />
+          {tool.sub_location_a}
+        </div>
+      );
+    }
+    
+    if (tool.sub_location_b) {
+      locations.push(
+        <div key="sub_b" className="flex items-center text-xs font-bold text-gray-700 ml-6">
+          <MapPin className="h-3 w-3 mr-1" />
+          {tool.sub_location_b}
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        {locations}
       </div>
     );
   };
