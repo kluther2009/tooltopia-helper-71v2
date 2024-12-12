@@ -31,6 +31,39 @@ export default function Index() {
     )
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const formatLocationDisplay = (tool: any) => {
+    const locations = [];
+    
+    // Add main location
+    if (tool.location) {
+      locations.push(tool.location);
+    }
+    
+    // Add sub-locations if they exist
+    if (tool.sub_location_a) {
+      locations.push(tool.sub_location_a);
+    }
+    if (tool.sub_location_b) {
+      locations.push(tool.sub_location_b);
+    }
+
+    return (
+      <div className="space-y-1">
+        <div className="font-bold text-black">{tool.name}</div>
+        {locations.map((loc, index) => (
+          <div 
+            key={index} 
+            className="flex items-center text-xs font-bold text-black"
+            style={{ marginLeft: `${index * 12}px` }}
+          >
+            <MapPin className="h-3 w-3 mr-1 text-black" />
+            {loc}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <Card className="w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6">
@@ -48,39 +81,15 @@ export default function Index() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
-          {filteredTools.map((tool) => {
-            const locations = [
-              tool.location,
-              tool.sub_location_a,
-              tool.sub_location_b
-            ].filter(Boolean);
-
-            const displayName = (
-              <div className="space-y-1">
-                <div className="font-bold text-black">{tool.name}</div>
-                {locations.map((loc, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center text-xs font-bold text-black"
-                    style={{ marginLeft: `${index * 12}px` }}
-                  >
-                    <MapPin className="h-3 w-3 mr-1 text-black" />
-                    {loc}
-                  </div>
-                ))}
-              </div>
-            );
-
-            return (
-              <ToolCard
-                key={tool.id}
-                id={tool.id}
-                name={displayName}
-                location={tool.location}
-                status={tool.status}
-              />
-            );
-          })}
+          {filteredTools.map((tool) => (
+            <ToolCard
+              key={tool.id}
+              id={tool.id}
+              name={formatLocationDisplay(tool)}
+              location={tool.location}
+              status={tool.status}
+            />
+          ))}
           {filteredTools.length === 0 && (
             <div className="col-span-full text-center py-4 sm:py-8 text-black font-bold text-sm">
               No tools found matching your search.
