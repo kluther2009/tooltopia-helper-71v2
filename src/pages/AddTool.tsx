@@ -28,6 +28,15 @@ export default function AddTool() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (!toolName.trim()) {
+      toast({
+        title: "Error",
+        description: "Tool name is required",
+        variant: "destructive"
+      })
+      return
+    }
+
     const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`
     
     const { data: { user } } = await supabase.auth.getUser()
@@ -41,34 +50,16 @@ export default function AddTool() {
       return
     }
 
-    // First, add to tools_reference if it's a new tool
-    const { data: existingTool } = await supabase
-      .from('tools_reference')
-      .select('tool_name')
-      .eq('tool_name', toolName)
-      .single()
-
-    if (!existingTool) {
-      const { error: referenceError } = await supabase
-        .from('tools_reference')
-        .insert([{ tool_name: toolName }])
-
-      if (referenceError) {
-        console.error('Error adding to tools reference:', referenceError)
-      }
-    }
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tools')
       .insert([
         {
-          name: toolName,
+          name: toolName.trim(),
           location: fullLocation,
           status,
           user_id: user.id
         }
       ])
-      .select()
 
     if (error) {
       console.error('Error inserting tool:', error)
@@ -81,7 +72,7 @@ export default function AddTool() {
     }
 
     toast({
-      title: "Tool Added",
+      title: "Success",
       description: `${toolName} has been added to ${fullLocation}`,
     })
 
