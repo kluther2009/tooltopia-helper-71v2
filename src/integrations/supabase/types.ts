@@ -40,18 +40,21 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          email_verified: boolean | null
           id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
+          email_verified?: boolean | null
           id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
+          email_verified?: boolean | null
           id?: string
           updated_at?: string
         }

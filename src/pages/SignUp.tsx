@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VerificationStatus } from "@/components/VerificationStatus";
+import { Loader2 } from "lucide-react";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -13,39 +15,112 @@ export default function SignUp() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error' | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Handle email verification confirmation
+  useEffect(() => {
+    const token_hash = searchParams.get('token_hash');
+    const type = searchParams.get('type');
+    
+    if (token_hash && type === 'email_verification') {
+      verifyEmail(token_hash);
+    }
+  }, [searchParams]);
+
+  const verifyEmail = async (token_hash: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: 'email_verification'
+      });
+
+      if (error) {
+        setVerificationStatus('error');
+        toast({
+          variant: "destructive",
+          title: "Verification failed",
+          description: error.message
+        });
+      } else {
+        setVerificationStatus('success');
+        toast({
+          title: "Email verified",
+          description: "Your email has been successfully verified. You can now sign in."
+        });
+        // Redirect to login after a short delay
+        setTimeout(() => navigate('/login'), 2000);
+      }
+    } catch (error) {
+      setVerificationStatus('error');
+      toast({
+        variant: "destructive",
+        title: "Verification failed",
+        description: "There was an error verifying your email."
+      });
+    }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-        },
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+          emailRedirectTo: `${window.location.origin}/signup`
+        }
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
+        });
+      } else {
+        setVerificationStatus('pending');
+        toast({
+          title: "Success",
+          description: "Please check your email to verify your account.",
+        });
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred.",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Please check your email to confirm your account.",
-      });
-      navigate("/login");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
+  // Show verification status if present
+  if (verificationStatus) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold text-card-foreground">
+              Email Verification
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <VerificationStatus status={verificationStatus} />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
@@ -120,7 +195,14 @@ export default function SignUp() {
               className="w-full text-lg py-6"
               disabled={loading}
             >
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Create account"
+              )}
             </Button>
 
             <div className="text-center">
