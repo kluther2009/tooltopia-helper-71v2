@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,31 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Check for access_token in URL when component mounts
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const access_token = hashParams.get('access_token');
+    const refresh_token = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+
+    if (access_token && type === 'recovery') {
+      // Set the session using the recovery tokens
+      supabase.auth.setSession({
+        access_token,
+        refresh_token: refresh_token || '',
+      });
+    } else {
+      // No valid recovery token found
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Invalid or expired password reset link. Please request a new one.",
+      });
+      navigate("/login");
+    }
+  }, [navigate, toast]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
