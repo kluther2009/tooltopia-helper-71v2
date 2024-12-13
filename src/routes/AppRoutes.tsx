@@ -8,6 +8,7 @@ import Storage from "@/pages/Storage";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
+import ResetPassword from "@/pages/ResetPassword";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -30,6 +31,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/"
         element={
