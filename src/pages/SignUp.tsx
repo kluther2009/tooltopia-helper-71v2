@@ -34,7 +34,7 @@ export default function SignUp() {
     try {
       const { error } = await supabase.auth.verifyOtp({
         token_hash,
-        type: 'email_verification'
+        type: 'signup' // Changed from 'email_verification' to 'signup'
       });
 
       if (error) {
