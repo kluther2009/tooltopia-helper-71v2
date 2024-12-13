@@ -94,7 +94,7 @@ export default function Login() {
             Forgot your password?
           </a>
           <a
-            href="#sign-up"
+            href="/signup"
             className="block text-muted-foreground hover:text-card-foreground transition-colors"
           >
             Don't have an account? Sign up
