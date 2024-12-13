@@ -9,6 +9,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -31,6 +32,37 @@ export default function Login() {
       navigate("/");
     }
     setLoading(false);
+  };
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter your email address first",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Password reset email sent. Please check your inbox.",
+      });
+    }
+    setResetLoading(false);
   };
 
   return (
@@ -87,12 +119,13 @@ export default function Login() {
         </form>
 
         <div className="space-y-4 text-center">
-          <a
-            href="#forgot-password"
-            className="block text-muted-foreground hover:text-card-foreground transition-colors"
+          <button
+            onClick={handleForgotPassword}
+            disabled={resetLoading}
+            className="text-muted-foreground hover:text-card-foreground transition-colors"
           >
-            Forgot your password?
-          </a>
+            {resetLoading ? "Sending reset email..." : "Forgot your password?"}
+          </button>
           <a
             href="/signup"
             className="block text-muted-foreground hover:text-card-foreground transition-colors"
