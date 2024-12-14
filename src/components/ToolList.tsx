@@ -39,11 +39,16 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
                   draggableId={tool.id} 
                   index={index}
                 >
-                  {(provided) => (
+                  {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
+                      style={{
+                        ...provided.draggableProps.style,
+                        transform: snapshot.isDragging ? provided.draggableProps.style?.transform : 'translate(0, 0)',
+                      }}
+                      className={`${snapshot.isDragging ? 'z-50' : ''}`}
                     >
                       <ToolCard {...tool} />
                     </div>
