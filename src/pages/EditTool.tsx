@@ -49,10 +49,9 @@ export default function EditTool() {
 
       if (data) {
         setToolName(data.name);
-        const locationParts = data.location.split(' > ');
-        setPrimaryLocation(locationParts[0] || '');
-        setSubLocation(locationParts[1] || '');
-        setSpecificLocation(locationParts[2] || '');
+        setPrimaryLocation(data.location || '');
+        setSubLocation(data.sub_location_a || '');
+        setSpecificLocation(data.sub_location_b || '');
         setStatus(data.status);
       }
       setIsLoading(false);
@@ -64,13 +63,13 @@ export default function EditTool() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
-    
     const { error } = await supabase
       .from('tools')
       .update({
         name: toolName,
-        location: fullLocation,
+        location: primaryLocation,
+        sub_location_a: subLocation || null,
+        sub_location_b: specificLocation || null,
         status,
       })
       .eq('id', id);
