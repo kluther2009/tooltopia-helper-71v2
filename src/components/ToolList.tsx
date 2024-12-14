@@ -1,7 +1,6 @@
 import { ToolCard } from "@/components/ToolCard";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tool } from "@/hooks/useTools";
 
 interface ToolListProps {
@@ -25,40 +24,38 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
           {locationTitle}
         </h3>
       )}
-      <ScrollArea className="h-auto max-h-[320px] w-full">
-        <Droppable droppableId={location}>
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-4"
-            >
-              {tools.map((tool, index) => (
-                <Draggable 
-                  key={tool.id} 
-                  draggableId={tool.id} 
-                  index={index}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      style={{
-                        ...provided.draggableProps.style,
-                      }}
-                      className={`${snapshot.isDragging ? 'opacity-75' : ''}`}
-                    >
-                      <ToolCard {...tool} />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </ScrollArea>
+      <Droppable droppableId={location}>
+        {(provided) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            {tools.map((tool, index) => (
+              <Draggable 
+                key={tool.id} 
+                draggableId={tool.id} 
+                index={index}
+              >
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    style={{
+                      ...provided.draggableProps.style,
+                    }}
+                    className={`${snapshot.isDragging ? 'opacity-75' : ''}`}
+                  >
+                    <ToolCard {...tool} />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
     </Card>
   );
 }
