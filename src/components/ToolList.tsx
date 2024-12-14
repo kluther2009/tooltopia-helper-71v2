@@ -29,7 +29,7 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="flex flex-wrap gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {tools.map((tool, index) => (
               <Draggable 
@@ -44,11 +44,11 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
                     {...provided.dragHandleProps}
                     style={{
                       ...provided.draggableProps.style,
-                      width: 'calc(33.333% - 1rem)',
-                      minWidth: '250px',
-                      flex: '1 0 auto'
+                      transform: snapshot.isDragging 
+                        ? provided.draggableProps.style?.transform 
+                        : 'translate(0, 0)',
                     }}
-                    className={`transition-opacity ${snapshot.isDragging ? 'opacity-75 z-50' : ''}`}
+                    className={`transition-opacity ${snapshot.isDragging ? 'opacity-75' : ''}`}
                   >
                     <ToolCard {...tool} />
                   </div>
