@@ -42,13 +42,8 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    style={{
-                      ...provided.draggableProps.style,
-                      transform: snapshot.isDragging 
-                        ? provided.draggableProps.style?.transform 
-                        : 'translate(0, 0)',
-                    }}
-                    className={`transition-opacity ${snapshot.isDragging ? 'opacity-75' : ''}`}
+                    style={provided.draggableProps.style}
+                    className={snapshot.isDragging ? 'opacity-75' : ''}
                   >
                     <ToolCard {...tool} />
                   </div>
