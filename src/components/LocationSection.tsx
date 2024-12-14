@@ -26,11 +26,11 @@ export function LocationSection({
   return (
     <Card className={`p-6 ${colorClass} border-2 border-black bg-opacity-90 hover:bg-opacity-100 transition-all duration-200`}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-white">{mainLocation}</h2>
+        <h2 className="text-2xl font-bold tracking-wide text-black text-center w-full font-serif">{mainLocation}</h2>
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:text-white/80"
+          className="text-black hover:text-black/80"
           onClick={() => setSelectedLocation(mainLocation)}
         >
           <Image className="h-5 w-5" />
