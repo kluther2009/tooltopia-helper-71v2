@@ -24,7 +24,7 @@ export function LocationSection({
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   return (
-    <Card className={`p-6 ${colorClass} border border-gray-200 bg-opacity-90 hover:bg-opacity-100 transition-all duration-200`}>
+    <Card className={`p-6 ${colorClass} border border-black bg-opacity-90 hover:bg-opacity-100 transition-all duration-200`}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-white">{mainLocation}</h2>
         <Button
@@ -37,7 +37,6 @@ export function LocationSection({
         </Button>
       </div>
 
-      {/* Display tools without sub-locations directly */}
       {mainLocationTools.length > 0 && (
         <div className="mb-6">
           <ToolList
@@ -49,7 +48,6 @@ export function LocationSection({
         </div>
       )}
 
-      {/* Display sub-location tools */}
       <div className="grid gap-6">
         {Object.entries(subLocations).map(([subLocation, locationTools]) => {
           const fullLocation = `${mainLocation} > ${subLocation}`;

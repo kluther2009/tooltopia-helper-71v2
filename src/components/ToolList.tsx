@@ -15,7 +15,7 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
 
   return (
     <Card 
-      className={`p-4 bg-white/50 backdrop-blur-sm border border-gray-200 shadow-sm transition-colors duration-200 ${
+      className={`p-4 bg-white/50 backdrop-blur-sm border border-black shadow-sm transition-colors duration-200 ${
         isDraggingOver ? "bg-primary/5" : ""
       }`}
     >
