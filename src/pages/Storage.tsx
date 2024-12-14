@@ -71,24 +71,25 @@ export default function Storage() {
     // Extract location parts and trim any whitespace
     const locationParts = tool.location.split(">").map(part => part.trim());
     const mainLocation = locationParts[0];
-    const subLocation = locationParts[1]; // Will be undefined if there's no sub-location
     
+    // Initialize the main location if it doesn't exist
     if (!acc[mainLocation]) {
       acc[mainLocation] = {
         mainTools: [],
         subLocations: {}
       };
     }
-    
-    // If there's a sub-location and it's not empty, add to sub-locations
-    if (subLocation && subLocation.length > 0) {
+
+    // If there's only one part in locationParts, it means there's no sub-location
+    if (locationParts.length === 1) {
+      acc[mainLocation].mainTools.push(tool);
+    } else {
+      // If there's a sub-location, add it to the appropriate sub-location array
+      const subLocation = locationParts[1];
       if (!acc[mainLocation].subLocations[subLocation]) {
         acc[mainLocation].subLocations[subLocation] = [];
       }
       acc[mainLocation].subLocations[subLocation].push(tool);
-    } else {
-      // If no sub-location or empty sub-location, add to main tools
-      acc[mainLocation].mainTools.push(tool);
     }
     
     return acc;

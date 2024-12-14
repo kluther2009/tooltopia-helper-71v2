@@ -30,12 +30,24 @@ export function useTools() {
       }
 
       if (data) {
-        const transformedTools = data.map(tool => ({
-          id: tool.id,
-          name: tool.name,
-          location: `${tool.location}${tool.sub_location_a ? ` > ${tool.sub_location_a}` : ''}${tool.sub_location_b ? ` > ${tool.sub_location_b}` : ''}`,
-          status: tool.status as "available" | "in-use" | "maintenance"
-        }));
+        const transformedTools = data.map(tool => {
+          // Construct location string only if sub-locations exist
+          let location = tool.location;
+          if (tool.sub_location_a) {
+            location += ` > ${tool.sub_location_a}`;
+          }
+          if (tool.sub_location_b) {
+            location += ` > ${tool.sub_location_b}`;
+          }
+          
+          return {
+            id: tool.id,
+            name: tool.name,
+            location: location,
+            status: tool.status as "available" | "in-use" | "maintenance"
+          };
+        });
+        console.log('Transformed tools:', transformedTools);
         setTools(transformedTools);
       }
     } catch (error) {
