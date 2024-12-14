@@ -4,17 +4,15 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { DeleteToolDialog } from "./tool/DeleteToolDialog";
 import { ToolStatusIcon } from "./tool/ToolStatusIcon";
-import { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 
 interface ToolCardProps {
   id: string;
   name: string | React.ReactNode;
   location: string;
   status: "available" | "in-use" | "maintenance";
-  dragHandleProps?: DraggableProvidedDragHandleProps;
 }
 
-export function ToolCard({ id, name, location, status, dragHandleProps }: ToolCardProps) {
+export function ToolCard({ id, name, status }: ToolCardProps) {
   const navigate = useNavigate();
 
   const renderLocation = () => {
@@ -30,8 +28,7 @@ export function ToolCard({ id, name, location, status, dragHandleProps }: ToolCa
 
   return (
     <Card 
-      {...dragHandleProps}
-      className="p-2 sm:p-3 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm"
+      className="p-2 sm:p-3 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-start gap-2 sm:gap-3">
         <ToolStatusIcon status={status} />
