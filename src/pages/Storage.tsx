@@ -68,9 +68,10 @@ export default function Storage() {
 
   // Group tools by main location and sub-location
   const groupedTools = tools.reduce((acc: GroupedTools, tool) => {
-    const locationParts = tool.location.split(" > ");
+    // Extract location parts and trim any whitespace
+    const locationParts = tool.location.split(">").map(part => part.trim());
     const mainLocation = locationParts[0];
-    const subLocation = locationParts[1];
+    const subLocation = locationParts[1]; // Will be undefined if there's no sub-location
     
     if (!acc[mainLocation]) {
       acc[mainLocation] = {
@@ -79,12 +80,14 @@ export default function Storage() {
       };
     }
     
-    if (subLocation) {
+    // If there's a sub-location and it's not empty, add to sub-locations
+    if (subLocation && subLocation.length > 0) {
       if (!acc[mainLocation].subLocations[subLocation]) {
         acc[mainLocation].subLocations[subLocation] = [];
       }
       acc[mainLocation].subLocations[subLocation].push(tool);
     } else {
+      // If no sub-location or empty sub-location, add to main tools
       acc[mainLocation].mainTools.push(tool);
     }
     
