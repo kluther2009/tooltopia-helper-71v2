@@ -28,7 +28,7 @@ export function ToolCard({ id, name, status }: ToolCardProps) {
 
   return (
     <Card 
-      className="p-2 sm:p-3 bg-white border border-black hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing"
+      className="p-2 sm:p-3 bg-white border-2 border-black hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-start gap-2 sm:gap-3">
         <ToolStatusIcon status={status} />
