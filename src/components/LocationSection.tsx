@@ -9,13 +9,15 @@ import { Button } from "./ui/button";
 interface LocationSectionProps {
   mainLocation: string;
   subLocations: { [key: string]: Tool[] };
+  mainLocationTools: Tool[];
   colorClass: string;
   isDraggingOver: string | null;
 }
 
 export function LocationSection({ 
   mainLocation, 
-  subLocations, 
+  subLocations,
+  mainLocationTools,
   colorClass,
   isDraggingOver 
 }: LocationSectionProps) {
@@ -34,15 +36,30 @@ export function LocationSection({
           <Image className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Display tools without sub-locations directly */}
+      {mainLocationTools.length > 0 && (
+        <div className="mb-6">
+          <ToolList
+            location={mainLocation}
+            tools={mainLocationTools}
+            isDraggingOver={isDraggingOver === mainLocation}
+            showLocationTitle={false}
+          />
+        </div>
+      )}
+
+      {/* Display sub-location tools */}
       <div className="grid gap-6">
         {Object.entries(subLocations).map(([subLocation, locationTools]) => {
-          const fullLocation = `${mainLocation}${subLocation !== "General" ? ` > ${subLocation}` : ''}`;
+          const fullLocation = `${mainLocation} > ${subLocation}`;
           return (
             <div key={`${mainLocation}-${subLocation}`}>
               <ToolList
                 location={fullLocation}
                 tools={locationTools}
                 isDraggingOver={isDraggingOver === fullLocation}
+                showLocationTitle={true}
               />
             </div>
           );

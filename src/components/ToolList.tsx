@@ -8,9 +8,10 @@ interface ToolListProps {
   location: string;
   tools: Tool[];
   isDraggingOver?: boolean;
+  showLocationTitle?: boolean;
 }
 
-export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
+export function ToolList({ location, tools, isDraggingOver, showLocationTitle = true }: ToolListProps) {
   const locationTitle = location.includes(" > ") ? location.split(" > ")[1] : location;
 
   return (
@@ -19,9 +20,11 @@ export function ToolList({ location, tools, isDraggingOver }: ToolListProps) {
         isDraggingOver ? "bg-primary/5" : ""
       }`}
     >
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">
-        {locationTitle}
-      </h3>
+      {showLocationTitle && (
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">
+          {locationTitle}
+        </h3>
+      )}
       <ScrollArea className="h-auto max-h-[320px] w-full">
         <Droppable droppableId={location}>
           {(provided) => (

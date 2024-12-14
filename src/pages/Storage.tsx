@@ -18,7 +18,10 @@ const locationColors = [
 
 interface GroupedTools {
   [location: string]: {
-    [subLocation: string]: Tool[];
+    mainTools: Tool[];
+    subLocations: {
+      [subLocation: string]: Tool[];
+    };
   };
 }
 
@@ -65,17 +68,26 @@ export default function Storage() {
 
   // Group tools by main location and sub-location
   const groupedTools = tools.reduce((acc: GroupedTools, tool) => {
-    const [mainLocation, subLocation = "General"] = tool.location.split(" > ");
+    const locationParts = tool.location.split(" > ");
+    const mainLocation = locationParts[0];
+    const subLocation = locationParts[1];
     
     if (!acc[mainLocation]) {
-      acc[mainLocation] = {};
+      acc[mainLocation] = {
+        mainTools: [],
+        subLocations: {}
+      };
     }
     
-    if (!acc[mainLocation][subLocation]) {
-      acc[mainLocation][subLocation] = [];
+    if (subLocation) {
+      if (!acc[mainLocation].subLocations[subLocation]) {
+        acc[mainLocation].subLocations[subLocation] = [];
+      }
+      acc[mainLocation].subLocations[subLocation].push(tool);
+    } else {
+      acc[mainLocation].mainTools.push(tool);
     }
     
-    acc[mainLocation][subLocation].push(tool);
     return acc;
   }, {});
 
@@ -101,10 +113,11 @@ export default function Storage() {
               }}
             >
               <div className="space-y-8">
-                {Object.entries(groupedTools).map(([mainLocation, subLocations], index) => (
+                {Object.entries(groupedTools).map(([mainLocation, { mainTools, subLocations }], index) => (
                   <LocationSection
                     key={mainLocation}
                     mainLocation={mainLocation}
+                    mainLocationTools={mainTools}
                     subLocations={subLocations}
                     colorClass={locationColors[index % locationColors.length]}
                     isDraggingOver={draggingOver}
