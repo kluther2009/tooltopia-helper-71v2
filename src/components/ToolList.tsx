@@ -20,7 +20,7 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
       }`}
     >
       {showLocationTitle && (
-        <h3 className="text-lg font-serif font-semibold mb-4 text-black text-center tracking-wide">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">
           {locationTitle}
         </h3>
       )}
