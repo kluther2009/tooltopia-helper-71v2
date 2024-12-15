@@ -42,6 +42,9 @@ export default function Storage() {
 
   useEffect(() => {
     checkSession();
+    return () => {
+      document.body.classList.remove('dragging');
+    };
   }, []);
 
   const checkSession = async () => {
@@ -63,7 +66,20 @@ export default function Storage() {
     fetchTools();
   };
 
+  const handleDragStart = () => {
+    document.body.classList.add('dragging');
+  };
+
+  const handleDragUpdate = (update: any) => {
+    if (update.destination) {
+      setDraggingOver(update.destination.droppableId);
+    } else {
+      setDraggingOver(null);
+    }
+  };
+
   const handleDragEnd = async (result: any) => {
+    document.body.classList.remove('dragging');
     setDraggingOver(null);
     if (!result.destination) return;
 
@@ -131,13 +147,9 @@ export default function Storage() {
             <h1 className="text-3xl font-bold mb-8 text-gray-900">Storage Locations</h1>
             <DragDropContext 
               onDragEnd={handleDragEnd}
-              onDragUpdate={(update) => {
-                if (update.destination) {
-                  setDraggingOver(update.destination.droppableId);
-                } else {
-                  setDraggingOver(null);
-                }
-              }}
+              onDragUpdate={handleDragUpdate}
+              onDragStart={handleDragStart}
+              enableDefaultSensors={true}
             >
               <div className="space-y-8">
                 {Object.entries(groupedTools).map(([mainLocation, { mainTools, subLocations }], index) => (
