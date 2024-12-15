@@ -7,6 +7,9 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { MoveToolDialog } from "@/components/MoveToolDialog";
 import { useTools, Tool } from "@/hooks/useTools";
 import { LocationSection } from "@/components/LocationSection";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const locationColors = [
   'bg-[#9b87f5]',
@@ -32,13 +35,33 @@ interface DragConfirmation {
 }
 
 export default function Storage() {
+  const navigate = useNavigate();
   const { tools, fetchTools, updateToolLocation } = useTools();
   const [dragConfirmation, setDragConfirmation] = useState<DragConfirmation | null>(null);
   const [draggingOver, setDraggingOver] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTools();
+    checkSession();
   }, []);
+
+  const checkSession = async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error("Session error:", error);
+      toast.error("Authentication error. Please log in again.");
+      navigate("/login");
+      return;
+    }
+
+    if (!session) {
+      toast.error("Please log in to access this page");
+      navigate("/login");
+      return;
+    }
+
+    fetchTools();
+  };
 
   const handleDragEnd = async (result: any) => {
     setDraggingOver(null);
