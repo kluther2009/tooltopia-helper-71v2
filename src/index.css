@@ -78,13 +78,3 @@
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary;
   }
 }
-
-body.dragging * {
-  transition: none !important;
-}
-
-.transform-gpu {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}

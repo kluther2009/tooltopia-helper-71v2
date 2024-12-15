@@ -15,7 +15,7 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
 
   return (
     <Card 
-      className={`p-4 bg-white/50 backdrop-blur-sm border-2 border-black shadow-sm transition-[background-color] duration-200 ${
+      className={`p-4 bg-white/50 backdrop-blur-sm border-2 border-black shadow-sm transition-colors duration-200 ${
         isDraggingOver ? "bg-primary/5" : ""
       }`}
     >
@@ -42,12 +42,7 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    style={{
-                      ...provided.draggableProps.style,
-                      transform: provided.draggableProps.style?.transform,
-                      willChange: 'transform'
-                    }}
-                    className="cursor-grab active:cursor-grabbing transform-gpu"
+                    style={provided.draggableProps.style}
                   >
                     <ToolCard {...tool} />
                   </div>
