@@ -8,7 +8,8 @@ import {
   Settings,
   BoxSelect,
   LogOut,
-  Plus
+  Plus,
+  ClipboardList
 } from "lucide-react";
 
 const routes = [
@@ -26,6 +27,11 @@ const routes = [
     label: "Storage",
     icon: BoxSelect,
     href: "/storage",
+  },
+  {
+    label: "Initial Inventory",
+    icon: ClipboardList,
+    href: "/initial-inventory",
   },
   {
     label: "Settings",

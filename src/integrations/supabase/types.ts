@@ -14,7 +14,9 @@ export type Database = {
           created_at: string
           file_path: string
           id: string
+          is_initial_inventory: boolean | null
           location: string
+          sub_location: string | null
           updated_at: string
           user_id: string | null
         }
@@ -22,7 +24,9 @@ export type Database = {
           created_at?: string
           file_path: string
           id?: string
+          is_initial_inventory?: boolean | null
           location: string
+          sub_location?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -30,7 +34,9 @@ export type Database = {
           created_at?: string
           file_path?: string
           id?: string
+          is_initial_inventory?: boolean | null
           location?: string
+          sub_location?: string | null
           updated_at?: string
           user_id?: string | null
         }
