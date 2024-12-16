@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { PhotoViewerDialog } from "./PhotoViewerDialog"
 
 interface LocationPhotoViewerProps {
   location: string | null
