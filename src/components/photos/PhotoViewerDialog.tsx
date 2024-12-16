@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LocationPhoto } from "@/types/photos";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,6 +16,9 @@ export function PhotoViewerDialog({ photo, isOpen, onClose }: PhotoViewerDialogP
       if (!open) onClose();
     }}>
       <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{photo.location}</DialogTitle>
+        </DialogHeader>
         <div className="relative aspect-video">
           <img
             src={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
@@ -25,9 +28,6 @@ export function PhotoViewerDialog({ photo, isOpen, onClose }: PhotoViewerDialogP
         </div>
         <div className="mt-4">
           <h3 className="text-lg font-semibold">{photo.location}</h3>
-          {photo.sub_location && (
-            <p className="text-sm text-gray-500">Sub-location: {photo.sub_location}</p>
-          )}
           <p className="text-sm text-gray-500">
             Uploaded on: {new Date(photo.created_at).toLocaleDateString()}
           </p>

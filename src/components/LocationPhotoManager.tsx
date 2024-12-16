@@ -173,7 +173,7 @@ export function LocationPhotoManager() {
       <PhotoViewerDialog
         photo={selectedPhoto}
         isOpen={isViewerOpen}
-        onOpenChange={setIsViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
       />
 
       <LocationInputDialog
