@@ -17,21 +17,31 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
+        });
+      } else {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred during login",
       });
-    } else {
-      navigate("/");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.MouseEvent) => {
@@ -46,30 +56,40 @@ export default function Login() {
     }
 
     setResetLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Password reset email sent. Please check your inbox.",
+        });
+      }
+    } catch (error) {
+      console.error("Reset password error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Password reset email sent. Please check your inbox.",
-      });
+    } finally {
+      setResetLoading(false);
     }
-    setResetLoading(false);
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center space-y-6">
-          <h1 className="text-5xl sm:text-6xl font-bold text-white mb-8 font-serif tracking-wider">
+          <h1 className="text-5xl sm:text-6xl font-bold text-card-foreground mb-8 font-serif tracking-wider">
             ToolTrackerHub
           </h1>
           <h2 className="text-3xl sm:text-4xl font-bold text-primary">
