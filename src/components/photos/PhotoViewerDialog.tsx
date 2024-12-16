@@ -1,30 +1,38 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { supabase } from "@/integrations/supabase/client"
-import { LocationPhoto } from "@/types/photos"
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { LocationPhoto } from "@/types/photos";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PhotoViewerDialogProps {
-  photo: LocationPhoto | null
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
+  photo: LocationPhoto | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function PhotoViewerDialog({ photo, isOpen, onOpenChange }: PhotoViewerDialogProps) {
-  if (!photo) return null
+export function PhotoViewerDialog({ photo, isOpen, onClose }: PhotoViewerDialogProps) {
+  if (!photo) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
       <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>{photo.location}</DialogTitle>
-        </DialogHeader>
-        <div className="aspect-video relative rounded-md overflow-hidden">
+        <div className="relative aspect-video">
           <img
             src={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
             alt={photo.location}
             className="object-contain w-full h-full"
           />
         </div>
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">{photo.location}</h3>
+          {photo.sub_location && (
+            <p className="text-sm text-gray-500">Sub-location: {photo.sub_location}</p>
+          )}
+          <p className="text-sm text-gray-500">
+            Uploaded on: {new Date(photo.created_at).toLocaleDateString()}
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
