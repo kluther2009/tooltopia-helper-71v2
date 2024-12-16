@@ -1,19 +1,19 @@
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { LocationPhoto } from "@/types/photos";
-import { PhotoCard } from "./PhotoCard";
-import { PhotoViewerDialog } from "./PhotoViewerDialog";
-import { toast } from "sonner";
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
+import { supabase } from "@/integrations/supabase/client"
+import { LocationPhoto } from "@/types/photos"
+import { PhotoCard } from "./PhotoCard"
+import { PhotoAnnotationViewer } from "./PhotoAnnotationViewer"
+import { toast } from "sonner"
 
 export function InitialInventoryViewer() {
-  const [photos, setPhotos] = useState<LocationPhoto[]>([]);
-  const [selectedPhoto, setSelectedPhoto] = useState<LocationPhoto | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [photos, setPhotos] = useState<LocationPhoto[]>([])
+  const [selectedPhoto, setSelectedPhoto] = useState<LocationPhoto | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchPhotos();
-  }, []);
+    fetchPhotos()
+  }, [])
 
   const fetchPhotos = async () => {
     try {
@@ -21,55 +21,53 @@ export function InitialInventoryViewer() {
         .from('location_photos')
         .select('*')
         .eq('is_initial_inventory', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (error) throw error;
-      setPhotos(data || []);
+      if (error) throw error
+      setPhotos(data || [])
     } catch (error) {
-      console.error('Error fetching photos:', error);
-      toast.error('Failed to load photos');
+      console.error('Error fetching photos:', error)
+      toast.error('Failed to load photos')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleDeletePhoto = async (photo: LocationPhoto) => {
     try {
-      // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('location-photos')
-        .remove([photo.file_path]);
+        .remove([photo.file_path])
 
-      if (storageError) throw storageError;
+      if (storageError) throw storageError
 
-      // Delete from database
       const { error: dbError } = await supabase
         .from('location_photos')
         .delete()
-        .eq('id', photo.id);
+        .eq('id', photo.id)
 
-      if (dbError) throw dbError;
+      if (dbError) throw dbError
 
-      setPhotos(photos.filter(p => p.id !== photo.id));
-      toast.success('Photo deleted successfully');
+      setPhotos(photos.filter(p => p.id !== photo.id))
+      toast.success('Photo deleted successfully')
     } catch (error) {
-      console.error('Error deleting photo:', error);
-      toast.error('Failed to delete photo');
+      console.error('Error deleting photo:', error)
+      toast.error('Failed to delete photo')
     }
-  };
+  }
 
   // Group photos by location
   const groupedPhotos = photos.reduce((acc, photo) => {
-    const location = photo.location;
+    const location = photo.location
     if (!acc[location]) {
-      acc[location] = [];
+      acc[location] = []
     }
-    acc[location].push(photo);
-    return acc;
-  }, {} as Record<string, LocationPhoto[]>);
+    acc[location].push(photo)
+    return acc
+  }, {} as Record<string, LocationPhoto[]>)
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="text-center py-8">Loading...</div>
   }
 
   return (
@@ -96,11 +94,11 @@ export function InitialInventoryViewer() {
         </div>
       )}
 
-      <PhotoViewerDialog
+      <PhotoAnnotationViewer
         photo={selectedPhoto}
         isOpen={!!selectedPhoto}
         onClose={() => setSelectedPhoto(null)}
       />
     </div>
-  );
+  )
 }

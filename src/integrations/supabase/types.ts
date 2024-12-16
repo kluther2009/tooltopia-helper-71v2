@@ -66,6 +66,61 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_annotations: {
+        Row: {
+          coordinates: Json
+          created_at: string
+          id: string
+          photo_id: string
+          tool_id: string | null
+          tool_reference_id: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          coordinates: Json
+          created_at?: string
+          id?: string
+          photo_id: string
+          tool_id?: string | null
+          tool_reference_id?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          coordinates?: Json
+          created_at?: string
+          id?: string
+          photo_id?: string
+          tool_id?: string | null
+          tool_reference_id?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_annotations_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "location_photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_annotations_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_annotations_tool_reference_id_fkey"
+            columns: ["tool_reference_id"]
+            isOneToOne: false
+            referencedRelation: "tools_reference"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tools: {
         Row: {
           created_at: string
