@@ -51,5 +51,5 @@ export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool }: ToolL
         )}
       </div>
     </ScrollArea>
-  );
+  )
 }
