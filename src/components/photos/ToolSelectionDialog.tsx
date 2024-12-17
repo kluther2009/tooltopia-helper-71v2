@@ -5,6 +5,8 @@ import { toast } from "sonner"
 import { ToolSearch } from "./tool/ToolSearch"
 import { ToolList } from "./tool/ToolList"
 import { CreateToolDialog } from "./tool/CreateToolDialog"
+import { usePhotoLocation } from "@/hooks/usePhotoLocation"
+import { useToolSearch } from "@/hooks/useToolSearch"
 
 interface ToolSelectionDialogProps {
   isOpen: boolean
@@ -22,53 +24,9 @@ export function ToolSelectionDialog({
   photoId
 }: ToolSelectionDialogProps) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [tools, setTools] = useState<{ id: string; name: string }[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [photoLocation, setPhotoLocation] = useState("")
-
-  const fetchPhotoLocation = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('location_photos')
-        .select('location, sub_location')
-        .eq('id', photoId)
-        .single()
-
-      if (error) throw error
-      
-      // Combine location and sub_location if both exist
-      const fullLocation = data.sub_location 
-        ? `${data.location} > ${data.sub_location}`
-        : data.location
-
-      setPhotoLocation(fullLocation)
-    } catch (error) {
-      console.error('Error fetching photo location:', error)
-      toast.error('Failed to fetch photo location')
-    }
-  }
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return
-
-    setIsLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('tools')
-        .select('id, name')
-        .ilike('name', `%${searchQuery}%`)
-        .limit(10)
-
-      if (error) throw error
-      setTools(data)
-    } catch (error) {
-      console.error('Error searching tools:', error)
-      toast.error('Failed to search tools')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const { tools, isLoading, searchTools } = useToolSearch()
+  const photoLocation = usePhotoLocation(photoId, isOpen)
 
   const handleToolSelect = async (toolId: string) => {
     try {
@@ -102,13 +60,6 @@ export function ToolSelectionDialog({
     await handleToolSelect(toolId)
   }
 
-  // Fetch photo location when dialog opens
-  useState(() => {
-    if (isOpen) {
-      fetchPhotoLocation()
-    }
-  }, [isOpen, photoId])
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -120,7 +71,7 @@ export function ToolSelectionDialog({
             <ToolSearch
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              onSearch={handleSearch}
+              onSearch={() => searchTools(searchQuery)}
               isLoading={isLoading}
             />
             
