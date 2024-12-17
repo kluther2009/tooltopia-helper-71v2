@@ -1,11 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { Check, Search } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { ToolSearch } from "./tool/ToolSearch"
+import { ToolList } from "./tool/ToolList"
 
 interface ToolSelectionDialogProps {
   isOpen: boolean
@@ -75,6 +73,11 @@ export function ToolSelectionDialog({
     }
   }
 
+  const handleAddNewTool = () => {
+    // We'll implement this in the next step
+    toast.info('Adding new tools will be implemented soon')
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
@@ -82,42 +85,19 @@ export function ToolSelectionDialog({
           <DialogTitle>Select Tool</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Search tools..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <Button onClick={handleSearch} disabled={isLoading}>
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
+          <ToolSearch
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onSearch={handleSearch}
+            isLoading={isLoading}
+          />
           
-          <ScrollArea className="h-[300px]">
-            <div className="space-y-2">
-              {tools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
-                  onClick={() => handleToolSelect(tool.id)}
-                >
-                  <span>{tool.name}</span>
-                  <Check className="h-4 w-4 text-green-500" />
-                </div>
-              ))}
-              {tools.length === 0 && !isLoading && (
-                <div className="text-center text-gray-500 py-4">
-                  No tools found
-                </div>
-              )}
-              {isLoading && (
-                <div className="text-center text-gray-500 py-4">
-                  Searching...
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+          <ToolList
+            tools={tools}
+            isLoading={isLoading}
+            onToolSelect={handleToolSelect}
+            onAddNewTool={handleAddNewTool}
+          />
         </div>
       </DialogContent>
     </Dialog>
