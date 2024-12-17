@@ -25,6 +25,29 @@ export function ToolSelectionDialog({
   const [tools, setTools] = useState<{ id: string; name: string }[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [photoLocation, setPhotoLocation] = useState("")
+
+  const fetchPhotoLocation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('location_photos')
+        .select('location, sub_location')
+        .eq('id', photoId)
+        .single()
+
+      if (error) throw error
+      
+      // Combine location and sub_location if both exist
+      const fullLocation = data.sub_location 
+        ? `${data.location} > ${data.sub_location}`
+        : data.location
+
+      setPhotoLocation(fullLocation)
+    } catch (error) {
+      console.error('Error fetching photo location:', error)
+      toast.error('Failed to fetch photo location')
+    }
+  }
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
@@ -79,6 +102,13 @@ export function ToolSelectionDialog({
     await handleToolSelect(toolId)
   }
 
+  // Fetch photo location when dialog opens
+  useState(() => {
+    if (isOpen) {
+      fetchPhotoLocation()
+    }
+  }, [isOpen, photoId])
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -108,7 +138,7 @@ export function ToolSelectionDialog({
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
         onToolCreated={handleCreateTool}
-        initialLocation="Initial Inventory"
+        initialLocation={photoLocation}
       />
     </>
   )

@@ -31,11 +31,15 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not authenticated")
 
+      // Split location into main location and sub-location if it contains ">"
+      const [mainLocation, subLocation] = initialLocation.split(" > ").map(part => part.trim())
+
       const { data, error } = await supabase
         .from('tools')
         .insert({
           name: name.trim(),
-          location: initialLocation,
+          location: mainLocation,
+          sub_location_a: subLocation || null,
           status,
           user_id: user.id
         })
@@ -70,6 +74,16 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter tool name"
               disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input
+              id="location"
+              value={initialLocation}
+              disabled
+              className="bg-gray-100"
             />
           </div>
 
