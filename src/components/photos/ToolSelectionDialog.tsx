@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
-import { Check, Search, X } from "lucide-react"
+import { Check, Search } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -49,12 +49,19 @@ export function ToolSelectionDialog({
 
   const handleToolSelect = async (toolId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to create annotations')
+        return
+      }
+
       const { error } = await supabase
         .from('tool_annotations')
         .insert({
           photo_id: photoId,
           tool_id: toolId,
-          coordinates
+          coordinates,
+          user_id: user.id
         })
 
       if (error) throw error
