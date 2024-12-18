@@ -27,18 +27,22 @@ export default function AddTool() {
   const toolNameInputRef = useRef<HTMLInputElement>(null)
 
   const checkToolExists = async (name: string) => {
-    const { data, error } = await supabase
-      .from('tools')
-      .select('name')
-      .ilike('name', name.trim())
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('tools')
+        .select('name')
+        .ilike('name', name.trim())
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
-      console.error('Error checking tool name:', error)
+      if (error) {
+        console.error('Error checking tool name:', error)
+        return false
+      }
+
+      return data && data.length > 0
+    } catch (error) {
+      console.error('Error in checkToolExists:', error)
       return false
     }
-
-    return !!data
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
