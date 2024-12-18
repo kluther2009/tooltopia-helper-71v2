@@ -1,122 +1,8 @@
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { useState, useRef } from "react"
-import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/integrations/supabase/client"
-import { useNavigate } from "react-router-dom"
-import { ToolNameAutocomplete } from "@/components/ToolNameAutocomplete"
-import { ToolLocationFields } from "@/components/ToolLocationFields"
+import { AddToolForm } from "@/components/tool/AddToolForm"
 
 export default function AddTool() {
-  const [toolName, setToolName] = useState("")
-  const [primaryLocation, setPrimaryLocation] = useState("")
-  const [subLocation, setSubLocation] = useState("")
-  const [specificLocation, setSpecificLocation] = useState("")
-  const [status, setStatus] = useState("available")
-  const { toast } = useToast()
-  const navigate = useNavigate()
-  const toolNameInputRef = useRef<HTMLInputElement>(null)
-
-  const checkToolExists = async (name: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('tools')
-        .select('name')
-        .ilike('name', name.trim())
-
-      if (error) {
-        console.error('Error checking tool name:', error)
-        return false
-      }
-
-      return data && data.length > 0
-    } catch (error) {
-      console.error('Error in checkToolExists:', error)
-      return false
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!toolName.trim()) {
-      toast({
-        title: "Error",
-        description: "Tool name is required",
-        variant: "destructive"
-      })
-      toolNameInputRef.current?.focus()
-      return
-    }
-
-    const toolExists = await checkToolExists(toolName)
-    if (toolExists) {
-      toast({
-        title: "Error",
-        description: "This tool already exists",
-        variant: "destructive"
-      })
-      toolNameInputRef.current?.focus()
-      return
-    }
-
-    const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to add a tool.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    const { error } = await supabase
-      .from('tools')
-      .insert([
-        {
-          name: toolName.trim(),
-          location: fullLocation,
-          status,
-          user_id: user.id
-        }
-      ])
-
-    if (error) {
-      console.error('Error inserting tool:', error)
-      toast({
-        title: "Error",
-        description: "Failed to add tool. Please try again.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    toast({
-      title: "Success",
-      description: `${toolName} has been added to ${fullLocation}`,
-    })
-
-    setToolName("")
-    setPrimaryLocation("")
-    setSubLocation("")
-    setSpecificLocation("")
-    setStatus("available")
-    
-    navigate('/')
-  }
-
   return (
     <Layout>
       <div className="max-w-2xl mx-auto p-4">
@@ -125,40 +11,7 @@ export default function AddTool() {
             <CardTitle className="text-2xl font-bold">Add New Tool</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <ToolNameAutocomplete
-                value={toolName}
-                onValueChange={setToolName}
-                inputRef={toolNameInputRef}
-              />
-
-              <ToolLocationFields
-                primaryLocation={primaryLocation}
-                subLocation={subLocation}
-                specificLocation={specificLocation}
-                onPrimaryLocationChange={setPrimaryLocation}
-                onSubLocationChange={setSubLocation}
-                onSpecificLocationChange={setSpecificLocation}
-              />
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="bg-background text-foreground border-input">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background text-foreground border-input">
-                    <SelectItem value="available">Available</SelectItem>
-                    <SelectItem value="in-use">In Use</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button type="submit" className="w-full">
-                Add Tool
-              </Button>
-            </form>
+            <AddToolForm />
           </CardContent>
         </Card>
       </div>
