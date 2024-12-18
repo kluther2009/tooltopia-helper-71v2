@@ -1,11 +1,25 @@
 import { useRef, useEffect, useState } from "react"
 
+interface Annotation {
+  id: string
+  coordinates: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+  tool: {
+    name: string
+  }
+}
+
 interface AnnotationCanvasProps {
   imageUrl: string
   onRectangleDrawn?: (coordinates: { x: number; y: number; width: number; height: number }) => void
+  existingAnnotations?: Annotation[]
 }
 
-export function AnnotationCanvas({ imageUrl, onRectangleDrawn }: AnnotationCanvasProps) {
+export function AnnotationCanvas({ imageUrl, onRectangleDrawn, existingAnnotations = [] }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
@@ -19,6 +33,12 @@ export function AnnotationCanvas({ imageUrl, onRectangleDrawn }: AnnotationCanva
       drawImage()
     }
   }, [imageUrl])
+
+  useEffect(() => {
+    if (imageRef.current) {
+      drawImage()
+    }
+  }, [existingAnnotations])
 
   const drawImage = () => {
     const canvas = canvasRef.current
@@ -41,6 +61,24 @@ export function AnnotationCanvas({ imageUrl, onRectangleDrawn }: AnnotationCanva
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(imageRef.current, x, y, scaledWidth, scaledHeight)
+
+    // Draw existing annotations
+    existingAnnotations.forEach(annotation => {
+      const { coordinates, tool } = annotation
+      ctx.strokeStyle = '#00ff00'
+      ctx.lineWidth = 2
+      ctx.strokeRect(
+        coordinates.x,
+        coordinates.y,
+        coordinates.width,
+        coordinates.height
+      )
+
+      // Draw tool name
+      ctx.fillStyle = '#00ff00'
+      ctx.font = '14px Arial'
+      ctx.fillText(tool.name, coordinates.x, coordinates.y - 5)
+    })
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
