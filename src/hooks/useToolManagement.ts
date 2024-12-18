@@ -24,18 +24,45 @@ export function useToolManagement() {
     }
   };
 
-  const addTool = async (name: string, location: string, status: string) => {
+  const addTool = async ({
+    name,
+    primaryLocation,
+    subLocation,
+    specificLocation,
+    status
+  }: {
+    name: string;
+    primaryLocation: string;
+    subLocation: string;
+    specificLocation: string;
+    status: string;
+  }) => {
     setIsLoading(true);
+    
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("You must be logged in to add a tool");
+        return false;
+      }
+
       const exists = await checkToolExists(name);
       if (exists) {
         toast.error("A tool with this name already exists");
         return false;
       }
 
+      const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
+
       const { error } = await supabase
         .from('tools')
-        .insert([{ name, location, status }]);
+        .insert([{
+          name: name.trim(),
+          location: fullLocation,
+          status,
+          user_id: user.id
+        }]);
 
       if (error) throw error;
 
