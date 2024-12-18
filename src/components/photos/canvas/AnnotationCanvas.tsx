@@ -65,6 +65,8 @@ export function AnnotationCanvas({ imageUrl, onRectangleDrawn, existingAnnotatio
     // Draw existing annotations
     existingAnnotations.forEach(annotation => {
       const { coordinates, tool } = annotation
+      
+      // Draw rectangle
       ctx.strokeStyle = '#00ff00'
       ctx.lineWidth = 2
       ctx.strokeRect(
@@ -74,10 +76,28 @@ export function AnnotationCanvas({ imageUrl, onRectangleDrawn, existingAnnotatio
         coordinates.height
       )
 
-      // Draw tool name
-      ctx.fillStyle = '#00ff00'
+      // Draw tool name with background
       ctx.font = '14px Arial'
-      ctx.fillText(tool.name, coordinates.x, coordinates.y - 5)
+      const textMetrics = ctx.measureText(tool.name)
+      const padding = 4
+      const textHeight = 16 // Approximate height of the text
+      
+      // Draw background rectangle for text
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)' // Semi-transparent dark background
+      ctx.fillRect(
+        coordinates.x,
+        coordinates.y - textHeight - padding * 2,
+        textMetrics.width + padding * 2,
+        textHeight + padding * 2
+      )
+
+      // Draw text
+      ctx.fillStyle = '#ffffff' // White text
+      ctx.fillText(
+        tool.name,
+        coordinates.x + padding,
+        coordinates.y - padding
+      )
     })
   }
 
