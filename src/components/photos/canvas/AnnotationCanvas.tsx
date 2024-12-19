@@ -21,7 +21,8 @@ export function AnnotationCanvas({
     isReadOnly,
     handleStart,
     handleMove,
-    handleEnd
+    handleEnd,
+    setIsDrawing
   } = useCanvasInteraction({
     canvasRef,
     onRectangleDrawn

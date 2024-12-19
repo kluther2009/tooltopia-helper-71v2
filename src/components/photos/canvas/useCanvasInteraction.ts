@@ -51,11 +51,6 @@ export const useCanvasInteraction = ({
     const coords = getCoordinates(e);
     if (!coords) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Redraw will be handled by the component
     return { startPos, currentPos: coords };
   };
 
