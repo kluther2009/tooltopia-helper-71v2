@@ -9,7 +9,9 @@ import {
   BoxSelect,
   LogOut,
   Plus,
-  ClipboardList
+  ClipboardList,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 
 const routes = [
@@ -41,7 +43,7 @@ const routes = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const location = useLocation();
   const { handleLogout } = useLogout();
 
@@ -50,10 +52,24 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "flex-shrink-0 h-[100dvh] flex flex-col border-r border-border bg-card transition-all duration-300",
+        "flex-shrink-0 h-[100dvh] flex flex-col border-r border-border bg-card transition-all duration-300 relative",
         isCollapsed ? "w-10 sm:w-14" : "w-40 sm:w-52",
       )}
     >
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute -right-4 top-2 h-8 w-8 rounded-full border bg-background"
+        onClick={toggleSidebar}
+      >
+        {isCollapsed ? (
+          <PanelLeftOpen className="h-4 w-4" />
+        ) : (
+          <PanelLeftClose className="h-4 w-4" />
+        )}
+        <span className="sr-only">Toggle Sidebar</span>
+      </Button>
+
       <div className="flex-1 overflow-y-auto p-1.5 sm:p-2">
         <div className="flex flex-col gap-1.5 sm:gap-2">
           {routes.map((route) => (
