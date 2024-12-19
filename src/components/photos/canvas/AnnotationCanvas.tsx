@@ -17,6 +17,7 @@ export function AnnotationCanvas({
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const isReadOnly = !onRectangleDrawn;
 
   useEffect(() => {
     const img = new Image();
@@ -67,6 +68,8 @@ export function AnnotationCanvas({
   };
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isReadOnly) return;
+    
     const coords = getCoordinates(e);
     if (!coords) return;
     
@@ -75,7 +78,7 @@ export function AnnotationCanvas({
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing || !startPos || !canvasRef.current) return;
+    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
 
     const coords = getCoordinates(e);
     if (!coords) return;
@@ -96,7 +99,7 @@ export function AnnotationCanvas({
   };
 
   const handleEnd = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing || !startPos || !canvasRef.current) return;
+    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
 
     const coords = getCoordinates(e);
     if (!coords) return;
@@ -116,7 +119,7 @@ export function AnnotationCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full cursor-crosshair touch-none"
+      className={`w-full h-full ${isReadOnly ? '' : 'cursor-crosshair'} touch-none`}
       onMouseDown={handleStart}
       onMouseMove={handleMove}
       onMouseUp={handleEnd}
