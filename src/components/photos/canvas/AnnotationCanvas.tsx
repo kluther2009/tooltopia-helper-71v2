@@ -40,34 +40,49 @@ export function AnnotationCanvas({
 
     drawImageOnCanvas(ctx, imageRef.current, canvas);
 
-    // Draw existing annotations
     existingAnnotations.forEach(annotation => {
       drawAnnotation(ctx, annotation);
     });
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
     
-    setIsDrawing(true);
-    setStartPos({ x, y });
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    } else if ('clientX' in e) {
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+    return null;
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const coords = getCoordinates(e);
+    if (!coords) return;
+    
+    setIsDrawing(true);
+    setStartPos(coords);
+  };
+
+  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing || !startPos || !canvasRef.current) return;
+
+    const coords = getCoordinates(e);
+    if (!coords) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
 
     drawCanvas();
     ctx.strokeStyle = '#00ff00';
@@ -75,38 +90,41 @@ export function AnnotationCanvas({
     ctx.strokeRect(
       startPos.x,
       startPos.y,
-      currentX - startPos.x,
-      currentY - startPos.y
+      coords.x - startPos.x,
+      coords.y - startPos.y
     );
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleEnd = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing || !startPos || !canvasRef.current) return;
 
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const endX = e.clientX - rect.left;
-    const endY = e.clientY - rect.top;
+    const coords = getCoordinates(e);
+    if (!coords) return;
 
     const coordinates = {
-      x: Math.min(startPos.x, endX),
-      y: Math.min(startPos.y, endY),
-      width: Math.abs(endX - startPos.x),
-      height: Math.abs(endY - startPos.y)
+      x: Math.min(startPos.x, coords.x),
+      y: Math.min(startPos.y, coords.y),
+      width: Math.abs(coords.x - startPos.x),
+      height: Math.abs(coords.y - startPos.y)
     };
 
     setIsDrawing(false);
+    setStartPos(null);
     onRectangleDrawn?.(coordinates);
   };
 
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full cursor-crosshair"
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
+      className="w-full h-full cursor-crosshair touch-none"
+      onMouseDown={handleStart}
+      onMouseMove={handleMove}
+      onMouseUp={handleEnd}
       onMouseLeave={() => setIsDrawing(false)}
+      onTouchStart={handleStart}
+      onTouchMove={handleMove}
+      onTouchEnd={handleEnd}
+      onTouchCancel={() => setIsDrawing(false)}
     />
   );
 }
