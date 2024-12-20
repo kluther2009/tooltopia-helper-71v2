@@ -7,6 +7,7 @@ import { ToolList } from "./tool/ToolList"
 import { CreateToolDialog } from "./tool/CreateToolDialog"
 import { usePhotoLocation } from "@/hooks/usePhotoLocation"
 import { useToolSearch } from "@/hooks/useToolSearch"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ToolSelectionDialogProps {
   isOpen: boolean
@@ -27,6 +28,7 @@ export function ToolSelectionDialog({
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const { tools, isLoading, searchTools } = useToolSearch()
   const photoLocation = usePhotoLocation(photoId, isOpen)
+  const isMobile = useIsMobile()
 
   const handleToolSelect = async (toolId: string) => {
     try {
@@ -63,11 +65,23 @@ export function ToolSelectionDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[425px] fixed bottom-0 left-0 right-0 top-auto sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 rounded-b-none sm:rounded-lg max-h-[60vh] sm:max-h-[90vh]">
+        <DialogContent 
+          className={`
+            ${isMobile ? 'fixed bottom-0 left-0 right-0 top-auto rounded-b-none' : 'fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 rounded-lg'}
+            sm:max-w-[425px] max-h-[60vh] sm:max-h-[90vh] overflow-hidden bg-white
+          `}
+          style={{
+            ...(isMobile && {
+              bottom: '0',
+              maxHeight: '60vh',
+              transform: 'none'
+            })
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Select Tool</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 overflow-y-auto">
+          <div className="space-y-4 overflow-y-auto p-4 pb-safe">
             <ToolSearch
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}

@@ -19,18 +19,21 @@ export const useCanvasInteraction = ({
     if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     
     if ('touches' in e) {
       const touch = e.touches[0];
+      const scrollX = window.scrollX || window.pageXOffset;
+      const scrollY = window.scrollY || window.pageYOffset;
       return {
-        x: ((touch.clientX - rect.left) / dpr),
-        y: ((touch.clientY - rect.top) / dpr)
+        x: (touch.clientX + scrollX - rect.left) * scaleX,
+        y: (touch.clientY + scrollY - rect.top) * scaleY
       };
     } else if ('clientX' in e) {
       return {
-        x: ((e.clientX - rect.left) / dpr),
-        y: ((e.clientY - rect.top) / dpr)
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
       };
     }
     return null;

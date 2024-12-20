@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { toast } from "sonner"
 import { ToolLocationFields } from "@/components/ToolLocationFields"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface CreateToolDialogProps {
   isOpen: boolean
@@ -32,6 +33,7 @@ export function CreateToolDialog({
   const [subLocation, setSubLocation] = useState("")
   const [specificLocation, setSpecificLocation] = useState("")
   const { checkToolExists, addTool } = useToolManagement()
+  const isMobile = useIsMobile()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,11 +74,23 @@ export function CreateToolDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px] fixed bottom-0 left-0 right-0 top-auto sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 rounded-b-none sm:rounded-lg max-h-[70vh] sm:max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className={`
+          ${isMobile ? 'fixed bottom-0 left-0 right-0 top-auto rounded-b-none' : 'fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 rounded-lg'}
+          sm:max-w-[425px] max-h-[70vh] sm:max-h-[90vh] overflow-y-auto bg-white
+        `}
+        style={{
+          ...(isMobile && {
+            bottom: '0',
+            maxHeight: '70vh',
+            transform: 'none'
+          })
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Add New Tool</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 pb-safe">
           <div>
             <Label htmlFor="toolName">Tool Name</Label>
             <Input
@@ -96,7 +110,7 @@ export function CreateToolDialog({
             onSpecificLocationChange={setSpecificLocation}
           />
 
-          <DialogFooter className="sm:justify-end">
+          <DialogFooter className="sm:justify-end pt-4">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
