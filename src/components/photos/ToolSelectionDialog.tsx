@@ -63,11 +63,11 @@ export function ToolSelectionDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] fixed bottom-0 left-0 right-0 top-auto sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:-translate-x-1/2 sm:-translate-y-1/2 rounded-b-none sm:rounded-lg max-h-[60vh] sm:max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Select Tool</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto">
             <ToolSearch
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
