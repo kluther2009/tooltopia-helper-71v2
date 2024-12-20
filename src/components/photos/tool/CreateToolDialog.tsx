@@ -40,7 +40,7 @@ export function CreateToolDialog({
       return
     }
 
-    const success = await addTool({
+    const result = await addTool({
       name: toolName,
       primaryLocation,
       subLocation,
@@ -48,8 +48,8 @@ export function CreateToolDialog({
       status: "available"
     })
 
-    if (success?.id) {
-      onToolCreated(success.id)
+    if (result && typeof result === 'object' && 'id' in result) {
+      onToolCreated(result.id)
       handleClose()
     }
   }
