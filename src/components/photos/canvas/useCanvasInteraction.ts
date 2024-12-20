@@ -19,17 +19,18 @@ export const useCanvasInteraction = ({
     if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
     
     if ('touches' in e) {
       const touch = e.touches[0];
       return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top
+        x: (touch.clientX - rect.left) / dpr,
+        y: (touch.clientY - rect.top) / dpr
       };
     } else if ('clientX' in e) {
       return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: (e.clientX - rect.left) / dpr,
+        y: (e.clientY - rect.top) / dpr
       };
     }
     return null;

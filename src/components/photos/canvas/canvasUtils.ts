@@ -5,9 +5,17 @@ export const setupCanvas = (
   containerWidth: number,
   containerHeight: number
 ) => {
-  canvas.width = containerWidth;
-  canvas.height = containerHeight;
-  return canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = containerWidth * dpr;
+  canvas.height = containerHeight * dpr;
+  canvas.style.width = `${containerWidth}px`;
+  canvas.style.height = `${containerHeight}px`;
+  
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.scale(dpr, dpr);
+  }
+  return ctx;
 };
 
 export const drawImageOnCanvas = (
@@ -15,8 +23,8 @@ export const drawImageOnCanvas = (
   image: HTMLImageElement,
   canvas: HTMLCanvasElement
 ) => {
-  const containerWidth = canvas.width;
-  const containerHeight = canvas.height;
+  const containerWidth = canvas.clientWidth;
+  const containerHeight = canvas.clientHeight;
 
   const scale = Math.min(
     containerWidth / image.width,
