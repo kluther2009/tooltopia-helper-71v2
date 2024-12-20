@@ -14,6 +14,13 @@ interface CreateToolDialogProps {
   initialLocation?: string
 }
 
+interface ToolResult {
+  id: string;
+  name: string;
+  location: string;
+  status: string;
+}
+
 export function CreateToolDialog({
   isOpen,
   onClose,
@@ -49,7 +56,8 @@ export function CreateToolDialog({
     })
 
     if (result && typeof result === 'object' && 'id' in result) {
-      onToolCreated(result.id)
+      const toolResult = result as ToolResult
+      onToolCreated(toolResult.id)
       handleClose()
     }
   }
