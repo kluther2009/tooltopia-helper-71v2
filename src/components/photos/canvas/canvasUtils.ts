@@ -14,8 +14,6 @@ export const setupCanvas = (
   const ctx = canvas.getContext('2d');
   if (ctx) {
     ctx.scale(dpr, dpr);
-    // Reset transform to handle high DPI displays properly
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   return ctx;
 };
@@ -27,7 +25,6 @@ export const drawImageOnCanvas = (
 ) => {
   const containerWidth = canvas.clientWidth;
   const containerHeight = canvas.clientHeight;
-  const dpr = window.devicePixelRatio || 1;
 
   const scale = Math.min(
     containerWidth / image.width,
@@ -38,7 +35,7 @@ export const drawImageOnCanvas = (
   const x = (containerWidth - scaledWidth) / 2;
   const y = (containerHeight - scaledHeight) / 2;
 
-  ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
 };
 
@@ -47,18 +44,14 @@ export const drawRectangle = (
   startPos: { x: number; y: number },
   currentPos: { x: number; y: number }
 ) => {
-  const dpr = window.devicePixelRatio || 1;
-  ctx.save();
-  ctx.scale(1/dpr, 1/dpr);
   ctx.strokeStyle = '#00ff00';
-  ctx.lineWidth = 2 * dpr;
+  ctx.lineWidth = 2;
   ctx.strokeRect(
-    startPos.x * dpr,
-    startPos.y * dpr,
-    (currentPos.x - startPos.x) * dpr,
-    (currentPos.y - startPos.y) * dpr
+    startPos.x,
+    startPos.y,
+    currentPos.x - startPos.x,
+    currentPos.y - startPos.y
   );
-  ctx.restore();
 };
 
 export const drawAnnotation = (
@@ -66,32 +59,28 @@ export const drawAnnotation = (
   annotation: Annotation
 ) => {
   const { coordinates, tool } = annotation;
-  const dpr = window.devicePixelRatio || 1;
   
-  ctx.save();
-  ctx.scale(1/dpr, 1/dpr);
-
   // Draw rectangle
   ctx.strokeStyle = '#00ff00';
-  ctx.lineWidth = 2 * dpr;
+  ctx.lineWidth = 2;
   ctx.strokeRect(
-    coordinates.x * dpr,
-    coordinates.y * dpr,
-    coordinates.width * dpr,
-    coordinates.height * dpr
+    coordinates.x,
+    coordinates.y,
+    coordinates.width,
+    coordinates.height
   );
 
   // Draw tool name with background
-  ctx.font = `${14 * dpr}px Arial`;
+  ctx.font = '14px Arial';
   const textMetrics = ctx.measureText(tool.name);
-  const padding = 4 * dpr;
-  const textHeight = 16 * dpr;
+  const padding = 4;
+  const textHeight = 16;
   
   // Draw background rectangle for text
   ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
   ctx.fillRect(
-    coordinates.x * dpr,
-    (coordinates.y - textHeight/dpr) * dpr - padding * 2,
+    coordinates.x,
+    coordinates.y - textHeight - padding * 2,
     textMetrics.width + padding * 2,
     textHeight + padding * 2
   );
@@ -100,9 +89,7 @@ export const drawAnnotation = (
   ctx.fillStyle = '#ffffff';
   ctx.fillText(
     tool.name,
-    coordinates.x * dpr + padding,
-    coordinates.y * dpr - padding
+    coordinates.x + padding,
+    coordinates.y - padding
   );
-
-  ctx.restore();
 };
