@@ -24,13 +24,13 @@ export const useCanvasInteraction = ({
     if ('touches' in e) {
       const touch = e.touches[0];
       return {
-        x: (touch.clientX - rect.left) / dpr,
-        y: (touch.clientY - rect.top) / dpr
+        x: ((touch.clientX - rect.left) / dpr),
+        y: ((touch.clientY - rect.top) / dpr)
       };
     } else if ('clientX' in e) {
       return {
-        x: (e.clientX - rect.left) / dpr,
-        y: (e.clientY - rect.top) / dpr
+        x: ((e.clientX - rect.left) / dpr),
+        y: ((e.clientY - rect.top) / dpr)
       };
     }
     return null;
