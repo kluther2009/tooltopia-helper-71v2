@@ -2,21 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Tool {
-  id: string;
-  name: string;
-  location: string;
-  status: string;
-}
-
-interface AddToolParams {
-  name: string;
-  primaryLocation: string;
-  subLocation: string;
-  specificLocation: string;
-  status: string;
-}
-
 export function useToolManagement() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,7 +30,13 @@ export function useToolManagement() {
     subLocation,
     specificLocation,
     status
-  }: AddToolParams): Promise<Tool | null> => {
+  }: {
+    name: string;
+    primaryLocation: string;
+    subLocation: string;
+    specificLocation: string;
+    status: string;
+  }) => {
     setIsLoading(true);
     
     try {
@@ -53,36 +44,34 @@ export function useToolManagement() {
       
       if (!user) {
         toast.error("You must be logged in to add a tool");
-        return null;
+        return false;
       }
 
       const exists = await checkToolExists(name);
       if (exists) {
         toast.error("A tool with this name already exists");
-        return null;
+        return false;
       }
 
       const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tools')
         .insert([{
           name: name.trim(),
           location: fullLocation,
           status,
           user_id: user.id
-        }])
-        .select()
-        .single();
+        }]);
 
       if (error) throw error;
 
       toast.success("Tool added successfully");
-      return data as Tool;
+      return true;
     } catch (error) {
       console.error('Error adding tool:', error);
       toast.error("Failed to add tool");
-      return null;
+      return false;
     } finally {
       setIsLoading(false);
     }
