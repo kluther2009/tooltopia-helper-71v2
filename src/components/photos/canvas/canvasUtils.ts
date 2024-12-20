@@ -23,19 +23,20 @@ export const drawImageOnCanvas = (
   image: HTMLImageElement,
   canvas: HTMLCanvasElement
 ) => {
-  const containerWidth = canvas.clientWidth;
-  const containerHeight = canvas.clientHeight;
+  const containerWidth = canvas.width;
+  const containerHeight = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
 
   const scale = Math.min(
-    containerWidth / image.width,
-    containerHeight / image.height
+    (containerWidth / dpr) / image.width,
+    (containerHeight / dpr) / image.height
   );
   const scaledWidth = image.width * scale;
   const scaledHeight = image.height * scale;
-  const x = (containerWidth - scaledWidth) / 2;
-  const y = (containerHeight - scaledHeight) / 2;
+  const x = ((containerWidth / dpr) - scaledWidth) / 2;
+  const y = ((containerHeight / dpr) - scaledHeight) / 2;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, containerWidth / dpr, containerHeight / dpr);
   ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
 };
 
@@ -44,13 +45,14 @@ export const drawRectangle = (
   startPos: { x: number; y: number },
   currentPos: { x: number; y: number }
 ) => {
+  const dpr = window.devicePixelRatio || 1;
   ctx.strokeStyle = '#00ff00';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2 * dpr;
   ctx.strokeRect(
-    startPos.x,
-    startPos.y,
-    currentPos.x - startPos.x,
-    currentPos.y - startPos.y
+    startPos.x / dpr,
+    startPos.y / dpr,
+    (currentPos.x - startPos.x) / dpr,
+    (currentPos.y - startPos.y) / dpr
   );
 };
 
@@ -59,10 +61,11 @@ export const drawAnnotation = (
   annotation: Annotation
 ) => {
   const { coordinates, tool } = annotation;
+  const dpr = window.devicePixelRatio || 1;
   
   // Draw rectangle
   ctx.strokeStyle = '#00ff00';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2 * dpr;
   ctx.strokeRect(
     coordinates.x,
     coordinates.y,
@@ -71,10 +74,10 @@ export const drawAnnotation = (
   );
 
   // Draw tool name with background
-  ctx.font = '14px Arial';
+  ctx.font = `${14 * dpr}px Arial`;
   const textMetrics = ctx.measureText(tool.name);
-  const padding = 4;
-  const textHeight = 16;
+  const padding = 4 * dpr;
+  const textHeight = 16 * dpr;
   
   // Draw background rectangle for text
   ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
