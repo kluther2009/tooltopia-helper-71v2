@@ -15,17 +15,37 @@ export default function Login() {
 
   // Check and handle existing session
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          // If there's a session error, clear it and any stored data
+          await supabase.auth.signOut();
+          localStorage.clear();
+          console.error("Session error:", error);
+          return;
+        }
+
+        if (session) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
       }
-    });
+    };
+
+    checkSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
         navigate("/");
+      } else if (event === 'SIGNED_OUT') {
+        // Clear any stored data on sign out
+        localStorage.clear();
+        navigate("/login");
       }
     });
 
@@ -44,8 +64,9 @@ export default function Login() {
 
       if (error) {
         if (error.message.includes('Invalid refresh token')) {
-          // Clear any existing session data
+          // Clear any existing session data and stored tokens
           await supabase.auth.signOut();
+          localStorage.clear();
         }
         toast({
           variant: "destructive",
