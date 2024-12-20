@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,25 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Check and handle existing session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,6 +43,10 @@ export default function Login() {
       });
 
       if (error) {
+        if (error.message.includes('Invalid refresh token')) {
+          // Clear any existing session data
+          await supabase.auth.signOut();
+        }
         toast({
           variant: "destructive",
           title: "Error",
