@@ -14,7 +14,7 @@ export const useCanvasInteraction = ({
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const isReadOnly = !onRectangleDrawn;
 
-  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent | PointerEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
