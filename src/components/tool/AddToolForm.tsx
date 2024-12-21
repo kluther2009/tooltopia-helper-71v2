@@ -11,6 +11,7 @@ import { FileUploadFields } from "./form/FileUploadFields"
 import { useFileUpload } from "@/hooks/useFileUpload"
 import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
+import { Switch } from "@/components/ui/switch"
 
 export function AddToolForm() {
   const [toolName, setToolName] = useState("")
@@ -18,6 +19,7 @@ export function AddToolForm() {
   const [subLocation, setSubLocation] = useState("")
   const [specificLocation, setSpecificLocation] = useState("")
   const [status, setStatus] = useState("available")
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false)
   const [purchaseDate, setPurchaseDate] = useState("")
   const [warrantyLength, setWarrantyLength] = useState("")
   const [purchaseCost, setPurchaseCost] = useState("")
@@ -62,33 +64,35 @@ export function AddToolForm() {
           sub_location_b: specificLocation || null,
           status,
           user_id: user.id,
-          purchase_date: purchaseDate || null,
-          warranty_length: warrantyLength ? parseInt(warrantyLength) : null,
-          purchase_cost: purchaseCost ? parseFloat(purchaseCost) : null
+          purchase_date: showAdditionalInfo ? purchaseDate || null : null,
+          warranty_length: showAdditionalInfo && warrantyLength ? parseInt(warrantyLength) : null,
+          purchase_cost: showAdditionalInfo && purchaseCost ? parseFloat(purchaseCost) : null
         })
         .select()
         .single()
 
       if (error) throw error
 
-      // Then upload files if provided
-      if (warrantyFile) {
-        const warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
-        if (warrantyPath) {
-          await supabase
-            .from('tools')
-            .update({ warranty_file_path: warrantyPath })
-            .eq('id', newTool.id)
+      // Then upload files if provided and additional info is enabled
+      if (showAdditionalInfo) {
+        if (warrantyFile) {
+          const warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
+          if (warrantyPath) {
+            await supabase
+              .from('tools')
+              .update({ warranty_file_path: warrantyPath })
+              .eq('id', newTool.id)
+          }
         }
-      }
 
-      if (receiptFile) {
-        const receiptPath = await uploadFile(receiptFile, newTool.id, 'receipt')
-        if (receiptPath) {
-          await supabase
-            .from('tools')
-            .update({ receipt_file_path: receiptPath })
-            .eq('id', newTool.id)
+        if (receiptFile) {
+          const receiptPath = await uploadFile(receiptFile, newTool.id, 'receipt')
+          if (receiptPath) {
+            await supabase
+              .from('tools')
+              .update({ receipt_file_path: receiptPath })
+              .eq('id', newTool.id)
+          }
         }
       }
 
@@ -131,19 +135,32 @@ export function AddToolForm() {
         </Select>
       </div>
 
-      <WarrantyFields
-        purchaseDate={purchaseDate}
-        warrantyLength={warrantyLength}
-        purchaseCost={purchaseCost}
-        onPurchaseDateChange={setPurchaseDate}
-        onWarrantyLengthChange={setWarrantyLength}
-        onPurchaseCostChange={setPurchaseCost}
-      />
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-additional-info"
+          checked={showAdditionalInfo}
+          onCheckedChange={setShowAdditionalInfo}
+        />
+        <Label htmlFor="show-additional-info">Add purchase and warranty information</Label>
+      </div>
 
-      <FileUploadFields
-        onWarrantyFileChange={setWarrantyFile}
-        onReceiptFileChange={setReceiptFile}
-      />
+      {showAdditionalInfo && (
+        <>
+          <WarrantyFields
+            purchaseDate={purchaseDate}
+            warrantyLength={warrantyLength}
+            purchaseCost={purchaseCost}
+            onPurchaseDateChange={setPurchaseDate}
+            onWarrantyLengthChange={setWarrantyLength}
+            onPurchaseCostChange={setPurchaseCost}
+          />
+
+          <FileUploadFields
+            onWarrantyFileChange={setWarrantyFile}
+            onReceiptFileChange={setReceiptFile}
+          />
+        </>
+      )}
 
       <Button type="submit" className="w-full" disabled={isUploading}>
         {isUploading ? "Uploading..." : "Add Tool"}
