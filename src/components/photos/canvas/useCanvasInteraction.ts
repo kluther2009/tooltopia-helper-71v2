@@ -14,28 +14,28 @@ export const useCanvasInteraction = ({
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const isReadOnly = !onRectangleDrawn;
 
-  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent | PointerEvent) => {
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-
-    const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
     const scaleX = (canvas.width / rect.width) * dpr;
     const scaleY = (canvas.height / rect.height) * dpr;
 
     if ('touches' in e) {
-      const touch = e.touches[0];
-      const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-      return {
-        x: ((touch.clientX + scrollX - rect.left) * scaleX) / dpr,
-        y: ((touch.clientY + scrollY - rect.top) * scaleY) / dpr
-      };
+        // Handle touchend event which has no touches
+        const touch = e.touches[0] || (e as TouchEvent).changedTouches?.[0];
+        if (!touch) return null;
+        
+        return {
+            x: ((touch.clientX - rect.left) * scaleX) / dpr,
+            y: ((touch.clientY - rect.top) * scaleY) / dpr
+        };
     } else if ('clientX' in e) {
-      return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY
-      };
+        return {
+            x: ((e.clientX - rect.left) * scaleX) / dpr,
+            y: ((e.clientY - rect.top) * scaleY) / dpr
+        };
     }
     return null;
   };
