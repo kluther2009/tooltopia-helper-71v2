@@ -81,6 +81,9 @@ export default function Index() {
               name={formatLocationDisplay(tool)}
               location={tool.location}
               status={tool.status}
+              purchaseDate={tool.purchase_date}
+              warrantyLength={tool.warranty_length}
+              purchaseCost={tool.purchase_cost}
             />
           ))}
           {filteredTools.length === 0 && (
