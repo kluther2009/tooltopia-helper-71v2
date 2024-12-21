@@ -11,9 +11,12 @@ import {
 } from "@/components/ui/select";
 import { Layout } from "@/components/Layout";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useParams } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+import { WarrantyFields } from "@/components/tool/form/WarrantyFields";
+import { FileUploadFields } from "@/components/tool/form/FileUploadFields";
 
 export default function EditTool() {
   const [toolName, setToolName] = useState("");
@@ -22,7 +25,12 @@ export default function EditTool() {
   const [specificLocation, setSpecificLocation] = useState("");
   const [status, setStatus] = useState("available");
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
+  const [purchaseDate, setPurchaseDate] = useState("");
+  const [warrantyLength, setWarrantyLength] = useState("");
+  const [purchaseCost, setPurchaseCost] = useState("");
+  const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -38,11 +46,7 @@ export default function EditTool() {
 
       if (error) {
         console.error('Error fetching tool:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch tool details.",
-          variant: "destructive"
-        });
+        toast.error("Failed to fetch tool details");
         navigate('/');
         return;
       }
@@ -53,43 +57,90 @@ export default function EditTool() {
         setSubLocation(data.sub_location_a || '');
         setSpecificLocation(data.sub_location_b || '');
         setStatus(data.status);
+        
+        // Set additional info fields if they exist
+        const hasAdditionalInfo = data.purchase_date || data.warranty_length || data.purchase_cost;
+        setShowAdditionalInfo(hasAdditionalInfo);
+        setPurchaseDate(data.purchase_date || '');
+        setWarrantyLength(data.warranty_length?.toString() || '');
+        setPurchaseCost(data.purchase_cost?.toString() || '');
       }
       setIsLoading(false);
     };
 
     fetchTool();
-  }, [id, navigate, toast]);
+  }, [id, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { error } = await supabase
-      .from('tools')
-      .update({
+    try {
+      const updateData: any = {
         name: toolName,
         location: primaryLocation,
         sub_location_a: subLocation || null,
         sub_location_b: specificLocation || null,
         status,
-      })
-      .eq('id', id);
+      };
 
-    if (error) {
+      // Only include additional info fields if the toggle is on
+      if (showAdditionalInfo) {
+        updateData.purchase_date = purchaseDate || null;
+        updateData.warranty_length = warrantyLength ? parseInt(warrantyLength) : null;
+        updateData.purchase_cost = purchaseCost ? parseFloat(purchaseCost) : null;
+      } else {
+        // Clear additional info fields if toggle is off
+        updateData.purchase_date = null;
+        updateData.warranty_length = null;
+        updateData.purchase_cost = null;
+        updateData.warranty_file_path = null;
+        updateData.receipt_file_path = null;
+      }
+
+      const { error } = await supabase
+        .from('tools')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Handle file uploads if additional info is enabled
+      if (showAdditionalInfo) {
+        if (warrantyFile) {
+          const warrantyPath = `warranty-files/${id}/${warrantyFile.name}`;
+          const { error: uploadError } = await supabase.storage
+            .from('warranty-files')
+            .upload(warrantyPath, warrantyFile);
+          
+          if (!uploadError) {
+            await supabase
+              .from('tools')
+              .update({ warranty_file_path: warrantyPath })
+              .eq('id', id);
+          }
+        }
+
+        if (receiptFile) {
+          const receiptPath = `warranty-files/${id}/${receiptFile.name}`;
+          const { error: uploadError } = await supabase.storage
+            .from('warranty-files')
+            .upload(receiptPath, receiptFile);
+          
+          if (!uploadError) {
+            await supabase
+              .from('tools')
+              .update({ receipt_file_path: receiptPath })
+              .eq('id', id);
+          }
+        }
+      }
+      
+      toast.success("Tool updated successfully");
+      navigate('/');
+    } catch (error) {
       console.error('Error updating tool:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update tool. Please try again.",
-        variant: "destructive"
-      });
-      return;
+      toast.error("Failed to update tool");
     }
-    
-    toast({
-      title: "Tool Updated",
-      description: `${toolName} has been updated successfully`,
-    });
-    
-    navigate('/');
   };
 
   if (isLoading) {
@@ -170,6 +221,33 @@ export default function EditTool() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="show-additional-info"
+                  checked={showAdditionalInfo}
+                  onCheckedChange={setShowAdditionalInfo}
+                />
+                <Label htmlFor="show-additional-info">Update purchase and warranty information</Label>
+              </div>
+
+              {showAdditionalInfo && (
+                <>
+                  <WarrantyFields
+                    purchaseDate={purchaseDate}
+                    warrantyLength={warrantyLength}
+                    purchaseCost={purchaseCost}
+                    onPurchaseDateChange={setPurchaseDate}
+                    onWarrantyLengthChange={setWarrantyLength}
+                    onPurchaseCostChange={setPurchaseCost}
+                  />
+
+                  <FileUploadFields
+                    onWarrantyFileChange={setWarrantyFile}
+                    onReceiptFileChange={setReceiptFile}
+                  />
+                </>
+              )}
 
               <div className="flex gap-4">
                 <Button type="submit" className="flex-1">
