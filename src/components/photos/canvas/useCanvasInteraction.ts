@@ -59,8 +59,13 @@ export const useCanvasInteraction = ({
     return { startPos, currentPos: coords };
   };
 
-  const handleEnd = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleEnd = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
+
+    // Prevent default behavior for touch events
+    if ('touches' in e) {
+        e.preventDefault();
+    }
 
     const coords = getCoordinates(e);
     if (!coords) return;
@@ -76,7 +81,7 @@ export const useCanvasInteraction = ({
     setStartPos(null);
     onRectangleDrawn?.(coordinates);
   };
-
+    
   return {
     isDrawing,
     startPos,
