@@ -128,11 +128,16 @@ export type Database = {
           id: string
           location: string
           name: string
+          purchase_cost: number | null
+          purchase_date: string | null
+          receipt_file_path: string | null
           status: string
           sub_location_a: string | null
           sub_location_b: string | null
           updated_at: string
           user_id: string | null
+          warranty_file_path: string | null
+          warranty_length: number | null
         }
         Insert: {
           created_at?: string
@@ -140,11 +145,16 @@ export type Database = {
           id?: string
           location: string
           name: string
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          receipt_file_path?: string | null
           status: string
           sub_location_a?: string | null
           sub_location_b?: string | null
           updated_at?: string
           user_id?: string | null
+          warranty_file_path?: string | null
+          warranty_length?: number | null
         }
         Update: {
           created_at?: string
@@ -152,11 +162,16 @@ export type Database = {
           id?: string
           location?: string
           name?: string
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          receipt_file_path?: string | null
           status?: string
           sub_location_a?: string | null
           sub_location_b?: string | null
           updated_at?: string
           user_id?: string | null
+          warranty_file_path?: string | null
+          warranty_length?: number | null
         }
         Relationships: []
       }

@@ -29,13 +29,23 @@ export function useToolManagement() {
     primaryLocation,
     subLocation,
     specificLocation,
-    status
+    status,
+    purchaseDate,
+    warrantyLength,
+    purchaseCost,
+    warrantyFile,
+    receiptFile
   }: {
     name: string;
     primaryLocation: string;
     subLocation: string;
     specificLocation: string;
     status: string;
+    purchaseDate?: string;
+    warrantyLength?: number;
+    purchaseCost?: number;
+    warrantyFile?: File;
+    receiptFile?: File;
   }) => {
     setIsLoading(true);
     
@@ -53,15 +63,18 @@ export function useToolManagement() {
         return false;
       }
 
-      const fullLocation = `${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`;
-
       const { error } = await supabase
         .from('tools')
         .insert([{
           name: name.trim(),
-          location: fullLocation,
+          location: primaryLocation,
+          sub_location_a: subLocation || null,
+          sub_location_b: specificLocation || null,
           status,
-          user_id: user.id
+          user_id: user.id,
+          purchase_date: purchaseDate || null,
+          warranty_length: warrantyLength || null,
+          purchase_cost: purchaseCost || null
         }]);
 
       if (error) throw error;
