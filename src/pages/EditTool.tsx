@@ -35,46 +35,69 @@ export default function EditTool() {
   const { id } = useParams();
 
   useEffect(() => {
-    const fetchTool = async () => {
-      if (!id) return;
-
-      const { data, error } = await supabase
-        .from('tools')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching tool:', error);
-        toast.error("Failed to fetch tool details");
-        navigate('/');
-        return;
-      }
-
-      if (data) {
-        setToolName(data.name);
-        setPrimaryLocation(data.location || '');
-        setSubLocation(data.sub_location_a || '');
-        setSpecificLocation(data.sub_location_b || '');
-        setStatus(data.status);
+    const checkAuthAndFetchTool = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Set additional info fields if they exist
-        const hasAdditionalInfo = data.purchase_date || data.warranty_length || data.purchase_cost;
-        setShowAdditionalInfo(hasAdditionalInfo);
-        setPurchaseDate(data.purchase_date || '');
-        setWarrantyLength(data.warranty_length?.toString() || '');
-        setPurchaseCost(data.purchase_cost?.toString() || '');
+        if (sessionError || !session) {
+          toast.error("Please sign in to edit tools");
+          navigate('/login');
+          return;
+        }
+
+        if (!id) return;
+
+        const { data, error } = await supabase
+          .from('tools')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching tool:', error);
+          toast.error("Failed to fetch tool details");
+          navigate('/');
+          return;
+        }
+
+        if (data) {
+          setToolName(data.name);
+          setPrimaryLocation(data.location || '');
+          setSubLocation(data.sub_location_a || '');
+          setSpecificLocation(data.sub_location_b || '');
+          setStatus(data.status);
+          
+          // Set additional info fields if they exist
+          const hasAdditionalInfo = !!(data.purchase_date || data.warranty_length || data.purchase_cost);
+          setShowAdditionalInfo(hasAdditionalInfo);
+          setPurchaseDate(data.purchase_date || '');
+          setWarrantyLength(data.warranty_length?.toString() || '');
+          setPurchaseCost(data.purchase_cost?.toString() || '');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error("An error occurred while loading the tool");
+        navigate('/');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
-    fetchTool();
+    checkAuthAndFetchTool();
   }, [id, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Please sign in to update tools");
+        navigate('/login');
+        return;
+      }
+
       const updateData: any = {
         name: toolName,
         location: primaryLocation,
