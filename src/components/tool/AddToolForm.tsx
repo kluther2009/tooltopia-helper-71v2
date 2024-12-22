@@ -124,13 +124,31 @@ export function AddToolForm() {
         if (annotationError) {
           console.error('Error creating annotation:', annotationError)
           toast.error('Failed to create tool annotation')
+          return
         }
 
-        // Clear the pending annotation
-        localStorage.removeItem('pendingAnnotation')
+        // Clear the form but keep location info
+        setToolName("")
+        setPrimaryLocation(pendingAnnotation.location || "") // Keep the location
+        setSubLocation(pendingAnnotation.subLocation || "")
+        setSpecificLocation("")
+        setStatus("available")
+        setShowAdditionalInfo(false)
+        setPurchaseDate("")
+        setWarrantyLength("")
+        setPurchaseCost("")
+        setWarrantyFile(null)
+        setReceiptFile(null)
         
-        // Navigate back to storage page with photos tab
-        navigate('/storage?tab=photos')
+        // Clear only the coordinates from the pending annotation
+        const updatedAnnotation = {
+          ...pendingAnnotation,
+          coordinates: null
+        }
+        localStorage.setItem('pendingAnnotation', JSON.stringify(updatedAnnotation))
+        setPendingAnnotation(updatedAnnotation)
+
+        toast.success(`${toolName} has been added. You can now select another tool from the photo.`)
         return
       }
 
