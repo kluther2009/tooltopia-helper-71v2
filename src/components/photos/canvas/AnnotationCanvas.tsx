@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Annotation, CanvasCoordinates } from "./types";
 import { drawImageOnCanvas, drawAnnotation, drawRectangle, setupCanvas } from "./canvasUtils";
 import { useCanvasInteraction } from "./useCanvasInteraction";
@@ -16,7 +16,13 @@ export function AnnotationCanvas({
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const canvasScaleRef = useRef<number>(1);
+  const [imageMetrics, setImageMetrics] = useState<{
+    scale: number;
+    x: number;
+    y: number;
+    scaledWidth: number;
+    scaledHeight: number;
+  } | null>(null);
   
   const {
     isReadOnly,
@@ -26,7 +32,8 @@ export function AnnotationCanvas({
     setIsDrawing
   } = useCanvasInteraction({
     canvasRef,
-    onRectangleDrawn
+    onRectangleDrawn,
+    imageMetrics
   });
 
   useEffect(() => {
@@ -62,11 +69,11 @@ export function AnnotationCanvas({
     const ctx = setupCanvas(canvas, canvas.clientWidth, canvas.clientHeight);
     if (!ctx) return;
 
-    const imageMetrics = drawImageOnCanvas(ctx, imageRef.current, canvas);
-    canvasScaleRef.current = imageMetrics.scale;
+    const metrics = drawImageOnCanvas(ctx, imageRef.current, canvas);
+    setImageMetrics(metrics);
 
     existingAnnotations.forEach(annotation => {
-      drawAnnotation(ctx, annotation, canvasScaleRef.current);
+      drawAnnotation(ctx, annotation, metrics);
     });
   };
 
@@ -89,7 +96,7 @@ export function AnnotationCanvas({
       onMouseLeave={() => setIsDrawing(false)}
       onTouchStart={handleStart}
       onTouchMove={(e) => {
-        e.preventDefault(); // Prevent scrolling while drawing
+        e.preventDefault();
         const moveResult = handleMove(e);
         if (moveResult) {
           drawCanvas();

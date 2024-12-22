@@ -23,20 +23,20 @@ export const drawImageOnCanvas = (
   image: HTMLImageElement,
   canvas: HTMLCanvasElement
 ) => {
-  const containerWidth = canvas.width;
-  const containerHeight = canvas.height;
-  const dpr = window.devicePixelRatio || 1;
+  const containerWidth = canvas.width / (window.devicePixelRatio || 1);
+  const containerHeight = canvas.height / (window.devicePixelRatio || 1);
 
   const scale = Math.min(
-    (containerWidth / dpr) / image.width,
-    (containerHeight / dpr) / image.height
+    containerWidth / image.width,
+    containerHeight / image.height
   );
+
   const scaledWidth = image.width * scale;
   const scaledHeight = image.height * scale;
-  const x = ((containerWidth / dpr) - scaledWidth) / 2;
-  const y = ((containerHeight / dpr) - scaledHeight) / 2;
+  const x = (containerWidth - scaledWidth) / 2;
+  const y = (containerHeight - scaledHeight) / 2;
 
-  ctx.clearRect(0, 0, containerWidth / dpr, containerHeight / dpr);
+  ctx.clearRect(0, 0, containerWidth, containerHeight);
   ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
 
   return {
@@ -53,34 +53,33 @@ export const drawRectangle = (
   startPos: { x: number; y: number },
   currentPos: { x: number; y: number }
 ) => {
-  const dpr = window.devicePixelRatio || 1;
+  const x = Math.min(startPos.x, currentPos.x);
+  const y = Math.min(startPos.y, currentPos.y);
+  const width = Math.abs(currentPos.x - startPos.x);
+  const height = Math.abs(currentPos.y - startPos.y);
+  
   ctx.strokeStyle = '#00ff00';
   ctx.lineWidth = 2;
-  
-  const x = Math.min(startPos.x, currentPos.x) / dpr;
-  const y = Math.min(startPos.y, currentPos.y) / dpr;
-  const width = Math.abs(currentPos.x - startPos.x) / dpr;
-  const height = Math.abs(currentPos.y - startPos.y) / dpr;
-  
   ctx.strokeRect(x, y, width, height);
 };
 
 export const drawAnnotation = (
   ctx: CanvasRenderingContext2D,
   annotation: Annotation,
-  canvasScale: number = 1
+  imageMetrics: { scale: number; x: number; y: number }
 ) => {
   const { coordinates, tool } = annotation;
   
+  // Convert stored coordinates back to canvas space
+  const x = coordinates.x * imageMetrics.scale + imageMetrics.x;
+  const y = coordinates.y * imageMetrics.scale + imageMetrics.y;
+  const width = coordinates.width * imageMetrics.scale;
+  const height = coordinates.height * imageMetrics.scale;
+
   // Draw rectangle
   ctx.strokeStyle = '#00ff00';
   ctx.lineWidth = 2;
-  ctx.strokeRect(
-    coordinates.x * canvasScale,
-    coordinates.y * canvasScale,
-    coordinates.width * canvasScale,
-    coordinates.height * canvasScale
-  );
+  ctx.strokeRect(x, y, width, height);
 
   // Draw tool name with background
   ctx.font = '14px Arial';
@@ -91,8 +90,8 @@ export const drawAnnotation = (
   // Draw background rectangle for text
   ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
   ctx.fillRect(
-    coordinates.x * canvasScale,
-    coordinates.y * canvasScale - textHeight - padding * 2,
+    x,
+    y - textHeight - padding * 2,
     textMetrics.width + padding * 2,
     textHeight + padding * 2
   );
@@ -101,7 +100,7 @@ export const drawAnnotation = (
   ctx.fillStyle = '#ffffff';
   ctx.fillText(
     tool.name,
-    coordinates.x * canvasScale + padding,
-    coordinates.y * canvasScale - padding
+    x + padding,
+    y - padding
   );
 };

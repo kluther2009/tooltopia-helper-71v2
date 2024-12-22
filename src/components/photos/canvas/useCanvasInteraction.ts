@@ -4,11 +4,13 @@ import { CanvasCoordinates } from './types';
 interface UseCanvasInteractionProps {
   canvasRef: RefObject<HTMLCanvasElement>;
   onRectangleDrawn?: (coordinates: CanvasCoordinates) => void;
+  imageMetrics?: { scale: number; x: number; y: number } | null;
 }
 
 export const useCanvasInteraction = ({ 
   canvasRef, 
-  onRectangleDrawn 
+  onRectangleDrawn,
+  imageMetrics 
 }: UseCanvasInteractionProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -19,12 +21,11 @@ export const useCanvasInteraction = ({
     if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
+    const dpr = window.devicePixelRatio || 1;
+    
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY
+      x: (clientX - rect.left) * (canvas.width / rect.width / dpr),
+      y: (clientY - rect.top) * (canvas.height / rect.height / dpr)
     };
   };
 
@@ -59,7 +60,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleEnd = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
-    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
+    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current || !imageMetrics) return;
 
     if ('touches' in e) {
       e.preventDefault();
@@ -68,21 +69,23 @@ export const useCanvasInteraction = ({
     const coords = getCoordinates(e);
     if (!coords) return;
 
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    // Convert canvas coordinates to image coordinates
+    const x = Math.min(startPos.x, coords.x);
+    const y = Math.min(startPos.y, coords.y);
+    const width = Math.abs(coords.x - startPos.x);
+    const height = Math.abs(coords.y - startPos.y);
 
-    const coordinates = {
-      x: Math.min(startPos.x, coords.x) / scaleX,
-      y: Math.min(startPos.y, coords.y) / scaleY,
-      width: Math.abs(coords.x - startPos.x) / scaleX,
-      height: Math.abs(coords.y - startPos.y) / scaleY
+    // Convert to relative coordinates
+    const relativeCoordinates = {
+      x: (x - imageMetrics.x) / imageMetrics.scale,
+      y: (y - imageMetrics.y) / imageMetrics.scale,
+      width: width / imageMetrics.scale,
+      height: height / imageMetrics.scale
     };
 
     setIsDrawing(false);
     setStartPos(null);
-    onRectangleDrawn?.(coordinates);
+    onRectangleDrawn?.(relativeCoordinates);
   };
     
   return {
