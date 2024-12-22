@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ToolNameAutocomplete } from "@/components/ToolNameAutocomplete"
 import { ToolLocationFields } from "@/components/ToolLocationFields"
@@ -25,11 +25,25 @@ export function AddToolForm() {
   const [purchaseCost, setPurchaseCost] = useState("")
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null)
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [pendingAnnotation, setPendingAnnotation] = useState<any>(null)
   
   const navigate = useNavigate()
   const toolNameInputRef = useRef<HTMLInputElement>(null)
   const { checkToolExists } = useToolManagement()
   const { uploadFile, isUploading } = useFileUpload()
+
+  useEffect(() => {
+    // Check for pending annotation data
+    const annotationData = localStorage.getItem('pendingAnnotation')
+    if (annotationData) {
+      const data = JSON.parse(annotationData)
+      setPendingAnnotation(data)
+      setPrimaryLocation(data.location || "")
+      if (data.subLocation) {
+        setSubLocation(data.subLocation)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +87,7 @@ export function AddToolForm() {
 
       if (error) throw error
 
-      // Then upload files if provided and additional info is enabled
+      // Handle file uploads if additional info is enabled
       if (showAdditionalInfo) {
         if (warrantyFile) {
           const warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
@@ -94,6 +108,26 @@ export function AddToolForm() {
               .eq('id', newTool.id)
           }
         }
+      }
+
+      // If there's a pending annotation, create it
+      if (pendingAnnotation) {
+        const { error: annotationError } = await supabase
+          .from('tool_annotations')
+          .insert({
+            photo_id: pendingAnnotation.photoId,
+            tool_id: newTool.id,
+            coordinates: pendingAnnotation.coordinates,
+            user_id: user.id
+          })
+
+        if (annotationError) {
+          console.error('Error creating annotation:', annotationError)
+          toast.error('Failed to create tool annotation')
+        }
+
+        // Clear the pending annotation
+        localStorage.removeItem('pendingAnnotation')
       }
 
       toast.success(`${toolName} has been added to ${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`)

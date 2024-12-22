@@ -3,7 +3,7 @@ import { LocationPhoto } from "@/types/photos"
 import { supabase } from "@/integrations/supabase/client"
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas"
 import { useState, useEffect } from "react"
-import { ToolSelectionDialog } from "./ToolSelectionDialog"
+import { useNavigate } from "react-router-dom"
 
 interface PhotoAnnotationViewerProps {
   photo: LocationPhoto | null
@@ -26,13 +26,8 @@ interface Annotation {
 }
 
 export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotationViewerProps) {
-  const [selectedCoordinates, setSelectedCoordinates] = useState<{
-    x: number
-    y: number
-    width: number
-    height: number
-  } | null>(null)
   const [annotations, setAnnotations] = useState<Annotation[]>([])
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (photo?.id && isOpen) {
@@ -61,39 +56,33 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
   }
 
   const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
-    setSelectedCoordinates(coordinates)
-  }
-
-  const handleToolSelect = async (toolId: string) => {
-    await fetchAnnotations()
-    setSelectedCoordinates(null)
+    // Store coordinates in localStorage for the Add Tool page to use
+    localStorage.setItem('pendingAnnotation', JSON.stringify({
+      photoId: photo?.id,
+      coordinates,
+      location: photo?.location,
+      subLocation: photo?.sub_location
+    }))
+    
+    // Navigate to Add Tool page
+    navigate('/add-tool')
   }
 
   if (!photo || !isOpen) return null
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={(open) => {
-        if (!open) onClose()
-      }}>
-        <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0">
-          <div className="relative w-full h-[80vh]">
-            <AnnotationCanvas
-              imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
-              onRectangleDrawn={handleRectangleDrawn}
-              existingAnnotations={annotations}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <ToolSelectionDialog
-        isOpen={!!selectedCoordinates}
-        onClose={() => setSelectedCoordinates(null)}
-        onToolSelect={handleToolSelect}
-        coordinates={selectedCoordinates || { x: 0, y: 0, width: 0, height: 0 }}
-        photoId={photo.id}
-      />
-    </>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose()
+    }}>
+      <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0">
+        <div className="relative w-full h-[80vh]">
+          <AnnotationCanvas
+            imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
+            onRectangleDrawn={handleRectangleDrawn}
+            existingAnnotations={annotations}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
