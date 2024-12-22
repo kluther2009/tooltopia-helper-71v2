@@ -36,11 +36,16 @@ export function AddToolForm() {
     // Check for pending annotation data
     const annotationData = localStorage.getItem('pendingAnnotation')
     if (annotationData) {
-      const data = JSON.parse(annotationData)
-      setPendingAnnotation(data)
-      setPrimaryLocation(data.location || "")
-      if (data.subLocation) {
-        setSubLocation(data.subLocation)
+      try {
+        const data = JSON.parse(annotationData)
+        setPendingAnnotation(data)
+        setPrimaryLocation(data.location || "")
+        if (data.subLocation) {
+          setSubLocation(data.subLocation)
+        }
+      } catch (error) {
+        console.error('Error parsing annotation data:', error)
+        localStorage.removeItem('pendingAnnotation')
       }
     }
   }, [])
@@ -111,7 +116,7 @@ export function AddToolForm() {
       }
 
       // If there's a pending annotation, create it
-      if (pendingAnnotation) {
+      if (pendingAnnotation && pendingAnnotation.coordinates) {
         const { error: annotationError } = await supabase
           .from('tool_annotations')
           .insert({
@@ -127,28 +132,11 @@ export function AddToolForm() {
           return
         }
 
-        // Clear the form but keep location info
-        setToolName("")
-        setPrimaryLocation(pendingAnnotation.location || "") // Keep the location
-        setSubLocation(pendingAnnotation.subLocation || "")
-        setSpecificLocation("")
-        setStatus("available")
-        setShowAdditionalInfo(false)
-        setPurchaseDate("")
-        setWarrantyLength("")
-        setPurchaseCost("")
-        setWarrantyFile(null)
-        setReceiptFile(null)
+        // Clear the pending annotation
+        localStorage.removeItem('pendingAnnotation')
         
-        // Clear only the coordinates from the pending annotation
-        const updatedAnnotation = {
-          ...pendingAnnotation,
-          coordinates: null
-        }
-        localStorage.setItem('pendingAnnotation', JSON.stringify(updatedAnnotation))
-        setPendingAnnotation(updatedAnnotation)
-
-        toast.success(`${toolName} has been added. You can now select another tool from the photo.`)
+        // Navigate back to storage page with photos tab
+        navigate('/storage?tab=photos')
         return
       }
 
