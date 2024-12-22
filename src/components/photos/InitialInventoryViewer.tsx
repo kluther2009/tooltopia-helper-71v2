@@ -12,12 +12,25 @@ export function InitialInventoryViewer() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    let mounted = true;
+
     const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error || !session) {
-        console.error("Session error:", error)
-        navigate("/login")
-        return
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error("Session error:", error)
+          if (mounted) navigate("/login")
+          return
+        }
+
+        if (!session) {
+          if (mounted) navigate("/login")
+          return
+        }
+      } catch (error) {
+        console.error("Session check error:", error)
+        if (mounted) navigate("/login")
       }
     }
 
@@ -25,32 +38,32 @@ export function InitialInventoryViewer() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && mounted) {
         navigate("/login")
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [navigate])
 
   if (isLoading) {
     return <div className="text-center py-8">Loading...</div>
   }
 
-  // Group photos by location
-  const groupedPhotos = photos.reduce((acc, photo) => {
-    const location = photo.location
-    if (!acc[location]) {
-      acc[location] = []
-    }
-    acc[location].push(photo)
-    return acc
-  }, {} as Record<string, LocationPhoto[]>)
-
   return (
     <div className="space-y-8">
-      {Object.entries(groupedPhotos).map(([location, locationPhotos]) => (
+      {Object.entries(photos.reduce((acc, photo) => {
+        const location = photo.location
+        if (!acc[location]) {
+          acc[location] = []
+        }
+        acc[location].push(photo)
+        return acc
+      }, {} as Record<string, LocationPhoto[]>)).map(([location, locationPhotos]) => (
         <PhotoLocationGroup
           key={location}
           location={location}

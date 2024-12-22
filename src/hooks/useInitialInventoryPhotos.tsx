@@ -11,7 +11,14 @@ export function useInitialInventoryPhotos() {
 
   const fetchPhotos = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        navigate("/login")
+        return
+      }
+
       if (!session) {
         navigate("/login")
         return
@@ -24,7 +31,8 @@ export function useInitialInventoryPhotos() {
         .order('created_at', { ascending: false })
 
       if (error) {
-        if (error.message.includes('JWT')) {
+        if (error.message.includes('JWT') || error.message.includes('session')) {
+          await supabase.auth.signOut()
           navigate("/login")
           return
         }
@@ -42,7 +50,14 @@ export function useInitialInventoryPhotos() {
 
   const handleDeletePhoto = async (photo: LocationPhoto) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        navigate("/login")
+        return
+      }
+
       if (!session) {
         navigate("/login")
         return
@@ -70,7 +85,19 @@ export function useInitialInventoryPhotos() {
   }
 
   useEffect(() => {
-    fetchPhotos()
+    let mounted = true;
+
+    const loadPhotos = async () => {
+      if (mounted) {
+        await fetchPhotos()
+      }
+    }
+
+    loadPhotos()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   return {
