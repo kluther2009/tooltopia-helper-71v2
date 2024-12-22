@@ -128,6 +128,10 @@ export function AddToolForm() {
 
         // Clear the pending annotation
         localStorage.removeItem('pendingAnnotation')
+        
+        // Navigate back to storage page with photos tab
+        navigate('/storage?tab=photos')
+        return
       }
 
       toast.success(`${toolName} has been added to ${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`)
