@@ -7,10 +7,7 @@ export const useLogout = () => {
 
   const handleLogout = async () => {
     try {
-      // First attempt to kill all sessions
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      // Force clear all storage
+      // First clear all storage to ensure no stale data remains
       localStorage.clear();
       sessionStorage.clear();
       
@@ -20,12 +17,20 @@ export const useLogout = () => {
           .replace(/^ +/, "")
           .replace(/=.*/, `=;expires=${new Date().toUTCString()};path=/`);
       });
-      
-      // Force reload the page to clear any remaining state
+
+      try {
+        // Attempt to sign out, but don't wait for it since the session might be invalid
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (error) {
+        // Ignore any errors during sign out since we're clearing everything anyway
+        console.log("Sign out error (ignored):", error);
+      }
+
+      // Force reload to clear any remaining state and redirect to login
       window.location.href = '/login';
     } catch (error) {
-      console.error("Error during logout:", error);
-      toast.error("Error logging out");
+      console.error("Error during logout cleanup:", error);
+      toast.error("Error during logout");
       // Force reload to login anyway
       window.location.href = '/login';
     }
