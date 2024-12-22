@@ -16,6 +16,7 @@ export function AnnotationCanvas({
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const canvasScaleRef = useRef<number>(1);
   
   const {
     isReadOnly,
@@ -61,10 +62,11 @@ export function AnnotationCanvas({
     const ctx = setupCanvas(canvas, canvas.clientWidth, canvas.clientHeight);
     if (!ctx) return;
 
-    drawImageOnCanvas(ctx, imageRef.current, canvas);
+    const imageMetrics = drawImageOnCanvas(ctx, imageRef.current, canvas);
+    canvasScaleRef.current = imageMetrics.scale;
 
     existingAnnotations.forEach(annotation => {
-      drawAnnotation(ctx, annotation);
+      drawAnnotation(ctx, annotation, canvasScaleRef.current);
     });
   };
 

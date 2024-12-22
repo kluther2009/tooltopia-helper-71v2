@@ -14,28 +14,27 @@ export const useCanvasInteraction = ({
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const isReadOnly = !onRectangleDrawn;
 
-  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
+  const getCanvasCoordinates = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const scaleX = (canvas.width / rect.width) * dpr;
-    const scaleY = (canvas.height / rect.height) * dpr;
 
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
+    };
+  };
+
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     if ('touches' in e) {
-        // Handle touchend event which has no touches
-        const touch = e.touches[0] || (e as TouchEvent).changedTouches?.[0];
-        if (!touch) return null;
-        
-        return {
-            x: ((touch.clientX - rect.left) * scaleX) / dpr,
-            y: ((touch.clientY - rect.top) * scaleY) / dpr
-        };
+      const touch = e.touches[0] || (e as TouchEvent).changedTouches?.[0];
+      if (!touch) return null;
+      return getCanvasCoordinates(touch.clientX, touch.clientY);
     } else if ('clientX' in e) {
-        return {
-            x: ((e.clientX - rect.left) * scaleX) / dpr,
-            y: ((e.clientY - rect.top) * scaleY) / dpr
-        };
+      return getCanvasCoordinates(e.clientX, e.clientY);
     }
     return null;
   };
@@ -62,19 +61,23 @@ export const useCanvasInteraction = ({
   const handleEnd = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
     if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
 
-    // Prevent default behavior for touch events
     if ('touches' in e) {
-        e.preventDefault();
+      e.preventDefault();
     }
 
     const coords = getCoordinates(e);
     if (!coords) return;
 
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
     const coordinates = {
-      x: Math.min(startPos.x, coords.x),
-      y: Math.min(startPos.y, coords.y),
-      width: Math.abs(coords.x - startPos.x),
-      height: Math.abs(coords.y - startPos.y)
+      x: Math.min(startPos.x, coords.x) / scaleX,
+      y: Math.min(startPos.y, coords.y) / scaleY,
+      width: Math.abs(coords.x - startPos.x) / scaleX,
+      height: Math.abs(coords.y - startPos.y) / scaleY
     };
 
     setIsDrawing(false);
