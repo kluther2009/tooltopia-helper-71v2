@@ -66,13 +66,13 @@ export function AddToolForm() {
       return
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      toast.error("You must be logged in to add a tool")
-      return
-    }
-
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error("You must be logged in to add a tool")
+        return
+      }
+
       // First insert the tool to get its ID
       const { data: newTool, error } = await supabase
         .from('tools')
@@ -135,8 +135,8 @@ export function AddToolForm() {
         // Clear the pending annotation
         localStorage.removeItem('pendingAnnotation')
         
-        // Navigate back to storage page with photos tab
-        navigate('/storage?tab=photos')
+        // Navigate back to initial inventory page
+        navigate('/initial-inventory')
         return
       }
 
