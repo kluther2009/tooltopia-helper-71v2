@@ -46,14 +46,13 @@ export const useCanvasInteraction = ({
     const touchX = touch.clientX - rect.left;
     const touchY = touch.clientY - rect.top;
 
-    // Add touch radius and pressure considerations for better accuracy
-    const touchRadiusX = touch.radiusX || 1;
-    const touchRadiusY = touch.radiusY || 1;
-    const pressure = touch.force || 1;
+    // Add touch characteristics for better accuracy
+    const touchRadius = Math.max(1, (touch as any).radiusX || 1);
+    const pressure = (touch as any).force || 1;
 
     // Adjust coordinates based on touch characteristics
-    const adjustedX = touchX + (touchRadiusX * pressure);
-    const adjustedY = touchY + (touchRadiusY * pressure);
+    const adjustedX = touchX + (touchRadius * pressure);
+    const adjustedY = touchY + (touchRadius * pressure);
 
     return getCanvasCoordinates(adjustedX, adjustedY);
   };
