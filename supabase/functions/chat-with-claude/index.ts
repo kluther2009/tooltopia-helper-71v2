@@ -63,29 +63,35 @@ serve(async (req) => {
 
   try {
     const { message, userId } = await req.json()
-    console.log('Debug 1 - Request received:', { message, userId })
+    console.log('Debug - Received request:', { message, userId })
 
-    // Clean the userId to ensure proper UUID format
-    const cleanUserId = userId.replace(/['"]/g, '')
-    console.log('Debug 2 - Cleaned userId:', cleanUserId)
-
-    // Raw SQL query to ensure proper UUID handling
+    // Fetch user's tools with improved query
     const { data: tools, error: toolsError } = await supabase
-      .rpc('get_tools_for_user', { user_uuid: cleanUserId })
+      .from('tools')
+      .select(`
+        name,
+        location,
+        status,
+        description,
+        sub_location_a,
+        sub_location_b,
+        purchase_date,
+        warranty_length
+      `)
+      .filter('user_id', 'eq', userId)
 
-    console.log('Debug 3 - Query results:', {
+    console.log('Debug - Query results:', {
       toolCount: tools?.length || 0,
       error: toolsError?.message,
       firstTool: tools?.[0]
     })
 
     if (toolsError) {
-      console.error('Debug 4 - Error fetching tools:', toolsError)
+      console.error('Error fetching tools:', toolsError)
       throw toolsError
     }
 
     if (!tools || tools.length === 0) {
-      console.log('Debug 5 - No tools found for user:', cleanUserId)
       return new Response(
         JSON.stringify({
           content: [{
@@ -117,7 +123,7 @@ serve(async (req) => {
       ].filter(Boolean).join('\n')
     }).join('\n\n')
 
-    console.log('Debug 6 - Formatted inventory (first 100 chars):', toolInventory.substring(0, 100))
+    console.log('Debug - Tool inventory sample:', toolInventory.substring(0, 100))
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -141,15 +147,14 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Debug 7 - Claude API error:', response.status, errorText)
+      console.error('Claude API error:', response.status, errorText)
       throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
     }
 
     const data = await response.json()
-    console.log('Debug 8 - Claude response received')
     
     if (!data.content || !data.content[0] || !data.content[0].text) {
-      console.error('Debug 9 - Invalid response format:', data)
+      console.error('Invalid response format from Claude:', data)
       throw new Error('Invalid response format from Claude API')
     }
 
@@ -157,7 +162,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error('Debug 10 - Function error:', error)
+    console.error('Error in chat-with-claude function:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
