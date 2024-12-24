@@ -113,8 +113,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
+        system: systemPrompt.replace('{toolInventory}', toolInventory),
         messages: [
-          { role: 'system', content: systemPrompt.replace('{toolInventory}', toolInventory) },
           { role: 'user', content: message }
         ],
       }),
