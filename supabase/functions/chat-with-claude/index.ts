@@ -76,9 +76,20 @@ serve(async (req) => {
       throw toolsError
     }
 
+    if (!tools || tools.length === 0) {
+      return new Response(
+        JSON.stringify({
+          content: [{
+            text: "I don't see any tools in your inventory yet. Would you like help adding some tools?"
+          }]
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     console.log('Retrieved tools:', tools)
 
-    // Format tool inventory for the prompt
+    // Format tool inventory for the prompt with better spacing
     const toolInventory = tools.map(tool => {
       const location = [
         tool.location,
@@ -86,22 +97,20 @@ serve(async (req) => {
         tool.sub_location_b
       ].filter(Boolean).join(' > ')
 
-      let warrantyInfo = ''
-      if (tool.purchase_date && tool.warranty_length) {
-        const purchaseDate = new Date(tool.purchase_date)
-        const warrantyEnd = new Date(purchaseDate)
-        warrantyEnd.setMonth(warrantyEnd.getMonth() + tool.warranty_length)
-        const isWarrantyValid = warrantyEnd > new Date()
-        warrantyInfo = `\n   Warranty: ${isWarrantyValid ? 'Valid' : 'Expired'} (${tool.warranty_length} months from ${tool.purchase_date})`
-      }
+      const warrantyInfo = tool.purchase_date && tool.warranty_length
+        ? `\n    Warranty: ${tool.warranty_length} months (from ${tool.purchase_date})`
+        : ''
 
-      return `- ${tool.name}
-   Location: ${location}
-   Status: ${tool.status}${warrantyInfo}
-   ${tool.description ? `Description: ${tool.description}` : ''}`
+      return [
+        `- ${tool.name}`,
+        `    Location: ${location}`,
+        `    Status: ${tool.status}`,
+        warrantyInfo,
+        tool.description ? `    Description: ${tool.description}` : ''
+      ].filter(Boolean).join('\n')
     }).join('\n\n')
 
-    console.log('Formatted system prompt with inventory:', systemPrompt.replace('{toolInventory}', toolInventory))
+    console.log('Formatted tool inventory:', toolInventory)
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -113,8 +122,11 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: systemPrompt.replace('{toolInventory}', toolInventory),
         messages: [
+          { 
+            role: 'system', 
+            content: systemPrompt.replace('{toolInventory}', toolInventory)
+          },
           { role: 'user', content: message }
         ],
       }),
