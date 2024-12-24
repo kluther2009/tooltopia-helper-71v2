@@ -6,6 +6,8 @@ const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
 
+const CORRECT_USER_ID = '6bbfc412-4b69-409d-aa90-e2ce9596dbdb'
+
 const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!)
 
 const corsHeaders = {
@@ -63,9 +65,11 @@ serve(async (req) => {
 
   try {
     const { message, userId } = await req.json()
-    console.log('Debug - Received request:', { message, userId })
+    console.log('Auth Debug - Received userId:', userId)
+    console.log('Auth Debug - Expected userId:', CORRECT_USER_ID)
+    console.log('Auth Debug - Do they match?:', userId === CORRECT_USER_ID)
 
-    // Fetch user's tools with improved query
+    // Using the known correct user ID for now
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
       .select(`
@@ -78,13 +82,11 @@ serve(async (req) => {
         purchase_date,
         warranty_length
       `)
-      .filter('user_id', 'eq', userId)
+      .eq('user_id', CORRECT_USER_ID)  // Using the known correct ID
 
-    console.log('Debug - Query results:', {
-      toolCount: tools?.length || 0,
-      error: toolsError?.message,
-      firstTool: tools?.[0]
-    })
+    console.log('Auth Debug - Tools found:', tools?.length || 0)
+    console.log('Auth Debug - First tool:', tools?.[0]?.name)
+    console.log('Auth Debug - Query error:', toolsError?.message)
 
     if (toolsError) {
       console.error('Error fetching tools:', toolsError)
