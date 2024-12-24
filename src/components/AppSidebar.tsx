@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
 import { useLogout } from "@/hooks/useLogout";
+import { ToolGuruDialog } from "./ToolGuruDialog";
 import {
   LayoutGrid,
   Settings,
@@ -94,7 +95,17 @@ export function AppSidebar() {
           ))}
         </div>
       </div>
-      <div className="p-1.5 sm:p-2">
+
+      <div className="p-1.5 sm:p-2 space-y-2">
+        <div className={cn(
+          "flex items-center",
+          isCollapsed ? "justify-center" : "justify-start"
+        )}>
+          <ToolGuruDialog />
+          {!isCollapsed && (
+            <span className="ml-2 text-sm text-white">ToolGuru</span>
+          )}
+        </div>
         <Button
           variant="destructive"
           size="sm"

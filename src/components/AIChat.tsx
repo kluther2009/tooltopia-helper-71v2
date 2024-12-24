@@ -21,14 +21,13 @@ export function AIChat() {
   }
 
   return (
-    <Card className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold">Chat with AI Assistant</h2>
+    <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your message here..."
-          className="min-h-[100px]"
+          placeholder="Ask me anything about tools, maintenance, or organization..."
+          className="min-h-[100px] resize-none"
         />
         <Button type="submit" disabled={isLoading || !message.trim()}>
           {isLoading ? (
@@ -37,18 +36,17 @@ export function AIChat() {
               Thinking...
             </>
           ) : (
-            "Send Message"
+            "Ask ToolGuru"
           )}
         </Button>
       </form>
       {response && (
         <div className="mt-4">
-          <h3 className="font-medium mb-2">AI Response:</h3>
-          <div className="bg-muted p-4 rounded-md whitespace-pre-wrap">
+          <div className="bg-muted p-4 rounded-md whitespace-pre-wrap text-sm">
             {response}
           </div>
         </div>
       )}
-    </Card>
+    </div>
   )
 }
