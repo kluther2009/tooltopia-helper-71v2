@@ -10,7 +10,7 @@ export function ToolGuruDialog() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="relative"
+          className="fixed bottom-4 right-4 hidden"
           aria-label="Open ToolGuru"
         >
           <MessageSquare className="h-5 w-5" />

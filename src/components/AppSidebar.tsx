@@ -68,6 +68,8 @@ export function AppSidebar() {
           )}
         </Button>
       </div>
+
+      <ToolGuruDialog />
     </aside>
   );
 }
