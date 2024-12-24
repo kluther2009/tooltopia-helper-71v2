@@ -63,6 +63,7 @@ serve(async (req) => {
 
   try {
     const { message, userId } = await req.json()
+    console.log('Received request with message:', message, 'and userId:', userId)
 
     // Fetch user's tools
     const { data: tools, error: toolsError } = await supabase
@@ -70,7 +71,12 @@ serve(async (req) => {
       .select('*')
       .eq('user_id', userId)
 
-    if (toolsError) throw toolsError
+    if (toolsError) {
+      console.error('Error fetching tools:', toolsError)
+      throw toolsError
+    }
+
+    console.log('Retrieved tools:', tools)
 
     // Format tool inventory for the prompt
     const toolInventory = tools.map(tool => {
@@ -95,7 +101,7 @@ serve(async (req) => {
    ${tool.description ? `Description: ${tool.description}` : ''}`
     }).join('\n\n')
 
-    const finalSystemPrompt = systemPrompt.replace('{toolInventory}', toolInventory)
+    console.log('Formatted system prompt with inventory:', systemPrompt.replace('{toolInventory}', toolInventory))
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -108,19 +114,23 @@ serve(async (req) => {
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         messages: [
-          { role: 'system', content: finalSystemPrompt },
+          { role: 'system', content: systemPrompt.replace('{toolInventory}', toolInventory) },
           { role: 'user', content: message }
         ],
       }),
     })
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`)
+      const errorText = await response.text()
+      console.error('Claude API error:', response.status, errorText)
+      throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
     }
 
     const data = await response.json()
+    console.log('Claude API response:', data)
     
     if (!data.content || !data.content[0] || !data.content[0].text) {
+      console.error('Invalid response format from Claude:', data)
       throw new Error('Invalid response format from Claude API')
     }
 
