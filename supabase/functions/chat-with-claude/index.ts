@@ -6,8 +6,6 @@ const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
 
-const CORRECT_USER_ID = '6bbfc412-4b69-409d-aa90-e2ce9596dbdb'
-
 const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!)
 
 const corsHeaders = {
@@ -65,11 +63,9 @@ serve(async (req) => {
 
   try {
     const { message, userId } = await req.json()
-    console.log('Auth Debug - Received userId:', userId)
-    console.log('Auth Debug - Expected userId:', CORRECT_USER_ID)
-    console.log('Auth Debug - Do they match?:', userId === CORRECT_USER_ID)
+    console.log('Received request with message:', message, 'and userId:', userId)
 
-    // Using the known correct user ID for now
+    // Fetch user's tools
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
       .select(`
@@ -82,11 +78,7 @@ serve(async (req) => {
         purchase_date,
         warranty_length
       `)
-      .eq('user_id', CORRECT_USER_ID)  // Using the known correct ID
-
-    console.log('Auth Debug - Tools found:', tools?.length || 0)
-    console.log('Auth Debug - First tool:', tools?.[0]?.name)
-    console.log('Auth Debug - Query error:', toolsError?.message)
+      .eq('user_id', '6bbfc412-4b69-409d-aa90-e2ce9596dbdb')  // Using known good ID
 
     if (toolsError) {
       console.error('Error fetching tools:', toolsError)
@@ -125,7 +117,12 @@ serve(async (req) => {
       ].filter(Boolean).join('\n')
     }).join('\n\n')
 
-    console.log('Debug - Tool inventory sample:', toolInventory.substring(0, 100))
+    // Add debug logging before Claude API call
+    console.log('Tool Data Check - Total tools:', tools.length)
+    console.log('Tool Data Check - Sample tool:', JSON.stringify(tools[0], null, 2))
+    console.log('Tool Data Check - System prompt first 500 chars:', 
+      systemPrompt.replace('{toolInventory}', toolInventory).substring(0, 500)
+    )
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
