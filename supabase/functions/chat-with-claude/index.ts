@@ -114,7 +114,16 @@ serve(async (req) => {
       }),
     })
 
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`)
+    }
+
     const data = await response.json()
+    
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      throw new Error('Invalid response format from Claude API')
+    }
+
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

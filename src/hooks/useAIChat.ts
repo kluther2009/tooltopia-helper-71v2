@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
-import { useToast } from '@/components/ui/use-toast'
+import { toast } from 'sonner'
 
 export function useAIChat() {
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   const sendMessage = async (message: string) => {
     setIsLoading(true)
@@ -12,11 +11,7 @@ export function useAIChat() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to use ToolGuru",
-          variant: "destructive"
-        })
+        toast.error("You must be logged in to use ToolGuru")
         return null
       }
 
@@ -29,14 +24,14 @@ export function useAIChat() {
 
       if (error) throw error
 
+      if (!data?.content?.[0]?.text) {
+        throw new Error('Invalid response format from AI')
+      }
+
       return data.content[0].text
     } catch (error) {
       console.error('Error calling Claude:', error)
-      toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
-        variant: "destructive"
-      })
+      toast.error("Failed to get AI response, please try again")
       return null
     } finally {
       setIsLoading(false)
