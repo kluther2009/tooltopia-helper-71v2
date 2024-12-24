@@ -7,7 +7,12 @@ export function ToolGuruDialog() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative"
+          aria-label="Open ToolGuru"
+        >
           <MessageSquare className="h-5 w-5" />
           <span className="sr-only">Open ToolGuru</span>
         </Button>
