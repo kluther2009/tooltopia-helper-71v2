@@ -4,9 +4,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!)
+// Initialize Supabase client with service role key for admin access
+const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -65,7 +66,7 @@ serve(async (req) => {
     const { message, userId } = await req.json()
     console.log('Received request with message:', message, 'and userId:', userId)
 
-    // Fetch user's tools using the provided userId
+    // Fetch user's tools using the service role client
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
       .select(`
@@ -86,6 +87,7 @@ serve(async (req) => {
     }
 
     console.log('Fetched tools count:', tools?.length || 0)
+    console.log('Sample tool data:', tools?.[0])
 
     if (!tools || tools.length === 0) {
       return new Response(
