@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AIChat } from "@/components/AIChat";
 
 export default function Index() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,10 +94,6 @@ export default function Index() {
             )}
           </div>
         </Card>
-
-        <div className="w-full max-w-3xl mx-auto">
-          <AIChat />
-        </div>
       </div>
     </Layout>
   );
