@@ -53,7 +53,11 @@ export function AIChat() {
         try {
           await conversation.startSession({
             agentId: "default", // Using default agent
-            text: aiResponse,
+            overrides: {
+              agent: {
+                firstMessage: aiResponse, // Pass the AI response as the first message
+              },
+            },
           })
         } catch (error) {
           console.error("TTS error:", error)
