@@ -65,7 +65,7 @@ serve(async (req) => {
     const { message, userId } = await req.json()
     console.log('Received request with message:', message, 'and userId:', userId)
 
-    // Fetch user's tools
+    // Fetch user's tools using the provided userId
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
       .select(`
@@ -78,12 +78,14 @@ serve(async (req) => {
         purchase_date,
         warranty_length
       `)
-      .eq('user_id', '6bbfc412-4b69-409d-aa90-e2ce9596dbdb')  // Using known good ID
+      .eq('user_id', userId)
 
     if (toolsError) {
       console.error('Error fetching tools:', toolsError)
       throw toolsError
     }
+
+    console.log('Fetched tools count:', tools?.length || 0)
 
     if (!tools || tools.length === 0) {
       return new Response(
@@ -117,12 +119,7 @@ serve(async (req) => {
       ].filter(Boolean).join('\n')
     }).join('\n\n')
 
-    // Add debug logging before Claude API call
-    console.log('Tool Data Check - Total tools:', tools.length)
-    console.log('Tool Data Check - Sample tool:', JSON.stringify(tools[0], null, 2))
-    console.log('Tool Data Check - System prompt first 500 chars:', 
-      systemPrompt.replace('{toolInventory}', toolInventory).substring(0, 500)
-    )
+    console.log('Formatted tool inventory sample:', toolInventory.substring(0, 200))
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -134,11 +131,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
+        system: systemPrompt.replace('{toolInventory}', toolInventory),
         messages: [
-          { 
-            role: 'system', 
-            content: systemPrompt.replace('{toolInventory}', toolInventory)
-          },
           { role: 'user', content: message }
         ],
       }),
@@ -151,6 +145,7 @@ serve(async (req) => {
     }
 
     const data = await response.json()
+    console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
     
     if (!data.content || !data.content[0] || !data.content[0].text) {
       console.error('Invalid response format from Claude:', data)
