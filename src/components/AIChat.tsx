@@ -1,11 +1,18 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Card } from "@/components/ui/card"
 import { useAIChat } from "@/hooks/useAIChat"
 import { Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
 import { useConversation } from "@11labs/react"
 import { toast } from "sonner"
+
+// Add type declaration for the Web Speech API
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}
 
 export function AIChat() {
   const [message, setMessage] = useState("")
@@ -44,7 +51,7 @@ export function AIChat() {
       if (!isMuted) {
         // Start TTS conversion and playback
         try {
-          await conversation.startConversation({
+          await conversation.startSession({
             agentId: "default", // Using default agent
             text: aiResponse,
           })
@@ -62,7 +69,8 @@ export function AIChat() {
         await navigator.mediaDevices.getUserMedia({ audio: true })
         setIsListening(true)
         // Start speech recognition
-        const recognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)()
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+        const recognition = new SpeechRecognition()
         recognition.continuous = false
         recognition.interimResults = false
 
