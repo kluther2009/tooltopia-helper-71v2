@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAIChat } from "@/hooks/useAIChat"
 import { Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
-import { useConversation, init } from "@11labs/react"
+import { useConversation } from "@11labs/react"
 import { toast } from "sonner"
 
 declare global {
@@ -12,12 +12,6 @@ declare global {
    SpeechRecognition: any;
  }
 }
-
-// Initialize ElevenLabs with your API key
-init({
-  apiKey: 'sk_2ff05cfbe7aaee3b41d5a8e5a5cf006fa78dcb3046a4ec1b',
-  endpoint: 'https://api.lovable.dev'
-})
 
 export function AIChat() {
  const [message, setMessage] = useState("")
@@ -79,11 +73,10 @@ export function AIChat() {
            },
          })
          
-         if (!session.isConnected) {
-           await session.connect()
-         }
-         await session.sendTextMessage(aiResponse)
          console.log("ElevenLabs session started:", session)
+         
+         // Send the AI response as a text message
+         await session.sendTextMessage(aiResponse)
          
        } catch (error) {
          console.error("TTS error:", error)
