@@ -43,7 +43,6 @@ export function AIChat() {
       },
       tts: {
         voiceId: "Charlie", // Using Charlie voice - professional and friendly
-        model: "eleven_monolingual_v1"
       },
     },
   })
@@ -66,8 +65,7 @@ export function AIChat() {
                 language: "en"
               },
               tts: {
-                voiceId: "Charlie",
-                model: "eleven_monolingual_v1"
+                voiceId: "Charlie"
               }
             },
           })
