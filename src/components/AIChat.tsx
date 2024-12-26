@@ -6,7 +6,6 @@ import { Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
 import { useConversation } from "@11labs/react"
 import { toast } from "sonner"
 import { ElevenLabsClient } from '@11labs/react'
-ElevenLabsClient.init('sk_2ff05cfbe7aaee3b41d5a8e5a5cf006fa78dcb3046a4ec1b')  // Replace with actual API key
 
 declare global {
  interface Window {
@@ -14,6 +13,10 @@ declare global {
    SpeechRecognition: any;
  }
 }
+ElevenLabsClient.init({
+  apiKey: 'sk_2ff05cfbe7aaee3b41d5a8e5a5cf006fa78dcb3046a4ec1b',
+  voiceId: 'IKne3meq5aSn9XLyUdCD'
+})
 
 export function AIChat() {
  const [message, setMessage] = useState("")
