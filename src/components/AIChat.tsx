@@ -42,7 +42,7 @@ export function AIChat() {
         }
       },
       tts: {
-        voiceId: "Charlie", // Using Charlie voice - professional and friendly
+        voiceId: "IKne3meq5aSn9XLyUdCD", // Charlie voice ID
       },
     },
   })
@@ -55,23 +55,22 @@ export function AIChat() {
     if (aiResponse) {
       setResponse(aiResponse)
       if (!isMuted) {
-        // Start TTS conversion and playback
         try {
           await conversation.startSession({
-            agentId: "default", // Using default agent
+            agentId: "default",
             overrides: {
               agent: {
                 firstMessage: aiResponse,
                 language: "en"
               },
               tts: {
-                voiceId: "Charlie"
+                voiceId: "IKne3meq5aSn9XLyUdCD" // Charlie voice ID
               }
             },
           })
         } catch (error) {
           console.error("TTS error:", error)
-          toast.error("Failed to convert text to speech")
+          toast.error("Failed to convert text to speech. Please check your ElevenLabs configuration.")
         }
       }
     }
