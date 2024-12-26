@@ -35,8 +35,15 @@ export function AIChat() {
       setIsListening(false)
     },
     overrides: {
+      agent: {
+        language: "en",
+        prompt: {
+          prompt: "You are ToolGuru, a helpful AI assistant focused on tools and organization."
+        }
+      },
       tts: {
         voiceId: "Charlie", // Using Charlie voice - professional and friendly
+        model: "eleven_monolingual_v1"
       },
     },
   })
@@ -55,8 +62,13 @@ export function AIChat() {
             agentId: "default", // Using default agent
             overrides: {
               agent: {
-                firstMessage: aiResponse, // Pass the AI response as the first message
+                firstMessage: aiResponse,
+                language: "en"
               },
+              tts: {
+                voiceId: "Charlie",
+                model: "eleven_monolingual_v1"
+              }
             },
           })
         } catch (error) {
