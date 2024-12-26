@@ -6,7 +6,6 @@ import { Loader2, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
 import { useConversation } from "@11labs/react"
 import { toast } from "sonner"
 
-// Add type declaration for the Web Speech API
 declare global {
   interface Window {
     webkitSpeechRecognition: any;
@@ -23,7 +22,8 @@ export function AIChat() {
   
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Connected to ElevenLabs")
+      console.log("Connected to ElevenLabs successfully")
+      toast.success("Voice chat connected")
     },
     onDisconnect: () => {
       console.log("Disconnected from ElevenLabs")
@@ -31,7 +31,7 @@ export function AIChat() {
     },
     onError: (error) => {
       console.error("ElevenLabs error:", error)
-      toast.error("Voice chat error occurred")
+      toast.error("Voice chat error: " + error.message)
       setIsListening(false)
     },
     overrides: {
@@ -56,7 +56,8 @@ export function AIChat() {
       setResponse(aiResponse)
       if (!isMuted) {
         try {
-          await conversation.startSession({
+          console.log("Starting ElevenLabs session...")
+          const session = await conversation.startSession({
             agentId: "default",
             overrides: {
               agent: {
@@ -68,9 +69,10 @@ export function AIChat() {
               }
             },
           })
+          console.log("ElevenLabs session started successfully:", session)
         } catch (error) {
-          console.error("TTS error:", error)
-          toast.error("Failed to convert text to speech. Please check your ElevenLabs configuration.")
+          console.error("Detailed TTS error:", error)
+          toast.error("Text-to-speech error. Please check the console for details.")
         }
       }
     }
