@@ -15,7 +15,7 @@ declare global {
 }
 ElevenLabsClient.init({
   apiKey: 'sk_2ff05cfbe7aaee3b41d5a8e5a5cf006fa78dcb3046a4ec1b',
-  voiceId: 'IKne3meq5aSn9XLyUdCD'
+  endpoint: 'https://api.lovable.dev'
 })
 
 export function AIChat() {
