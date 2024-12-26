@@ -29,9 +29,9 @@ export function AIChat() {
       console.log("Disconnected from ElevenLabs")
       setIsListening(false)
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("ElevenLabs error:", error)
-      toast.error("Voice chat error: " + error.message)
+      toast.error("Voice chat error occurred")
       setIsListening(false)
     },
     overrides: {
@@ -69,10 +69,10 @@ export function AIChat() {
               }
             },
           })
-          console.log("ElevenLabs session started successfully:", session)
+          console.log("ElevenLabs session started:", session)
         } catch (error) {
-          console.error("Detailed TTS error:", error)
-          toast.error("Text-to-speech error. Please check the console for details.")
+          console.error("TTS error:", error)
+          toast.error("Text-to-speech error occurred. Please try again.")
         }
       }
     }
@@ -83,19 +83,21 @@ export function AIChat() {
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true })
         setIsListening(true)
-        // Start speech recognition
+        
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
         const recognition = new SpeechRecognition()
         recognition.continuous = false
         recognition.interimResults = false
+        recognition.lang = 'en-US'
 
-        recognition.onresult = (event) => {
+        recognition.onresult = (event: any) => {
           const transcript = event.results[0][0].transcript
           setMessage(transcript)
           setIsListening(false)
+          toast.success("Speech recognized")
         }
 
-        recognition.onerror = (event) => {
+        recognition.onerror = (event: any) => {
           console.error("Speech recognition error:", event.error)
           toast.error("Failed to recognize speech")
           setIsListening(false)
@@ -116,6 +118,7 @@ export function AIChat() {
     setIsMuted(!isMuted)
     if (conversation) {
       conversation.setVolume({ volume: isMuted ? 1 : 0 })
+      toast.success(isMuted ? "Voice unmuted" : "Voice muted")
     }
   }
 
