@@ -15,6 +15,7 @@ interface BasicToolInfoProps {
   onSubLocationChange: (value: string) => void
   onSpecificLocationChange: (value: string) => void
   onStatusChange: (value: string) => void
+  onExistingToolSelect?: (toolId: string) => void
 }
 
 export function BasicToolInfo({
@@ -29,6 +30,7 @@ export function BasicToolInfo({
   onSubLocationChange,
   onSpecificLocationChange,
   onStatusChange,
+  onExistingToolSelect,
 }: BasicToolInfoProps) {
   return (
     <>
@@ -36,6 +38,7 @@ export function BasicToolInfo({
         value={toolName}
         onValueChange={onToolNameChange}
         inputRef={toolNameInputRef}
+        onExistingToolSelect={onExistingToolSelect}
       />
 
       <ToolLocationFields

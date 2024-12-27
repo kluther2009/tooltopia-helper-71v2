@@ -6,10 +6,16 @@ import { FormButtons } from "./form/FormButtons"
 import { BackgroundPhoto } from "./form/BackgroundPhoto"
 import { useToolForm } from "@/hooks/useToolForm"
 import { useBackgroundPhoto } from "@/hooks/useBackgroundPhoto"
+import { useNavigate } from "react-router-dom"
 
 export function AddToolForm() {
   const { formState, handlers, toolNameInputRef } = useToolForm()
   const { backgroundPhotoUrl } = useBackgroundPhoto()
+  const navigate = useNavigate()
+
+  const handleExistingToolSelect = (toolId: string) => {
+    navigate(`/edit-tool/${toolId}`)
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -28,6 +34,7 @@ export function AddToolForm() {
           onSubLocationChange={handlers.setSubLocation}
           onSpecificLocationChange={handlers.setSpecificLocation}
           onStatusChange={handlers.setStatus}
+          onExistingToolSelect={handleExistingToolSelect}
         />
 
         <AdditionalInfoToggle
