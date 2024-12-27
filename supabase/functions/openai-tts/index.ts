@@ -34,6 +34,21 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.json()
+      console.error('OpenAI API Error:', error)
+      
+      // Check specifically for quota exceeded error
+      if (error.error?.message?.includes('exceeded your current quota')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Voice response unavailable due to API quota limits. Please try again later.' 
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+      
       throw new Error(error.error?.message || 'Failed to generate speech')
     }
 
@@ -48,7 +63,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in TTS function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'An unexpected error occurred'
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

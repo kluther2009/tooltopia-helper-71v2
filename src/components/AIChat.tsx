@@ -34,7 +34,20 @@ export function AIChat() {
             body: { text: aiResponse }
           })
 
-          if (error) throw error
+          if (error) {
+            // Check if it's a quota exceeded error (status 429)
+            if (error.status === 429) {
+              toast.error("Voice response unavailable due to API limits. Text response still available.")
+              return
+            }
+            throw error
+          }
+
+          // Handle the case where we get an error message in the response
+          if (data?.error) {
+            toast.error(data.error)
+            return
+          }
 
           // Create a blob URL from the audio data
           const blob = new Blob([data], { type: 'audio/mpeg' })
@@ -46,7 +59,7 @@ export function AIChat() {
           }
         } catch (error) {
           console.error("TTS error:", error)
-          toast.error("Failed to convert text to speech")
+          toast.error("Failed to convert text to speech. Text response still available.")
         }
       }
     }
