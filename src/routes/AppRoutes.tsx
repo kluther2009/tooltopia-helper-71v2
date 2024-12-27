@@ -10,6 +10,7 @@ import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
 import ResetPassword from "@/pages/ResetPassword";
 import InitialInventory from "@/pages/InitialInventory";
+import Projects from "@/pages/Projects";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -70,6 +71,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <InitialInventory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <ProtectedRoute>
+            <Projects />
           </ProtectedRoute>
         }
       />

@@ -5,6 +5,7 @@ import {
   Plus,
   ClipboardList,
   MessageSquare,
+  FolderPlus,
 } from "lucide-react";
 
 export const sidebarRoutes = [
@@ -27,6 +28,11 @@ export const sidebarRoutes = [
     label: "Visual Inventory",
     icon: ClipboardList,
     href: "/initial-inventory",
+  },
+  {
+    label: "My Projects",
+    icon: FolderPlus,
+    href: "/projects",
   },
   {
     label: "ToolGuru",
