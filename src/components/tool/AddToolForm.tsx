@@ -1,9 +1,10 @@
-import { Button } from "@/components/ui/button"
 import { useState, useRef, useEffect } from "react"
 import { BasicToolInfo } from "./form/BasicToolInfo"
 import { AdditionalInfoToggle } from "./form/AdditionalInfoToggle"
 import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
+import { FormButtons } from "./form/FormButtons"
+import { BackgroundPhoto } from "./form/BackgroundPhoto"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { useToolSubmission } from "./hooks/useToolSubmission"
 import { toast } from "sonner"
@@ -38,7 +39,6 @@ export function AddToolForm() {
         if (data.subLocation) {
           setSubLocation(data.subLocation)
         }
-        // Fetch and set the background photo URL
         if (data.photoId) {
           fetchPhotoUrl(data.photoId)
         }
@@ -100,24 +100,13 @@ export function AddToolForm() {
   }
 
   const handleCancel = () => {
-    // Navigate back to the initial inventory page
     navigate('/initial-inventory')
   }
 
   return (
     <div className="relative min-h-screen">
-      {backgroundPhotoUrl && (
-        <div 
-          className="fixed inset-0 z-0"
-          style={{
-            backgroundImage: `url(${backgroundPhotoUrl})`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.15
-          }}
-        />
-      )}
+      <BackgroundPhoto photoUrl={backgroundPhotoUrl} />
+      
       <form onSubmit={handleSubmit} className="relative z-10 space-y-6 bg-background/80 p-6 rounded-lg backdrop-blur-sm">
         <BasicToolInfo
           toolName={toolName}
@@ -156,19 +145,10 @@ export function AddToolForm() {
           </>
         )}
 
-        <div className="flex gap-4">
-          <Button type="submit" className="flex-1" disabled={isUploading}>
-            {isUploading ? "Uploading..." : "Add Tool"}
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="flex-1"
-            onClick={handleCancel}
-          >
-            Cancel
-          </Button>
-        </div>
+        <FormButtons 
+          isUploading={isUploading}
+          onCancel={handleCancel}
+        />
       </form>
     </div>
   )
