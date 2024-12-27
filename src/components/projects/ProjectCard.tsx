@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Tool } from "lucide-react";
+import { Pencil, Trash2, Wrench } from "lucide-react";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { ProjectToolsDialog } from "./ProjectToolsDialog";
@@ -34,7 +34,7 @@ export function ProjectCard({ project }: { project: Project }) {
             size="icon"
             onClick={() => setIsToolsDialogOpen(true)}
           >
-            <Tool className="h-4 w-4" />
+            <Wrench className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
