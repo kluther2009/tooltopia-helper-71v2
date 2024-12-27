@@ -42,24 +42,28 @@ export function AIChat() {
             return
           }
 
-          if (!data) {
+          if (!data || !data.length) {
             toast.error("No audio data received", { duration: 5000 })
             return
           }
 
-          // Convert the array buffer to a Blob
-          const audioBlob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' })
-          const audioUrl = URL.createObjectURL(audioBlob)
+          // Create a base64 string from the array buffer
+          const base64String = btoa(String.fromCharCode(...new Uint8Array(data)))
+          const audioUrl = `data:audio/mpeg;base64,${base64String}`
 
           if (audioRef.current) {
             audioRef.current.src = audioUrl
             try {
-              await audioRef.current.play()
+              const playPromise = audioRef.current.play()
+              if (playPromise !== undefined) {
+                playPromise.catch(playError => {
+                  console.error("Audio playback error:", playError)
+                  toast.error("Failed to play audio. Please try again or unmute if muted.")
+                })
+              }
             } catch (playError) {
               console.error("Audio playback error:", playError)
-              toast.error("Failed to play audio. Please try again.")
-              // Clean up the audio URL
-              URL.revokeObjectURL(audioUrl)
+              toast.error("Failed to play audio. Please ensure audio is enabled in your browser.")
             }
           }
         } catch (error) {
