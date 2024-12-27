@@ -7,7 +7,6 @@ import { useFileUpload } from "@/hooks/useFileUpload"
 export function useToolSubmission() {
   const navigate = useNavigate()
   const { uploadFile, isUploading } = useFileUpload()
-  const [pendingAnnotation, setPendingAnnotation] = useState<any>(null)
 
   const handleToolSubmission = async ({
     toolName,
@@ -102,9 +101,10 @@ export function useToolSubmission() {
               return false
             }
 
-            localStorage.removeItem('pendingAnnotation')
-            navigate('/initial-inventory')
-            return true
+            // Don't remove the pendingAnnotation data, just clear the coordinates
+            const updatedData = { ...data }
+            delete updatedData.coordinates
+            localStorage.setItem('pendingAnnotation', JSON.stringify(updatedData))
           }
         } catch (error) {
           console.error('Error parsing annotation data:', error)
@@ -112,8 +112,7 @@ export function useToolSubmission() {
         }
       }
 
-      toast.success(`${toolName} has been added to ${primaryLocation}${subLocation ? ` > ${subLocation}` : ''}${specificLocation ? ` > ${specificLocation}` : ''}`)
-      navigate('/')
+      toast.success(`${toolName} has been added`)
       return true
     } catch (error) {
       console.error('Error adding tool:', error)

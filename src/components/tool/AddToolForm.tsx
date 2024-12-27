@@ -84,7 +84,7 @@ export function AddToolForm() {
       return
     }
 
-    await handleToolSubmission({
+    const success = await handleToolSubmission({
       toolName,
       primaryLocation,
       subLocation,
@@ -97,9 +97,15 @@ export function AddToolForm() {
       warrantyFile,
       receiptFile
     })
+
+    if (success) {
+      // Navigate back to the photo annotation view
+      navigate('/initial-inventory')
+    }
   }
 
   const handleCancel = () => {
+    // Navigate back to the photo annotation view
     navigate('/initial-inventory')
   }
 
