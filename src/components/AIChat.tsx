@@ -30,29 +30,18 @@ export function AIChat() {
       setResponse(aiResponse)
       if (!isMuted) {
         try {
-          const { data, error } = await supabase.functions.invoke('openai-tts', {
+          const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
             body: { text: aiResponse }
           })
 
           if (error) {
-            // Handle rate limit error (429)
-            if (error.status === 429) {
-              toast.error("Voice response unavailable due to API limits. Text response still available.", {
-                duration: 5000
-              })
-              return
-            }
-            // Handle other errors
-            throw error
-          }
-
-          // Handle error message in the response data
-          if (data?.error) {
-            toast.error(data.error, { duration: 5000 })
+            console.error('TTS Error:', error)
+            toast.error("Voice response unavailable. Text response still available.", {
+              duration: 5000
+            })
             return
           }
 
-          // Process successful response
           const blob = new Blob([data], { type: 'audio/mpeg' })
           const url = URL.createObjectURL(blob)
 
