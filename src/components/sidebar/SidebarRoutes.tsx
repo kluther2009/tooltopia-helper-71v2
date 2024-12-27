@@ -24,7 +24,7 @@ export const sidebarRoutes = [
     href: "/storage",
   },
   {
-    label: "Initial Inventory",
+    label: "Visual Inventory",
     icon: ClipboardList,
     href: "/initial-inventory",
   },
