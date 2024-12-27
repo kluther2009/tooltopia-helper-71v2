@@ -27,8 +27,7 @@ export function SubscriptionSection() {
         });
 
         if (!response.ok) {
-          console.error('Subscription check failed:', await response.text());
-          throw new Error('Failed to check subscription');
+          throw new Error(`Subscription check failed: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
@@ -63,13 +62,18 @@ export function SubscriptionSection() {
         },
       });
 
+      // Store the response data in a variable first
+      const responseData = await response.json().catch(async () => {
+        // If JSON parsing fails, try to get the text
+        const text = await response.text();
+        throw new Error(text || 'Failed to parse response');
+      });
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Checkout session creation failed:', errorText);
-        throw new Error(errorText || 'Failed to create checkout session');
+        throw new Error(responseData.message || 'Failed to create checkout session');
       }
 
-      const { url } = await response.json();
+      const { url } = responseData;
       if (url) {
         console.log('Redirecting to checkout:', url);
         window.location.href = url;
