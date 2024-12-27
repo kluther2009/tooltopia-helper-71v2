@@ -50,6 +50,24 @@ export function InitialInventoryViewer() {
     }
   }, [navigate])
 
+  // Check for pending annotation data and set selected photo
+  useEffect(() => {
+    const annotationData = localStorage.getItem('pendingAnnotation')
+    if (annotationData) {
+      try {
+        const data = JSON.parse(annotationData)
+        if (data.photoId) {
+          const photo = photos.find(p => p.id === data.photoId)
+          if (photo) {
+            setSelectedPhoto(photo)
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing annotation data:', error)
+      }
+    }
+  }, [photos])
+
   if (isLoading) {
     return <div className="text-center py-8">Loading...</div>
   }
