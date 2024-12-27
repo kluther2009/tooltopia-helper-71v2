@@ -1,26 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { LoginHeader } from "@/components/auth/LoginHeader";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  // Check and handle existing session
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          // If there's a session error, clear it and any stored data
           await supabase.auth.signOut();
           localStorage.clear();
           console.error("Session error:", error);
@@ -43,7 +35,6 @@ export default function Login() {
       if (event === 'SIGNED_IN' && session) {
         navigate("/");
       } else if (event === 'SIGNED_OUT') {
-        // Clear any stored data on sign out
         localStorage.clear();
         navigate("/login");
       }
@@ -52,151 +43,11 @@ export default function Login() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        if (error.message.includes('Invalid refresh token')) {
-          // Clear any existing session data and stored tokens
-          await supabase.auth.signOut();
-          localStorage.clear();
-        }
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message,
-        });
-      } else {
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred during login",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please enter your email address first",
-      });
-      return;
-    }
-
-    setResetLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message,
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Password reset email sent. Please check your inbox.",
-        });
-      }
-    } catch (error) {
-      console.error("Reset password error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred",
-      });
-    } finally {
-      setResetLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
       <div className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-6">
-          <h1 className="text-5xl sm:text-6xl font-bold text-card-foreground mb-8 font-serif tracking-wider">
-            ToolTrackerHub
-          </h1>
-          <h2 className="text-3xl sm:text-4xl font-bold text-primary">
-            Tool Inventory System
-          </h2>
-          <div className="h-1 w-24 bg-primary mx-auto rounded-full" />
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-lg text-card-foreground">
-              Email address
-            </label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Your email"
-              className="w-full bg-background/50 text-card-foreground border-card-foreground/20"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-lg text-card-foreground">
-              Your Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your password"
-              className="w-full bg-background/50 text-card-foreground border-card-foreground/20"
-              required
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full text-lg py-6"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
-
-        <div className="space-y-4 text-center">
-          <button
-            onClick={handleForgotPassword}
-            disabled={resetLoading}
-            className="text-muted-foreground hover:text-card-foreground transition-colors"
-          >
-            {resetLoading ? "Sending reset email..." : "Forgot your password?"}
-          </button>
-          <a
-            href="/signup"
-            className="block text-muted-foreground hover:text-card-foreground transition-colors"
-          >
-            Don't have an account? Sign up
-          </a>
-        </div>
+        <LoginHeader />
+        <LoginForm onLoginSuccess={() => navigate("/")} />
       </div>
     </div>
   );
