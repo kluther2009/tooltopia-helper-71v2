@@ -13,20 +13,31 @@ export function SubscriptionSection() {
   const { data: subscriptionStatus, isLoading: isCheckingSubscription } = useQuery({
     queryKey: ['subscription-status'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.error('No session found');
+          return { subscribed: false };
+        }
 
-      const response = await fetch('/functions/v1/check-subscription', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+        const response = await fetch('/functions/v1/check-subscription', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to check subscription');
+        if (!response.ok) {
+          console.error('Subscription check failed:', await response.text());
+          throw new Error('Failed to check subscription');
+        }
+
+        const data = await response.json();
+        console.log('Subscription status:', data);
+        return data;
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        throw error;
       }
-
-      return response.json();
     },
   });
 
@@ -37,31 +48,40 @@ export function SubscriptionSection() {
       if (!session) {
         toast({
           variant: "destructive",
-          title: "Error",
+          title: "Authentication Error",
           description: "Please log in to subscribe",
         });
         return;
       }
 
+      console.log('Creating checkout session...');
       const response = await fetch('/functions/v1/create-checkout-session', {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorText = await response.text();
+        console.error('Checkout session creation failed:', errorText);
+        throw new Error(errorText || 'Failed to create checkout session');
       }
 
       const { url } = await response.json();
       if (url) {
+        console.log('Redirecting to checkout:', url);
         window.location.href = url;
+      } else {
+        throw new Error('No checkout URL received');
       }
     } catch (error) {
+      console.error('Subscription error:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to initiate subscription process",
+        title: "Subscription Error",
+        description: error instanceof Error ? error.message : "Failed to initiate subscription process",
       });
     } finally {
       setIsLoading(false);
