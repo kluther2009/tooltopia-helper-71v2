@@ -99,6 +99,11 @@ export function AddToolForm() {
     })
   }
 
+  const handleCancel = () => {
+    // Navigate back to the initial inventory page
+    navigate('/initial-inventory')
+  }
+
   return (
     <div className="relative min-h-screen">
       {backgroundPhotoUrl && (
@@ -159,7 +164,7 @@ export function AddToolForm() {
             type="button" 
             variant="outline" 
             className="flex-1"
-            onClick={() => navigate('/')}
+            onClick={handleCancel}
           >
             Cancel
           </Button>
