@@ -9,10 +9,11 @@ import { useToolManagement } from "@/hooks/useToolManagement"
 import { useToolSubmission } from "./hooks/useToolSubmission"
 import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 
 export function AddToolForm() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [toolName, setToolName] = useState("")
   const [primaryLocation, setPrimaryLocation] = useState("")
   const [subLocation, setSubLocation] = useState("")
@@ -29,6 +30,14 @@ export function AddToolForm() {
   const toolNameInputRef = useRef<HTMLInputElement>(null)
   const { checkToolExists } = useToolManagement()
   const { handleToolSubmission, isUploading } = useToolSubmission()
+
+  // Clear pending annotation if accessing directly from sidebar
+  useEffect(() => {
+    if (location.pathname === '/add-tool') {
+      localStorage.removeItem('pendingAnnotation')
+      setBackgroundPhotoUrl(null)
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     const annotationData = localStorage.getItem('pendingAnnotation')
