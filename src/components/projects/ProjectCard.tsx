@@ -1,15 +1,17 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Tool } from "lucide-react";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
+import { ProjectToolsDialog } from "./ProjectToolsDialog";
 import { useState } from "react";
 import { Project } from "@/types/projects";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isToolsDialogOpen, setIsToolsDialogOpen] = useState(false);
 
   const statusColors = {
     planned: "bg-yellow-100 text-yellow-800",
@@ -27,6 +29,13 @@ export function ProjectCard({ project }: { project: Project }) {
           </Badge>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsToolsDialogOpen(true)}
+          >
+            <Tool className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -53,6 +62,11 @@ export function ProjectCard({ project }: { project: Project }) {
         project={project}
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+      <ProjectToolsDialog
+        projectId={project.id}
+        open={isToolsDialogOpen}
+        onOpenChange={setIsToolsDialogOpen}
       />
     </Card>
   );
