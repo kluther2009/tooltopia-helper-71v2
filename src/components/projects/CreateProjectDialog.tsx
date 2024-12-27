@@ -28,11 +28,15 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
     setIsSubmitting(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
       const { error } = await supabase
         .from("projects")
         .insert({
           name: name.trim(),
           status,
+          user_id: user.id
         });
 
       if (error) throw error;
