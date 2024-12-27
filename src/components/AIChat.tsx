@@ -47,23 +47,31 @@ export function AIChat() {
             return
           }
 
-          // Create a base64 string from the array buffer
-          const base64String = btoa(String.fromCharCode(...new Uint8Array(data)))
-          const audioUrl = `data:audio/mpeg;base64,${base64String}`
+          // Convert the binary array to a Uint8Array
+          const uint8Array = new Uint8Array(data)
+          // Create a blob from the Uint8Array
+          const blob = new Blob([uint8Array], { type: 'audio/mpeg' })
+          // Create an object URL from the blob
+          const audioUrl = URL.createObjectURL(blob)
 
           if (audioRef.current) {
             audioRef.current.src = audioUrl
-            try {
-              const playPromise = audioRef.current.play()
-              if (playPromise !== undefined) {
-                playPromise.catch(playError => {
-                  console.error("Audio playback error:", playError)
-                  toast.error("Failed to play audio. Please try again or unmute if muted.")
+            const playPromise = audioRef.current.play()
+            
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  // Audio started playing successfully
+                  console.log("Audio playback started successfully")
                 })
-              }
-            } catch (playError) {
-              console.error("Audio playback error:", playError)
-              toast.error("Failed to play audio. Please ensure audio is enabled in your browser.")
+                .catch(playError => {
+                  console.error("Audio playback error:", playError)
+                  toast.error("Failed to play audio. Please ensure your browser's audio is enabled and unmuted.")
+                })
+                .finally(() => {
+                  // Clean up the object URL after playback attempt
+                  URL.revokeObjectURL(audioUrl)
+                })
             }
           }
         } catch (error) {
