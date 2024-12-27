@@ -42,15 +42,25 @@ export function AIChat() {
             return
           }
 
-          const blob = new Blob([data], { type: 'audio/mpeg' })
-          const url = URL.createObjectURL(blob)
+          if (!data) {
+            toast.error("No audio data received", { duration: 5000 })
+            return
+          }
+
+          // Convert the array buffer to a Blob
+          const audioBlob = new Blob([new Uint8Array(data)], { type: 'audio/mpeg' })
+          const audioUrl = URL.createObjectURL(audioBlob)
 
           if (audioRef.current) {
-            audioRef.current.src = url
-            await audioRef.current.play().catch(error => {
-              console.error("Audio playback error:", error)
+            audioRef.current.src = audioUrl
+            try {
+              await audioRef.current.play()
+            } catch (playError) {
+              console.error("Audio playback error:", playError)
               toast.error("Failed to play audio. Please try again.")
-            })
+              // Clean up the audio URL
+              URL.revokeObjectURL(audioUrl)
+            }
           }
         } catch (error) {
           console.error("TTS error:", error)
