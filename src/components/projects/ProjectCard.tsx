@@ -5,12 +5,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { useState } from "react";
-
-interface Project {
-  id: string;
-  name: string;
-  status: "planned" | "ongoing" | "completed";
-}
+import { Project } from "@/types/projects";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

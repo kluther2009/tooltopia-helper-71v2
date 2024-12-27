@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectCard } from "./ProjectCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Project } from "@/types/projects"; // Add this import
 
 export function ProjectsList() {
-  const { data: projects, isLoading } = useQuery({
+  const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ["projects"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -13,7 +14,12 @@ export function ProjectsList() {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // Ensure the status is of the correct type
+      return data.map(project => ({
+        ...project,
+        status: project.status as "planned" | "ongoing" | "completed"
+      }));
     },
   });
 
