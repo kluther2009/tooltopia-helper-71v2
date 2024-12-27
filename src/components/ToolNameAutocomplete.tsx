@@ -79,7 +79,7 @@ export function ToolNameAutocomplete({
             </AlertDescription>
           </Alert>
           <Button
-            variant="outline"
+            variant="default"
             className="w-full"
             onClick={() => onExistingToolSelect?.(existingTool.id)}
           >
