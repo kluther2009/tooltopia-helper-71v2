@@ -73,7 +73,7 @@ export function ToolNameAutocomplete({
       
       {existingTool && (
         <div className="space-y-2">
-          <Alert variant="warning">
+          <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
             <AlertDescription>
               This tool already exists at {formatLocation(existingTool)}. You can update the existing tool or enter a different name.
             </AlertDescription>
