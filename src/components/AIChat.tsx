@@ -30,6 +30,7 @@ export function AIChat() {
       setResponse(aiResponse)
       if (!isMuted) {
         try {
+          console.log('Sending TTS request for response:', aiResponse)
           const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
             body: { text: aiResponse }
           })
@@ -43,25 +44,24 @@ export function AIChat() {
           }
 
           if (!data || !data.length) {
+            console.error('No audio data received')
             toast.error("No audio data received", { duration: 5000 })
             return
           }
 
-          // Convert the binary array to a Uint8Array
+          console.log('Received audio data, length:', data.length)
           const uint8Array = new Uint8Array(data)
-          // Create a blob from the Uint8Array
           const blob = new Blob([uint8Array], { type: 'audio/mpeg' })
-          // Create an object URL from the blob
           const audioUrl = URL.createObjectURL(blob)
 
           if (audioRef.current) {
             audioRef.current.src = audioUrl
+            console.log('Starting audio playback')
             const playPromise = audioRef.current.play()
             
             if (playPromise !== undefined) {
               playPromise
                 .then(() => {
-                  // Audio started playing successfully
                   console.log("Audio playback started successfully")
                 })
                 .catch(playError => {
@@ -69,7 +69,6 @@ export function AIChat() {
                   toast.error("Failed to play audio. Please ensure your browser's audio is enabled and unmuted.")
                 })
                 .finally(() => {
-                  // Clean up the object URL after playback attempt
                   URL.revokeObjectURL(audioUrl)
                 })
             }

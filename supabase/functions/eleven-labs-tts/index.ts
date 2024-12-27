@@ -16,13 +16,23 @@ serve(async (req) => {
     const apiKey = Deno.env.get('ELEVEN_LABS_API_KEY')
 
     if (!apiKey) {
+      console.error('Eleven Labs API key not configured')
       throw new Error('Eleven Labs API key not configured')
+    }
+
+    if (!text) {
+      console.error('No text provided for TTS conversion')
+      throw new Error('No text provided for TTS conversion')
     }
 
     // Using the "Rachel" voice ID - one of Eleven Labs' default voices
     const voiceId = "21m00Tcm4TlvDq8ikWAM"
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    console.log('Making request to Eleven Labs API:', url)
+    console.log('Text to convert:', text)
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Accept': 'audio/mpeg',
@@ -40,11 +50,16 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      console.error('Eleven Labs API Error:', error)
-      throw new Error(error.detail?.message || 'Failed to generate speech')
+      const errorData = await response.json()
+      console.error('Eleven Labs API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      })
+      throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
+    console.log('Successfully received audio data from Eleven Labs')
     const audioData = await response.arrayBuffer()
     
     return new Response(audioData, {
@@ -57,7 +72,8 @@ serve(async (req) => {
     console.error('Error in TTS function:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An unexpected error occurred'
+        error: error.message || 'An unexpected error occurred',
+        details: error.toString()
       }),
       {
         status: 500,
