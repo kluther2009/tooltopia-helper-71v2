@@ -8,8 +8,10 @@ import { useToolManagement } from "@/hooks/useToolManagement"
 import { useToolSubmission } from "./hooks/useToolSubmission"
 import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
+import { useNavigate } from "react-router-dom"
 
 export function AddToolForm() {
+  const navigate = useNavigate()
   const [toolName, setToolName] = useState("")
   const [primaryLocation, setPrimaryLocation] = useState("")
   const [subLocation, setSubLocation] = useState("")
@@ -149,9 +151,19 @@ export function AddToolForm() {
           </>
         )}
 
-        <Button type="submit" className="w-full" disabled={isUploading}>
-          {isUploading ? "Uploading..." : "Add Tool"}
-        </Button>
+        <div className="flex gap-4">
+          <Button type="submit" className="flex-1" disabled={isUploading}>
+            {isUploading ? "Uploading..." : "Add Tool"}
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => navigate('/')}
+          >
+            Cancel
+          </Button>
+        </div>
       </form>
     </div>
   )
