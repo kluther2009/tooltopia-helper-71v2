@@ -1,1 +1,4 @@
 project_id = "bnwztdwbdejiubjfpigj"
+
+[functions.openai-tts]
+verify_jwt = true
