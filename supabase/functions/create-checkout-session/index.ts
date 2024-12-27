@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,7 +18,6 @@ serve(async (req) => {
   );
 
   try {
-    // Get the session or user object
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
     const { data } = await supabaseClient.auth.getUser(token);
@@ -39,13 +37,11 @@ serve(async (req) => {
       limit: 1
     });
 
-    // Replace with your actual price ID from Stripe
-    const price_id = "your_price_id_here";
+    const price_id = "price_1Qakp1G6qjqurmgJEBYEjf9Z";
 
     let customer_id = undefined;
     if (customers.data.length > 0) {
       customer_id = customers.data[0].id;
-      // check if already subscribed to this price
       const subscriptions = await stripe.subscriptions.list({
         customer: customers.data[0].id,
         status: 'active',

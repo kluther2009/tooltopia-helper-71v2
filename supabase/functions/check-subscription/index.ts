@@ -47,13 +47,10 @@ serve(async (req) => {
       );
     }
 
-    // Replace with your actual price ID from Stripe
-    const price_id = "your_price_id_here";
-
     const subscriptions = await stripe.subscriptions.list({
       customer: customers.data[0].id,
       status: 'active',
-      price: price_id,
+      price: 'price_1Qakp1G6qjqurmgJEBYEjf9Z',
       limit: 1
     });
 
