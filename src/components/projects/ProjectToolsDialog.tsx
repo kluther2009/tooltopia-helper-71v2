@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -88,17 +89,15 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     }
   };
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // When dialog is closed (including via X button), invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
-    }
-    onOpenChange(open);
+  const handleClose = () => {
+    // Invalidate queries and close dialog
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Select Tools</DialogTitle>
@@ -124,6 +123,11 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
             )}
           </div>
         </ScrollArea>
+        <div className="flex justify-end mt-4">
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
