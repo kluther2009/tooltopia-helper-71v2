@@ -27,9 +27,10 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       if (error) throw error;
       return data;
     },
+    staleTime: 1000,
   });
 
-  // Fetch selected tools for this project
+  // Fetch selected tools for this project using the same configuration as ProjectTools
   const { data: selectedTools = [] } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
@@ -41,8 +42,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       if (error) throw error;
       return data;
     },
-    enabled: open,
-    staleTime: 0,
+    staleTime: 1000,
   });
 
   const isToolSelected = (toolId: string) => {
@@ -84,34 +84,15 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       }
       
       // Invalidate relevant queries
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["project-tools"] }),
-        queryClient.invalidateQueries({ queryKey: ["projects"] }),
-        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
     } catch (error) {
       console.error('Error managing project tool:', error);
       toast.error('Failed to update project tools');
     }
   };
 
-  const handleClose = async () => {
-    try {
-      // Invalidate queries before closing
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["project-tools"] }),
-        queryClient.invalidateQueries({ queryKey: ["projects"] }),
-        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
-      ]);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-      onOpenChange(false);
-    }
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Select Tools</DialogTitle>
@@ -137,11 +118,6 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
             )}
           </div>
         </ScrollArea>
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={handleClose}>
-            Cancel
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

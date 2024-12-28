@@ -31,9 +31,7 @@ export function ProjectTools({ projectId }: { projectId: string }) {
       }
       return (data || []) as ProjectTool[];
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchInterval: 1000, // Refetch every second while component is mounted
+    staleTime: 1000,
   });
 
   return (
