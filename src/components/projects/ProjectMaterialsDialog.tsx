@@ -33,7 +33,9 @@ export function ProjectMaterialsDialog({
 
   const handleCancel = () => {
     onOpenChange(false);
+    // Invalidate both projects and project-materials queries
     queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["project-materials", project.id] });
   };
 
   return (
