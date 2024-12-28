@@ -34,7 +34,7 @@ export function ProjectCard({ project }: { project: Project }) {
         .select("*")
         .eq("project_id", project.id);
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
@@ -46,9 +46,11 @@ export function ProjectCard({ project }: { project: Project }) {
         .from("project_tools")
         .select("tool_id, tools(name)")
         .eq("project_id", project.id);
-      if (error) throw error;
-      console.log("Tools data:", data); // Debug log
-      return data || []; // Ensure we always return an array
+      if (error) {
+        console.error("Error fetching tools:", error);
+        throw error;
+      }
+      return data || [];
     },
   });
 
@@ -134,7 +136,7 @@ export function ProjectCard({ project }: { project: Project }) {
                   {material.name} x{material.quantity}
                 </Badge>
               ))}
-              {!materials?.length && (
+              {(!materials || materials.length === 0) && (
                 <span className="text-sm text-slate-400">No materials added</span>
               )}
             </div>
@@ -142,16 +144,17 @@ export function ProjectCard({ project }: { project: Project }) {
           <div>
             <h4 className="text-sm font-medium text-slate-300 mb-2">Tools Required:</h4>
             <div className="flex flex-wrap gap-2">
-              {Array.isArray(tools) && tools.map((tool) => (
-                <Badge
-                  key={tool.tool_id}
-                  variant="secondary"
-                  className="bg-slate-700 text-slate-200"
-                >
-                  {tool.tools?.name}
-                </Badge>
-              ))}
-              {!tools?.length && (
+              {tools && tools.length > 0 ? (
+                tools.map((tool) => (
+                  <Badge
+                    key={tool.tool_id}
+                    variant="secondary"
+                    className="bg-slate-700 text-slate-200"
+                  >
+                    {tool.tools?.name || 'Unnamed Tool'}
+                  </Badge>
+                ))
+              ) : (
                 <span className="text-sm text-slate-400">No tools added</span>
               )}
             </div>
