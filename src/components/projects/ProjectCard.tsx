@@ -13,10 +13,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectTool {
-  tools: {
+  id: string;
+  project_id: string;
+  tool_id: string;
+  tool: {
     id: string;
     name: string;
-  } | null;
+  };
 }
 
 export function ProjectCard({ project }: { project: Project }) {
@@ -38,14 +41,17 @@ export function ProjectCard({ project }: { project: Project }) {
     },
   });
 
-  // Fetch tools for this project with proper error handling
-  const { data: tools } = useQuery({
+  // Updated query to properly fetch tools with their details
+  const { data: projectTools } = useQuery({
     queryKey: ["project-tools", project.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("project_tools")
         .select(`
-          tools (
+          id,
+          project_id,
+          tool_id,
+          tool:tools (
             id,
             name
           )
@@ -150,17 +156,15 @@ export function ProjectCard({ project }: { project: Project }) {
           <div>
             <h4 className="text-sm font-medium text-slate-300 mb-2">Tools Required:</h4>
             <div className="flex flex-wrap gap-2">
-              {tools && tools.length > 0 ? (
-                tools.map((tool) => (
-                  tool.tools && (
-                    <Badge
-                      key={tool.tools.id}
-                      variant="secondary"
-                      className="bg-slate-700 text-slate-200"
-                    >
-                      {tool.tools.name}
-                    </Badge>
-                  )
+              {projectTools && projectTools.length > 0 ? (
+                projectTools.map((projectTool) => (
+                  <Badge
+                    key={projectTool.id}
+                    variant="secondary"
+                    className="bg-slate-700 text-slate-200"
+                  >
+                    {projectTool.tool.name}
+                  </Badge>
                 ))
               ) : (
                 <span className="text-sm text-slate-400">No tools added</span>
