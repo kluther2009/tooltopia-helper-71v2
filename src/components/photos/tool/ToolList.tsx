@@ -1,6 +1,8 @@
 import { Check, Plus } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
+import { useQuery } from "@tanstack/react-query"
+import { supabase } from "@/integrations/supabase/client"
 
 interface Tool {
   id: string
@@ -12,9 +14,30 @@ interface ToolListProps {
   isLoading: boolean
   onToolSelect: (toolId: string) => void
   onAddNewTool: () => void
+  projectId?: string
 }
 
-export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool }: ToolListProps) {
+export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool, projectId }: ToolListProps) {
+  // Fetch existing project tools if projectId is provided
+  const { data: selectedTools } = useQuery({
+    queryKey: ["project-tools", projectId],
+    queryFn: async () => {
+      if (!projectId) return []
+      const { data, error } = await supabase
+        .from("project_tools")
+        .select("tool_id")
+        .eq("project_id", projectId)
+      
+      if (error) throw error
+      return data.map(pt => pt.tool_id)
+    },
+    enabled: !!projectId
+  })
+
+  const isToolSelected = (toolId: string) => {
+    return selectedTools?.includes(toolId)
+  }
+
   return (
     <ScrollArea className="h-[300px]">
       <div className="space-y-2">
@@ -34,7 +57,9 @@ export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool }: ToolL
             onClick={() => onToolSelect(tool.id)}
           >
             <span>{tool.name}</span>
-            <Check className="h-4 w-4 text-green-500" />
+            {isToolSelected(tool.id) && (
+              <Check className="h-4 w-4 text-green-500" />
+            )}
           </div>
         ))}
         

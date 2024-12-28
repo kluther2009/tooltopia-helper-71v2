@@ -7,6 +7,11 @@ import { Tool } from "@/hooks/useTools";
 import { Check, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { ToolSearch } from "../photos/tool/ToolSearch";
+import { ToolList } from "../photos/tool/ToolList";
+import { CreateToolDialog } from "../photos/tool/CreateToolDialog";
+import { usePhotoLocation } from "@/hooks/usePhotoLocation";
+import { useToolSearch } from "@/hooks/useToolSearch";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -15,161 +20,84 @@ interface ProjectToolsDialogProps {
 }
 
 export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
-  const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const { tools, isLoading, searchTools } = useToolSearch()
+  const photoLocation = usePhotoLocation(projectId, open)
+  const queryClient = useQueryClient()
 
-  // Fetch available tools
-  const { data: tools, isLoading: isLoadingTools } = useQuery({
-    queryKey: ["tools"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tools")
-        .select("*")
-        .order("name");
-      
-      if (error) throw error;
-      return data as Tool[];
-    },
-  });
-
-  // Fetch existing project tools
-  const { data: projectTools, isLoading: isLoadingProjectTools } = useQuery({
-    queryKey: ["project-tools", projectId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("project_tools")
-        .select("tool_id")
-        .eq("project_id", projectId);
-      
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Update selected tools when project tools data is loaded
-  useEffect(() => {
-    if (projectTools) {
-      const toolIds = new Set(projectTools.map(pt => pt.tool_id));
-      setSelectedTools(toolIds);
-    }
-  }, [projectTools]);
-
-  const handleToolToggle = (toolId: string) => {
-    const newSelected = new Set(selectedTools);
-    if (newSelected.has(toolId)) {
-      newSelected.delete(toolId);
-    } else {
-      newSelected.add(toolId);
-    }
-    setSelectedTools(newSelected);
-  };
-
-  const handleSave = async () => {
-    if (!projectTools) return;
-
-    setIsSubmitting(true);
+  const handleToolSelect = async (toolId: string) => {
     try {
-      // Convert Sets to Arrays for comparison
-      const currentToolIds = projectTools.map(pt => pt.tool_id);
-      const newToolIds = Array.from(selectedTools);
-
-      // Remove tools that were unselected
-      const toolsToRemove = currentToolIds.filter(id => !selectedTools.has(id));
-      if (toolsToRemove.length > 0) {
-        const { error: deleteError } = await supabase
-          .from("project_tools")
-          .delete()
-          .eq("project_id", projectId)
-          .in("tool_id", toolsToRemove);
-        
-        if (deleteError) throw deleteError;
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to add tools')
+        return
       }
 
-      // Add newly selected tools
-      const toolsToAdd = newToolIds.filter(id => !currentToolIds.includes(id));
-      if (toolsToAdd.length > 0) {
-        const { error: insertError } = await supabase
-          .from("project_tools")
-          .insert(
-            toolsToAdd.map(toolId => ({
-              project_id: projectId,
-              tool_id: toolId,
-            }))
-          );
-        
-        if (insertError) throw insertError;
-      }
+      const { error } = await supabase
+        .from('project_tools')
+        .insert({
+          project_id: projectId,
+          tool_id: toolId,
+        })
 
-      // Invalidate relevant queries to trigger a refresh
-      await queryClient.invalidateQueries({ queryKey: ["project-tools"] });
+      if (error) throw error
       
-      toast.success("Project tools updated successfully");
-      onOpenChange(false);
+      // Invalidate relevant queries
+      await queryClient.invalidateQueries({ queryKey: ["project-tools"] })
+      await queryClient.invalidateQueries({ queryKey: ["projects"] })
+      
+      toast.success('Tool added to project')
     } catch (error) {
-      console.error("Error updating project tools:", error);
-      toast.error("Failed to update project tools");
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error adding tool to project:', error)
+      toast.error('Failed to add tool to project')
     }
-  };
+  }
 
-  const isLoading = isLoadingTools || isLoadingProjectTools;
+  const handleCreateTool = async (toolId: string) => {
+    await handleToolSelect(toolId)
+    setShowCreateDialog(false)
+  }
+
+  const handleCancel = () => {
+    // Invalidate both projects and project-tools queries
+    queryClient.invalidateQueries({ queryKey: ["projects"] })
+    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
+    onOpenChange(false)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Manage Project Tools</DialogTitle>
-        </DialogHeader>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
+    <>
+      <Dialog open={open} onOpenChange={handleCancel}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Select Tool</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <ToolSearch
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSearch={() => searchTools(searchQuery)}
+              isLoading={isLoading}
+            />
+            
+            <ToolList
+              tools={tools}
+              isLoading={isLoading}
+              onToolSelect={handleToolSelect}
+              onAddNewTool={() => setShowCreateDialog(true)}
+              projectId={projectId}
+            />
           </div>
-        ) : (
-          <>
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="space-y-2">
-                {tools?.map((tool) => (
-                  <div
-                    key={tool.id}
-                    onClick={() => handleToolToggle(tool.id)}
-                    className="flex items-center justify-between p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
-                  >
-                    <span>{tool.name}</span>
-                    {selectedTools.has(tool.id) && (
-                      <Check className="h-4 w-4 text-green-500" />
-                    )}
-                  </div>
-                ))}
-                
-                {!tools?.length && (
-                  <div className="text-center text-gray-500 py-4">
-                    No tools available
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
-            <div className="flex gap-2 justify-end mt-4">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+      <CreateToolDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onToolCreated={handleCreateTool}
+        initialLocation={photoLocation}
+      />
+    </>
+  )
 }
