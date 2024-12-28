@@ -63,8 +63,12 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
 
     setIsSubmitting(true);
     try {
+      // Convert Sets to Arrays for comparison
+      const currentToolIds = Array.from(projectTools);
+      const newToolIds = Array.from(selectedTools);
+
       // Remove tools that were unselected
-      const toolsToRemove = Array.from(projectTools).filter(toolId => !selectedTools.has(toolId));
+      const toolsToRemove = currentToolIds.filter(toolId => !selectedTools.has(toolId));
       if (toolsToRemove.length > 0) {
         const { error: deleteError } = await supabase
           .from("project_tools")
@@ -76,14 +80,16 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       }
 
       // Add newly selected tools
-      const toolsToAdd = Array.from(selectedTools).filter(toolId => !projectTools.has(toolId));
+      const toolsToAdd = newToolIds.filter(toolId => !projectTools.has(toolId));
       if (toolsToAdd.length > 0) {
         const { error: insertError } = await supabase
           .from("project_tools")
-          .insert(toolsToAdd.map(toolId => ({
-            project_id: projectId,
-            tool_id: toolId,
-          })));
+          .insert(
+            toolsToAdd.map(toolId => ({
+              project_id: projectId,
+              tool_id: toolId,
+            }))
+          );
         
         if (insertError) throw insertError;
       }
