@@ -122,12 +122,16 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
               <div
                 key={tool.id}
                 onClick={() => handleToolSelect(tool.id)}
-                className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer"
+                className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer group"
               >
                 <span className="text-sm font-medium">{tool.name}</span>
-                {isToolSelected(tool.id) && (
-                  <Check className="h-4 w-4 text-green-500" />
-                )}
+                <Check 
+                  className={`h-4 w-4 ${
+                    isToolSelected(tool.id) 
+                      ? 'text-green-500' 
+                      : 'text-transparent'
+                  }`}
+                />
               </div>
             ))}
             {tools.length === 0 && (
