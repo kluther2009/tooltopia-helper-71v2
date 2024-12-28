@@ -121,44 +121,42 @@ export function ProjectCard({ project }: { project: Project }) {
           </div>
         </div>
 
-        {(materials?.length > 0 || (tools && tools.length > 0)) && (
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div>
-              <h4 className="text-sm font-medium text-slate-300 mb-2">Materials Needed:</h4>
-              <div className="flex flex-wrap gap-2">
-                {materials?.map((material) => (
-                  <Badge
-                    key={material.id}
-                    variant="secondary"
-                    className="bg-slate-700 text-slate-200"
-                  >
-                    {material.name} x{material.quantity}
-                  </Badge>
-                ))}
-                {!materials?.length && (
-                  <span className="text-sm text-slate-400">No materials added</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-slate-300 mb-2">Tools Required:</h4>
-              <div className="flex flex-wrap gap-2">
-                {Array.isArray(tools) && tools.map((tool) => (
-                  <Badge
-                    key={tool.tool_id}
-                    variant="secondary"
-                    className="bg-slate-700 text-slate-200"
-                  >
-                    {tool.tools?.name}
-                  </Badge>
-                ))}
-                {!tools?.length && (
-                  <span className="text-sm text-slate-400">No tools added</span>
-                )}
-              </div>
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <div>
+            <h4 className="text-sm font-medium text-slate-300 mb-2">Materials Needed:</h4>
+            <div className="flex flex-wrap gap-2">
+              {materials?.map((material) => (
+                <Badge
+                  key={material.id}
+                  variant="secondary"
+                  className="bg-slate-700 text-slate-200"
+                >
+                  {material.name} x{material.quantity}
+                </Badge>
+              ))}
+              {!materials?.length && (
+                <span className="text-sm text-slate-400">No materials added</span>
+              )}
             </div>
           </div>
-        )}
+          <div>
+            <h4 className="text-sm font-medium text-slate-300 mb-2">Tools Required:</h4>
+            <div className="flex flex-wrap gap-2">
+              {Array.isArray(tools) && tools.map((tool) => (
+                <Badge
+                  key={tool.tool_id}
+                  variant="secondary"
+                  className="bg-slate-700 text-slate-200"
+                >
+                  {tool.tools?.name}
+                </Badge>
+              ))}
+              {!tools?.length && (
+                <span className="text-sm text-slate-400">No tools added</span>
+              )}
+            </div>
+          </div>
+        </div>
 
         {project.notes && (
           <div className="text-sm text-slate-300">
