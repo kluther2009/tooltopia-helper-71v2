@@ -66,29 +66,25 @@ export default function Projects() {
 
           {/* Tools Section */}
           <div className="w-80 shrink-0">
-            <Card className="p-4 bg-slate-800 text-white sticky top-4">
+            <Card className="p-4 bg-slate-800/50 text-white sticky top-4">
               <div className="flex items-center gap-2 mb-4">
                 <Wrench className="h-5 w-5" />
                 <h2 className="text-lg font-semibold">Tools Required</h2>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {projectTools?.map((tool) => (
                   <div 
                     key={tool.id} 
-                    className="flex items-center justify-between bg-slate-700/50 p-2 rounded-lg"
+                    className="flex items-center gap-2 text-sm"
                   >
-                    <span className="text-sm">{tool.name}</span>
-                    <Badge 
-                      variant="secondary" 
-                      className={`
-                        ${tool.status === 'available' ? 'bg-green-600' : ''}
-                        ${tool.status === 'in-use' ? 'bg-orange-600' : ''}
-                        ${tool.status === 'maintenance' ? 'bg-red-600' : ''}
-                        text-white
+                    <div 
+                      className={`w-2 h-2 rounded-full shrink-0
+                        ${tool.status === 'available' ? 'bg-green-500' : ''}
+                        ${tool.status === 'in-use' ? 'bg-orange-500' : ''}
+                        ${tool.status === 'maintenance' ? 'bg-red-500' : ''}
                       `}
-                    >
-                      {tool.status}
-                    </Badge>
+                    />
+                    <span className="text-slate-200">{tool.name}</span>
                   </div>
                 ))}
                 {(!projectTools || projectTools.length === 0) && (
