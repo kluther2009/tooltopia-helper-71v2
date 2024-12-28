@@ -11,9 +11,15 @@ interface MaterialFormProps {
   };
   onMaterialChange: (field: string, value: string) => void;
   onAddMaterial: () => void;
+  onCancel: () => void;
 }
 
-export function MaterialForm({ newMaterial, onMaterialChange, onAddMaterial }: MaterialFormProps) {
+export function MaterialForm({ 
+  newMaterial, 
+  onMaterialChange, 
+  onAddMaterial,
+  onCancel 
+}: MaterialFormProps) {
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-3 gap-2">
@@ -43,10 +49,15 @@ export function MaterialForm({ newMaterial, onMaterialChange, onAddMaterial }: M
           onChange={(e) => onMaterialChange("quantity", e.target.value)}
         />
       </div>
-      <Button onClick={onAddMaterial} className="w-full">
-        <Plus className="h-4 w-4 mr-2" />
-        Add Material
-      </Button>
+      <div className="flex gap-2">
+        <Button onClick={onAddMaterial} className="flex-1">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Material
+        </Button>
+        <Button variant="outline" onClick={onCancel} className="flex-1">
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }

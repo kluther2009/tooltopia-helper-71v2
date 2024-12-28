@@ -8,6 +8,7 @@ import { Project } from "@/types/projects";
 import { MaterialForm } from "./materials/MaterialForm";
 import { MaterialList } from "./materials/MaterialList";
 import { useMaterials } from "./materials/useMaterials";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProjectMaterialsDialogProps {
   project: Project;
@@ -20,6 +21,8 @@ export function ProjectMaterialsDialog({
   open,
   onOpenChange,
 }: ProjectMaterialsDialogProps) {
+  const queryClient = useQueryClient();
+  
   const {
     materials,
     newMaterial,
@@ -27,6 +30,11 @@ export function ProjectMaterialsDialog({
     handleAddMaterial,
     handleDeleteMaterial,
   } = useMaterials(project.id);
+
+  const handleCancel = () => {
+    onOpenChange(false);
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -39,6 +47,7 @@ export function ProjectMaterialsDialog({
             newMaterial={newMaterial}
             onMaterialChange={handleMaterialChange}
             onAddMaterial={handleAddMaterial}
+            onCancel={handleCancel}
           />
           <MaterialList
             materials={materials}
