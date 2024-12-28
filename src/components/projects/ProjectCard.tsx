@@ -12,6 +12,13 @@ import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+interface ProjectTool {
+  tool_id: string;
+  tools: {
+    name: string;
+  } | null;
+}
+
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -32,7 +39,7 @@ export function ProjectCard({ project }: { project: Project }) {
   });
 
   // Fetch tools for this project
-  const { data: tools } = useQuery({
+  const { data: tools } = useQuery<ProjectTool[]>({
     queryKey: ["project-tools", project.id],
     queryFn: async () => {
       const { data, error } = await supabase
