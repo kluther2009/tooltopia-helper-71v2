@@ -13,10 +13,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectTool {
-  tool_id: string;
   tools: {
+    id: string;
     name: string;
-  } | null;
+  };
 }
 
 export function ProjectCard({ project }: { project: Project }) {
@@ -44,7 +44,12 @@ export function ProjectCard({ project }: { project: Project }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("project_tools")
-        .select("tool_id, tools(name)")
+        .select(`
+          tools (
+            id,
+            name
+          )
+        `)
         .eq("project_id", project.id);
       
       if (error) {
@@ -148,11 +153,11 @@ export function ProjectCard({ project }: { project: Project }) {
               {tools && tools.length > 0 ? (
                 tools.map((tool) => (
                   <Badge
-                    key={tool.tool_id}
+                    key={tool.tools.id}
                     variant="secondary"
                     className="bg-slate-700 text-slate-200"
                   >
-                    {tool.tools?.name || 'Unnamed Tool'}
+                    {tool.tools.name}
                   </Badge>
                 ))
               ) : (
