@@ -36,12 +36,14 @@ export function ProjectCard({ project }: { project: Project }) {
               {format(new Date(project.target_date), "MMM d, yyyy")}
             </div>
           )}
-          {project.total_cost > 0 && (
-            <div className="flex items-center text-sm text-muted-foreground">
-              <DollarSign className="h-4 w-4 mr-1" />
-              ${project.total_cost.toFixed(2)}
-            </div>
-          )}
+          {/* Update the total cost display to show even when it's 0 */}
+          <div className="flex items-center text-sm text-muted-foreground">
+            <DollarSign className="h-4 w-4 mr-1" />
+            {typeof project.total_cost === 'number' 
+              ? `$${project.total_cost.toFixed(2)}`
+              : '$0.00'
+            }
+          </div>
           {project.notes && (
             <div className="flex items-start text-sm text-muted-foreground mt-2">
               <StickyNote className="h-4 w-4 mr-1 mt-1 flex-shrink-0" />
