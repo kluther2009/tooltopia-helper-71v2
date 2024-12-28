@@ -40,6 +40,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       if (error) throw error;
       return data;
     },
+    enabled: open, // Only fetch when dialog is open
   });
 
   const isToolSelected = (toolId: string) => {
@@ -87,14 +88,17 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     }
   };
 
-  const handleCancel = () => {
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
-    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
-    onOpenChange(false);
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // When dialog is closed (including via X button), invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
+    }
+    onOpenChange(open);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleCancel}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Select Tools</DialogTitle>

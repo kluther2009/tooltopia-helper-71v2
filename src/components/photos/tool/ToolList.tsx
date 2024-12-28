@@ -29,7 +29,7 @@ export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool, project
         .eq("project_id", projectId)
       
       if (error) throw error
-      return data.map(pt => pt.tool_id)
+      return data
     },
     enabled: !!projectId
   })
