@@ -1,7 +1,1 @@
 project_id = "bnwztdwbdejiubjfpigj"
-
-[functions]
-[functions.check-subscription]
-verify_jwt = true
-[functions.create-checkout-session]
-verify_jwt = true
