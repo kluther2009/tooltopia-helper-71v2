@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,12 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
   const [newMaterial, setNewMaterial] = useState({ name: "", cost: "", quantity: "1" });
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (open) {
+      fetchMaterials();
+    }
+  }, [open]);
+
   const fetchMaterials = async () => {
     const { data, error } = await supabase
       .from("project_materials")
@@ -39,6 +45,22 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
     }
 
     setMaterials(data);
+  };
+
+  const updateProjectTotalCost = async (materials: ProjectMaterial[]) => {
+    const totalCost = materials.reduce((sum, material) => sum + material.cost * material.quantity, 0);
+    
+    const { error } = await supabase
+      .from("projects")
+      .update({ total_cost: totalCost })
+      .eq("id", project.id);
+
+    if (error) {
+      toast.error("Failed to update project total cost");
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
   };
 
   const handleAddMaterial = async () => {
@@ -63,8 +85,8 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
 
     toast.success("Material added successfully");
     setNewMaterial({ name: "", cost: "", quantity: "1" });
-    fetchMaterials();
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    const updatedMaterials = await fetchMaterials();
+    updateProjectTotalCost(updatedMaterials || materials);
   };
 
   const handleDeleteMaterial = async (id: string) => {
@@ -79,8 +101,9 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
     }
 
     toast.success("Material deleted successfully");
-    fetchMaterials();
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    const updatedMaterials = materials.filter(m => m.id !== id);
+    setMaterials(updatedMaterials);
+    updateProjectTotalCost(updatedMaterials);
   };
 
   return (
