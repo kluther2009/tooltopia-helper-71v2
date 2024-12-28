@@ -2,14 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { ToolSearch } from "../photos/tool/ToolSearch";
-import { ToolList } from "../photos/tool/ToolList";
-import { CreateToolDialog } from "../photos/tool/CreateToolDialog";
-import { usePhotoLocation } from "@/hooks/usePhotoLocation";
-import { useToolSearch } from "@/hooks/useToolSearch";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -18,11 +12,39 @@ interface ProjectToolsDialogProps {
 }
 
 export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const { tools, isLoading, searchTools } = useToolSearch()
-  const photoLocation = usePhotoLocation(projectId, open)
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+
+  // Fetch all tools
+  const { data: tools = [] } = useQuery({
+    queryKey: ["tools"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tools")
+        .select("*")
+        .order("name");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch selected tools for this project
+  const { data: selectedTools = [] } = useQuery({
+    queryKey: ["project-tools", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_tools")
+        .select("tool_id")
+        .eq("project_id", projectId);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isToolSelected = (toolId: string) => {
+    return selectedTools.some(pt => pt.tool_id === toolId);
+  };
 
   const handleToolSelect = async (toolId: string) => {
     try {
@@ -31,7 +53,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         .select('id')
         .eq('project_id', projectId)
         .eq('tool_id', toolId)
-        .single()
+        .single();
 
       if (existingTool) {
         // If tool exists, remove it
@@ -39,10 +61,10 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           .from('project_tools')
           .delete()
           .eq('project_id', projectId)
-          .eq('tool_id', toolId)
+          .eq('tool_id', toolId);
 
-        if (deleteError) throw deleteError
-        toast.success('Tool removed from project')
+        if (deleteError) throw deleteError;
+        toast.success('Tool removed from project');
       } else {
         // If tool doesn't exist, add it
         const { error: insertError } = await supabase
@@ -50,64 +72,55 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           .insert({
             project_id: projectId,
             tool_id: toolId,
-          })
+          });
 
-        if (insertError) throw insertError
-        toast.success('Tool added to project')
+        if (insertError) throw insertError;
+        toast.success('Tool added to project');
       }
       
       // Invalidate relevant queries
-      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
-      await queryClient.invalidateQueries({ queryKey: ["projects"] })
+      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error) {
-      console.error('Error managing project tool:', error)
-      toast.error('Failed to update project tools')
+      console.error('Error managing project tool:', error);
+      toast.error('Failed to update project tools');
     }
-  }
-
-  const handleCreateTool = async (toolId: string) => {
-    await handleToolSelect(toolId)
-    setShowCreateDialog(false)
-  }
+  };
 
   const handleCancel = () => {
-    queryClient.invalidateQueries({ queryKey: ["projects"] })
-    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
-    onOpenChange(false)
-  }
+    queryClient.invalidateQueries({ queryKey: ["projects"] });
+    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
+    onOpenChange(false);
+  };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={handleCancel}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Select Tools</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <ToolSearch
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onSearch={() => searchTools(searchQuery)}
-              isLoading={isLoading}
-            />
-            
-            <ToolList
-              tools={tools}
-              isLoading={isLoading}
-              onToolSelect={handleToolSelect}
-              onAddNewTool={() => setShowCreateDialog(true)}
-              projectId={projectId}
-            />
+    <Dialog open={open} onOpenChange={handleCancel}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Select Tools</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-[400px] pr-4">
+          <div className="space-y-2">
+            {tools.map((tool) => (
+              <div
+                key={tool.id}
+                onClick={() => handleToolSelect(tool.id)}
+                className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer"
+              >
+                <span className="text-sm font-medium">{tool.name}</span>
+                {isToolSelected(tool.id) && (
+                  <Check className="h-4 w-4 text-green-500" />
+                )}
+              </div>
+            ))}
+            {tools.length === 0 && (
+              <div className="text-center text-gray-500 py-4">
+                No tools available
+              </div>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <CreateToolDialog
-        isOpen={showCreateDialog}
-        onClose={() => setShowCreateDialog(false)}
-        onToolCreated={handleCreateTool}
-        initialLocation={photoLocation}
-      />
-    </>
-  )
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
 }
