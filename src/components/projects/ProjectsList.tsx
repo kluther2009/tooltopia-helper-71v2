@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProjectCard } from "./ProjectCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Project } from "@/types/projects"; // Add this import
+import { Project } from "@/types/projects";
 
 export function ProjectsList() {
   const { data: projects, isLoading } = useQuery<Project[]>({
@@ -15,12 +15,13 @@ export function ProjectsList() {
       
       if (error) throw error;
       
-      // Ensure the status is of the correct type
       return data.map(project => ({
         ...project,
         status: project.status as "planned" | "ongoing" | "completed"
       }));
     },
+    staleTime: 0, // This ensures the data is always refetched when the query is invalidated
+    refetchOnWindowFocus: true, // This ensures the data is refetched when the window regains focus
   });
 
   if (isLoading) {

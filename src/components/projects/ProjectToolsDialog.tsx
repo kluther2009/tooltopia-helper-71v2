@@ -84,7 +84,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       
       // Invalidate relevant queries
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-tools"] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] })
       ]);
     } catch (error) {
@@ -93,14 +93,18 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     }
   };
 
-  const handleClose = () => {
-    // Invalidate queries before closing
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["projects"] }),
-      queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
-    ]).then(() => {
+  const handleClose = async () => {
+    try {
+      // Invalidate queries before closing
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-tools"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] })
+      ]);
       onOpenChange(false);
-    });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      onOpenChange(false);
+    }
   };
 
   return (
