@@ -66,6 +66,47 @@ export type Database = {
         }
         Relationships: []
       }
+      project_materials: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          name: string
+          project_id: string | null
+          quantity: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          name: string
+          project_id?: string | null
+          quantity?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string | null
+          quantity?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_materials_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tools: {
         Row: {
           created_at: string
@@ -107,7 +148,10 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          notes: string | null
           status: string
+          target_date: string | null
+          total_cost: number | null
           updated_at: string
           user_id: string | null
         }
@@ -115,7 +159,10 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          notes?: string | null
           status: string
+          target_date?: string | null
+          total_cost?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -123,7 +170,10 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          notes?: string | null
           status?: string
+          target_date?: string | null
+          total_cost?: number | null
           updated_at?: string
           user_id?: string | null
         }
