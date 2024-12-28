@@ -55,7 +55,7 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customers.data[0].id,
       status: 'active',
-      price: 'price_1Qakp1G6qjqurmgJEBYEjf9Z',
+      price: "price_1Qakp1G6qjqurmgJEBYEjf9Z",
       limit: 1
     });
 
@@ -71,6 +71,7 @@ serve(async (req) => {
         status: 200,
       }
     );
+
   } catch (error) {
     console.error('Error checking subscription:', error);
     return new Response(
