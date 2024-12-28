@@ -2,8 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Check } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -94,33 +96,72 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     }
   };
 
+  const availableTools = tools.filter(tool => !isToolSelected(tool.id));
+  const projectTools = tools.filter(tool => isToolSelected(tool.id));
+
+  const ToolList = ({ tools, title }: { tools: any[], title: string }) => (
+    <Card className="flex-1 p-4">
+      <h3 className="font-medium mb-3 text-sm text-gray-700">{title}</h3>
+      <ScrollArea className="h-[300px] pr-4">
+        <div className="space-y-2">
+          {tools.map((tool) => (
+            <div
+              key={tool.id}
+              className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer text-sm"
+            >
+              {tool.name}
+            </div>
+          ))}
+          {tools.length === 0 && (
+            <div className="text-center text-gray-500 py-4 text-sm">
+              No tools available
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </Card>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Select Tools</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-2">
-            {tools.map((tool) => (
-              <div
-                key={tool.id}
-                onClick={() => handleToolSelect(tool.id)}
-                className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer"
-              >
-                <span className="text-sm font-medium">{tool.name}</span>
-                <Check 
-                  className={`h-4 w-4 ${isToolSelected(tool.id) ? 'text-green-500' : 'text-transparent'}`}
-                />
-              </div>
-            ))}
-            {tools.length === 0 && (
-              <div className="text-center text-gray-500 py-4">
-                No tools available
-              </div>
-            )}
+        <div className="flex items-stretch gap-4">
+          <ToolList tools={availableTools} title="Available Tools" />
+          
+          <div className="flex flex-col justify-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const selectedTool = availableTools[0];
+                if (selectedTool) {
+                  handleToolSelect(selectedTool.id);
+                }
+              }}
+              disabled={availableTools.length === 0}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const selectedTool = projectTools[0];
+                if (selectedTool) {
+                  handleToolSelect(selectedTool.id);
+                }
+              }}
+              disabled={projectTools.length === 0}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
           </div>
-        </ScrollArea>
+
+          <ToolList tools={projectTools} title="Selected Tools" />
+        </div>
       </DialogContent>
     </Dialog>
   );
