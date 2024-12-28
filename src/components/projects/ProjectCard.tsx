@@ -47,7 +47,8 @@ export function ProjectCard({ project }: { project: Project }) {
         .select("tool_id, tools(name)")
         .eq("project_id", project.id);
       if (error) throw error;
-      return data;
+      console.log("Tools data:", data); // Debug log
+      return data || []; // Ensure we always return an array
     },
   });
 
@@ -120,7 +121,7 @@ export function ProjectCard({ project }: { project: Project }) {
           </div>
         </div>
 
-        {(materials?.length > 0 || tools?.length > 0) && (
+        {(materials?.length > 0 || (tools && tools.length > 0)) && (
           <div className="grid grid-cols-2 gap-4 pt-2">
             <div>
               <h4 className="text-sm font-medium text-slate-300 mb-2">Materials Needed:</h4>
@@ -142,7 +143,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <div>
               <h4 className="text-sm font-medium text-slate-300 mb-2">Tools Required:</h4>
               <div className="flex flex-wrap gap-2">
-                {tools?.map((tool) => (
+                {Array.isArray(tools) && tools.map((tool) => (
                   <Badge
                     key={tool.tool_id}
                     variant="secondary"
