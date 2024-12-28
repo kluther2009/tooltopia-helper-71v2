@@ -2,14 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Tool {
-  id: string;
-  name: string;
-}
-
 interface ProjectTool {
   id: string;
-  tool: Tool;
+  tool: {
+    id: string;
+    name: string;
+  };
 }
 
 export function ProjectTools({ projectId }: { projectId: string }) {
@@ -25,7 +23,7 @@ export function ProjectTools({ projectId }: { projectId: string }) {
             name
           )
         `)
-        .eq("project_id", projectId);
+        .eq('project_id', projectId);
       
       if (error) {
         console.error("Error fetching tools:", error);
