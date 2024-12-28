@@ -18,6 +18,7 @@ serve(async (req) => {
   );
 
   try {
+    console.log('Starting subscription check...');
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
     const { data } = await supabaseClient.auth.getUser(token);
@@ -25,9 +26,11 @@ serve(async (req) => {
     const email = user?.email;
 
     if (!email) {
+      console.error('No email found for user');
       throw new Error('No email found');
     }
 
+    console.log('Checking subscription for email:', email);
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
@@ -38,6 +41,7 @@ serve(async (req) => {
     });
 
     if (customers.data.length === 0) {
+      console.log('No customer found for email:', email);
       return new Response(
         JSON.stringify({ subscribed: false }),
         {
@@ -47,6 +51,7 @@ serve(async (req) => {
       );
     }
 
+    console.log('Customer found, checking active subscriptions...');
     const subscriptions = await stripe.subscriptions.list({
       customer: customers.data[0].id,
       status: 'active',
@@ -54,9 +59,12 @@ serve(async (req) => {
       limit: 1
     });
 
+    const isSubscribed = subscriptions.data.length > 0;
+    console.log('Subscription status:', isSubscribed ? 'Active' : 'Not active');
+
     return new Response(
       JSON.stringify({ 
-        subscribed: subscriptions.data.length > 0,
+        subscribed: isSubscribed,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

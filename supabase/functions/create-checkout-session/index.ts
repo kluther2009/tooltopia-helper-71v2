@@ -18,6 +18,7 @@ serve(async (req) => {
   );
 
   try {
+    console.log('Starting checkout session creation...');
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
     const { data } = await supabaseClient.auth.getUser(token);
@@ -25,9 +26,11 @@ serve(async (req) => {
     const email = user?.email;
 
     if (!email) {
+      console.error('No email found for user');
       throw new Error('No email found');
     }
 
+    console.log('Creating checkout session for email:', email);
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
@@ -42,6 +45,7 @@ serve(async (req) => {
     let customer_id = undefined;
     if (customers.data.length > 0) {
       customer_id = customers.data[0].id;
+      console.log('Existing customer found:', customer_id);
       const subscriptions = await stripe.subscriptions.list({
         customer: customers.data[0].id,
         status: 'active',
@@ -50,6 +54,7 @@ serve(async (req) => {
       });
 
       if (subscriptions.data.length > 0) {
+        console.error('Customer already has an active subscription');
         throw new Error("Customer already has an active subscription");
       }
     }
