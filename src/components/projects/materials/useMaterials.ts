@@ -29,14 +29,17 @@ export function useMaterials(projectId: string) {
   };
 
   const calculateTotalCost = (materialsToCalculate: ProjectMaterial[]) => {
-    return materialsToCalculate.reduce(
-      (sum, material) => sum + material.cost * material.quantity,
+    const total = materialsToCalculate.reduce(
+      (sum, material) => sum + (material.cost * material.quantity),
       0
     );
+    // Round to 2 decimal places to avoid floating point precision issues
+    return Number(total.toFixed(2));
   };
 
   const updateProjectTotalCost = async (materialsToUpdate: ProjectMaterial[]) => {
     const totalCost = calculateTotalCost(materialsToUpdate);
+    console.log("Updating total cost to:", totalCost);
 
     const { error } = await supabase
       .from("projects")
@@ -44,6 +47,7 @@ export function useMaterials(projectId: string) {
       .eq("id", projectId);
 
     if (error) {
+      console.error("Error updating total cost:", error);
       toast.error("Failed to update project total cost");
       return;
     }
@@ -70,12 +74,15 @@ export function useMaterials(projectId: string) {
   const handleAddMaterial = async () => {
     if (!validateNewMaterial()) return;
 
-    const { error } = await supabase.from("project_materials").insert({
-      project_id: projectId,
-      name: newMaterial.name,
-      cost: parseFloat(newMaterial.cost),
-      quantity: parseInt(newMaterial.quantity),
-    });
+    const { data, error } = await supabase
+      .from("project_materials")
+      .insert({
+        project_id: projectId,
+        name: newMaterial.name,
+        cost: parseFloat(newMaterial.cost),
+        quantity: parseInt(newMaterial.quantity),
+      })
+      .select();
 
     if (error) {
       toast.error("Failed to add material");
@@ -85,7 +92,7 @@ export function useMaterials(projectId: string) {
     toast.success("Material added successfully");
     resetNewMaterialForm();
     const updatedMaterials = await fetchMaterials();
-    updateProjectTotalCost(updatedMaterials);
+    await updateProjectTotalCost(updatedMaterials);
   };
 
   const handleDeleteMaterial = async (id: string) => {
@@ -102,12 +109,14 @@ export function useMaterials(projectId: string) {
     toast.success("Material deleted successfully");
     const updatedMaterials = materials.filter((m) => m.id !== id);
     setMaterials(updatedMaterials);
-    updateProjectTotalCost(updatedMaterials);
+    await updateProjectTotalCost(updatedMaterials);
   };
 
   useEffect(() => {
     if (projectId) {
-      fetchMaterials();
+      fetchMaterials().then((materials) => {
+        updateProjectTotalCost(materials);
+      });
     }
   }, [projectId]);
 
