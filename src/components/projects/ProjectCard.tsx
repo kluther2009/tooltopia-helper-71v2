@@ -38,7 +38,7 @@ export function ProjectCard({ project }: { project: Project }) {
     },
   });
 
-  // Fetch tools for this project
+  // Fetch tools for this project with proper error handling
   const { data: tools } = useQuery<ProjectTool[]>({
     queryKey: ["project-tools", project.id],
     queryFn: async () => {
@@ -46,6 +46,7 @@ export function ProjectCard({ project }: { project: Project }) {
         .from("project_tools")
         .select("tool_id, tools(name)")
         .eq("project_id", project.id);
+      
       if (error) {
         console.error("Error fetching tools:", error);
         throw error;

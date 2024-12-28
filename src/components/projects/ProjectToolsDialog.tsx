@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tool } from "@/hooks/useTools";
 import { Check, Loader2 } from "lucide-react";
@@ -17,6 +17,7 @@ interface ProjectToolsDialogProps {
 export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
   const [selectedTools, setSelectedTools] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch available tools
   const { data: tools, isLoading: isLoadingTools } = useQuery({
@@ -94,6 +95,9 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         if (insertError) throw insertError;
       }
 
+      // Invalidate relevant queries to trigger a refresh
+      await queryClient.invalidateQueries({ queryKey: ["project-tools"] });
+      
       toast.success("Project tools updated successfully");
       onOpenChange(false);
     } catch (error) {
