@@ -1,9 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tool } from "@/hooks/useTools";
 import { Check, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -28,29 +26,42 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
 
   const handleToolSelect = async (toolId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        toast.error('You must be logged in to add tools')
-        return
-      }
-
-      const { error } = await supabase
+      const { data: existingTool } = await supabase
         .from('project_tools')
-        .insert({
-          project_id: projectId,
-          tool_id: toolId,
-        })
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('tool_id', toolId)
+        .single()
 
-      if (error) throw error
+      if (existingTool) {
+        // If tool exists, remove it
+        const { error: deleteError } = await supabase
+          .from('project_tools')
+          .delete()
+          .eq('project_id', projectId)
+          .eq('tool_id', toolId)
+
+        if (deleteError) throw deleteError
+        toast.success('Tool removed from project')
+      } else {
+        // If tool doesn't exist, add it
+        const { error: insertError } = await supabase
+          .from('project_tools')
+          .insert({
+            project_id: projectId,
+            tool_id: toolId,
+          })
+
+        if (insertError) throw insertError
+        toast.success('Tool added to project')
+      }
       
       // Invalidate relevant queries
-      await queryClient.invalidateQueries({ queryKey: ["project-tools"] })
+      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
       await queryClient.invalidateQueries({ queryKey: ["projects"] })
-      
-      toast.success('Tool added to project')
     } catch (error) {
-      console.error('Error adding tool to project:', error)
-      toast.error('Failed to add tool to project')
+      console.error('Error managing project tool:', error)
+      toast.error('Failed to update project tools')
     }
   }
 
@@ -60,9 +71,8 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   }
 
   const handleCancel = () => {
-    // Invalidate both projects and project-tools queries
     queryClient.invalidateQueries({ queryKey: ["projects"] })
-    queryClient.invalidateQueries({ queryKey: ["project-tools"] })
+    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
     onOpenChange(false)
   }
 
@@ -71,7 +81,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       <Dialog open={open} onOpenChange={handleCancel}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Select Tool</DialogTitle>
+            <DialogTitle>Select Tools</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <ToolSearch

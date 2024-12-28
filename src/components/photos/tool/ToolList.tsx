@@ -19,7 +19,7 @@ interface ToolListProps {
 
 export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool, projectId }: ToolListProps) {
   // Fetch existing project tools if projectId is provided
-  const { data: selectedTools } = useQuery({
+  const { data: selectedTools = [] } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       if (!projectId) return []
@@ -35,7 +35,7 @@ export function ToolList({ tools, isLoading, onToolSelect, onAddNewTool, project
   })
 
   const isToolSelected = (toolId: string) => {
-    return selectedTools?.includes(toolId)
+    return selectedTools.some(pt => pt.tool_id === toolId)
   }
 
   return (
