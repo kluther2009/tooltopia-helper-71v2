@@ -50,12 +50,14 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
 
   const handleToolSelect = async (toolId: string) => {
     try {
-      const { data: existingTool } = await supabase
+      const { data: existingTool, error: checkError } = await supabase
         .from('project_tools')
         .select('id')
         .eq('project_id', projectId)
         .eq('tool_id', toolId)
-        .single();
+        .maybeSingle(); // Changed from .single() to .maybeSingle()
+
+      if (checkError) throw checkError;
 
       if (existingTool) {
         // If tool exists, remove it
