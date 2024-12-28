@@ -55,7 +55,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         .select('id')
         .eq('project_id', projectId)
         .eq('tool_id', toolId)
-        .maybeSingle(); // Changed from .single() to .maybeSingle()
+        .maybeSingle();
 
       if (checkError) throw checkError;
 
@@ -83,8 +83,10 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       }
       
       // Invalidate relevant queries
-      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] })
+      ]);
     } catch (error) {
       console.error('Error managing project tool:', error);
       toast.error('Failed to update project tools');
@@ -92,10 +94,13 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   };
 
   const handleClose = () => {
-    // Invalidate queries and close dialog
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
-    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
-    onOpenChange(false);
+    // Invalidate queries before closing
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
+    ]).then(() => {
+      onOpenChange(false);
+    });
   };
 
   return (
