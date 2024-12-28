@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -30,7 +29,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     staleTime: 1000,
   });
 
-  // Fetch selected tools for this project using the same configuration as ProjectTools
+  // Fetch selected tools for this project
   const { data: selectedTools = [] } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
@@ -42,7 +41,9 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       if (error) throw error;
       return data;
     },
+    enabled: open,
     staleTime: 1000,
+    refetchOnWindowFocus: true,
   });
 
   const isToolSelected = (toolId: string) => {
@@ -84,7 +85,9 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       }
       
       // Invalidate relevant queries
-      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
+      await queryClient.invalidateQueries({ 
+        queryKey: ["project-tools", projectId]
+      });
     } catch (error) {
       console.error('Error managing project tool:', error);
       toast.error('Failed to update project tools');

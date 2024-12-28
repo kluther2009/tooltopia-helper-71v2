@@ -32,6 +32,8 @@ export function ProjectTools({ projectId }: { projectId: string }) {
       return (data || []) as ProjectTool[];
     },
     staleTime: 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000,
   });
 
   return (
