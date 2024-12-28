@@ -5,8 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tool } from "@/hooks/useTools";
 import { Check, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useState } from "react";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -25,7 +25,8 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tools")
-        .select("*");
+        .select("*")
+        .order("name");
       
       if (error) throw error;
       return data as Tool[];
@@ -42,12 +43,17 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         .eq("project_id", projectId);
       
       if (error) throw error;
-      
-      const toolIds = new Set(data.map(pt => pt.tool_id));
-      setSelectedTools(toolIds);
-      return toolIds;
+      return data || [];
     },
   });
+
+  // Update selected tools when project tools data is loaded
+  useEffect(() => {
+    if (projectTools) {
+      const toolIds = new Set(projectTools.map(pt => pt.tool_id));
+      setSelectedTools(toolIds);
+    }
+  }, [projectTools]);
 
   const handleToolToggle = (toolId: string) => {
     const newSelected = new Set(selectedTools);
@@ -65,11 +71,11 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     setIsSubmitting(true);
     try {
       // Convert Sets to Arrays for comparison
-      const currentToolIds = Array.from(projectTools);
+      const currentToolIds = projectTools.map(pt => pt.tool_id);
       const newToolIds = Array.from(selectedTools);
 
       // Remove tools that were unselected
-      const toolsToRemove = currentToolIds.filter(toolId => !selectedTools.has(toolId));
+      const toolsToRemove = currentToolIds.filter(id => !selectedTools.has(id));
       if (toolsToRemove.length > 0) {
         const { error: deleteError } = await supabase
           .from("project_tools")
@@ -81,7 +87,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       }
 
       // Add newly selected tools
-      const toolsToAdd = newToolIds.filter(toolId => !projectTools.has(toolId));
+      const toolsToAdd = newToolIds.filter(id => !currentToolIds.includes(id));
       if (toolsToAdd.length > 0) {
         const { error: insertError } = await supabase
           .from("project_tools")
@@ -112,7 +118,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Manage Project Tools</DialogTitle>
         </DialogHeader>
@@ -148,7 +154,6 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
 
             <div className="flex gap-2 justify-end mt-4">
               <Button
-                type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}

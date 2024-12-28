@@ -39,7 +39,7 @@ export function ProjectCard({ project }: { project: Project }) {
   });
 
   // Fetch tools for this project with proper error handling
-  const { data: tools } = useQuery<ProjectTool[]>({
+  const { data: tools } = useQuery({
     queryKey: ["project-tools", project.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,7 +51,7 @@ export function ProjectCard({ project }: { project: Project }) {
         console.error("Error fetching tools:", error);
         throw error;
       }
-      return data || [];
+      return (data || []) as ProjectTool[];
     },
   });
 
