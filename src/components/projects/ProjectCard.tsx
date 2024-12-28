@@ -1,26 +1,13 @@
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Wrench, Calendar, DollarSign } from "lucide-react";
+import { useState } from "react";
+import { Project } from "@/types/projects";
 import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { ProjectToolsDialog } from "./ProjectToolsDialog";
 import { ProjectMaterialsDialog } from "./ProjectMaterialsDialog";
-import { useState } from "react";
-import { Project } from "@/types/projects";
-import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-
-interface ProjectTool {
-  id: string;
-  project_id: string;
-  tool_id: string;
-  tool: {
-    id: string;
-    name: string;
-  };
-}
+import { ProjectHeader } from "./project-card/ProjectHeader";
+import { ProjectTools } from "./project-card/ProjectTools";
+import { ProjectMaterials } from "./project-card/ProjectMaterials";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -28,149 +15,20 @@ export function ProjectCard({ project }: { project: Project }) {
   const [isToolsDialogOpen, setIsToolsDialogOpen] = useState(false);
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
 
-  // Fetch materials for this project
-  const { data: materials } = useQuery({
-    queryKey: ["project-materials", project.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("project_materials")
-        .select("*")
-        .eq("project_id", project.id);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Updated query to properly fetch tools with their details
-  const { data: projectTools } = useQuery({
-    queryKey: ["project-tools", project.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("project_tools")
-        .select(`
-          id,
-          project_id,
-          tool_id,
-          tool:tools (
-            id,
-            name
-          )
-        `)
-        .eq("project_id", project.id);
-      
-      if (error) {
-        console.error("Error fetching tools:", error);
-        throw error;
-      }
-      return (data || []) as ProjectTool[];
-    },
-  });
-
-  const statusColors = {
-    planned: "bg-blue-600 text-white",
-    ongoing: "bg-orange-600 text-white",
-    completed: "bg-green-600 text-white",
-  };
-
   return (
     <Card className="p-4 bg-slate-800 text-white">
       <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold">{project.name}</h3>
-              <Badge className={statusColors[project.status]} variant="secondary">
-                {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-slate-300">
-              {project.target_date && (
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  {format(new Date(project.target_date), "MMM d, yyyy")}
-                </div>
-              )}
-              <div className="flex items-center">
-                <DollarSign className="h-4 w-4 mr-1" />
-                {typeof project.total_cost === 'number' 
-                  ? `$${project.total_cost.toFixed(2)}`
-                  : '$0.00'
-                }
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={() => setIsMaterialsDialogOpen(true)}
-            >
-              <DollarSign className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={() => setIsToolsDialogOpen(true)}
-            >
-              <Wrench className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={() => setIsEditDialogOpen(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={() => setIsDeleteDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <ProjectHeader 
+          project={project}
+          onEditClick={() => setIsEditDialogOpen(true)}
+          onDeleteClick={() => setIsDeleteDialogOpen(true)}
+          onToolsClick={() => setIsToolsDialogOpen(true)}
+          onMaterialsClick={() => setIsMaterialsDialogOpen(true)}
+        />
 
         <div className="grid grid-cols-2 gap-4 pt-2">
-          <div>
-            <h4 className="text-sm font-medium text-slate-300 mb-2">Materials Needed:</h4>
-            <div className="flex flex-wrap gap-2">
-              {materials?.map((material) => (
-                <Badge
-                  key={material.id}
-                  variant="secondary"
-                  className="bg-slate-700 text-slate-200"
-                >
-                  {material.name} x{material.quantity}
-                </Badge>
-              ))}
-              {(!materials || materials.length === 0) && (
-                <span className="text-sm text-slate-400">No materials added</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-slate-300 mb-2">Tools Required:</h4>
-            <div className="flex flex-wrap gap-2">
-              {projectTools && projectTools.length > 0 ? (
-                projectTools.map((projectTool) => (
-                  <Badge
-                    key={projectTool.id}
-                    variant="secondary"
-                    className="bg-slate-700 text-slate-200"
-                  >
-                    {projectTool.tool.name}
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-sm text-slate-400">No tools added</span>
-              )}
-            </div>
-          </div>
+          <ProjectMaterials projectId={project.id} />
+          <ProjectTools projectId={project.id} />
         </div>
 
         {project.notes && (
