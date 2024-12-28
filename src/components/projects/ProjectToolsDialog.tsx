@@ -41,7 +41,8 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       if (error) throw error;
       return data;
     },
-    enabled: open, // Only fetch when dialog is open
+    enabled: open,
+    staleTime: 0,
   });
 
   const isToolSelected = (toolId: string) => {
@@ -85,7 +86,8 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       // Invalidate relevant queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project-tools"] }),
-        queryClient.invalidateQueries({ queryKey: ["projects"] })
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
       ]);
     } catch (error) {
       console.error('Error managing project tool:', error);
@@ -98,7 +100,8 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       // Invalidate queries before closing
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project-tools"] }),
-        queryClient.invalidateQueries({ queryKey: ["projects"] })
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
       ]);
       onOpenChange(false);
     } catch (error) {
