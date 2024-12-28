@@ -62,7 +62,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   const handleCancel = () => {
     // Invalidate both projects and project-tools queries
     queryClient.invalidateQueries({ queryKey: ["projects"] })
-    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] })
+    queryClient.invalidateQueries({ queryKey: ["project-tools"] })
     onOpenChange(false)
   }
 
