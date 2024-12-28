@@ -16,7 +16,7 @@ interface ProjectTool {
   tools: {
     id: string;
     name: string;
-  };
+  } | null;
 }
 
 export function ProjectCard({ project }: { project: Project }) {
@@ -152,13 +152,15 @@ export function ProjectCard({ project }: { project: Project }) {
             <div className="flex flex-wrap gap-2">
               {tools && tools.length > 0 ? (
                 tools.map((tool) => (
-                  <Badge
-                    key={tool.tools.id}
-                    variant="secondary"
-                    className="bg-slate-700 text-slate-200"
-                  >
-                    {tool.tools.name}
-                  </Badge>
+                  tool.tools && (
+                    <Badge
+                      key={tool.tools.id}
+                      variant="secondary"
+                      className="bg-slate-700 text-slate-200"
+                    >
+                      {tool.tools.name}
+                    </Badge>
+                  )
                 ))
               ) : (
                 <span className="text-sm text-slate-400">No tools added</span>
