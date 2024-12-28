@@ -107,6 +107,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           {tools.map((tool) => (
             <div
               key={tool.id}
+              onClick={() => handleToolSelect(tool.id)}
               className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer text-sm"
             >
               {tool.name}
