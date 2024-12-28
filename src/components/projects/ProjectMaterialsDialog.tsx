@@ -1,4 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -22,9 +27,17 @@ interface ProjectMaterialsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectMaterialsDialogProps) {
+export function ProjectMaterialsDialog({
+  project,
+  open,
+  onOpenChange,
+}: ProjectMaterialsDialogProps) {
   const [materials, setMaterials] = useState<ProjectMaterial[]>([]);
-  const [newMaterial, setNewMaterial] = useState({ name: "", cost: "", quantity: "1" });
+  const [newMaterial, setNewMaterial] = useState({
+    name: "",
+    cost: "",
+    quantity: "1",
+  });
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -41,15 +54,23 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
 
     if (error) {
       toast.error("Failed to load materials");
-      return;
+      return [];
     }
 
     setMaterials(data);
+    return data;
   };
 
-  const updateProjectTotalCost = async (materials: ProjectMaterial[]) => {
-    const totalCost = materials.reduce((sum, material) => sum + material.cost * material.quantity, 0);
-    
+  const calculateTotalCost = (materialsToCalculate: ProjectMaterial[]) => {
+    return materialsToCalculate.reduce(
+      (sum, material) => sum + material.cost * material.quantity,
+      0
+    );
+  };
+
+  const updateProjectTotalCost = async (materialsToUpdate: ProjectMaterial[]) => {
+    const totalCost = calculateTotalCost(materialsToUpdate);
+
     const { error } = await supabase
       .from("projects")
       .update({ total_cost: totalCost })
@@ -63,20 +84,27 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
     queryClient.invalidateQueries({ queryKey: ["projects"] });
   };
 
-  const handleAddMaterial = async () => {
+  const resetNewMaterialForm = () => {
+    setNewMaterial({ name: "", cost: "", quantity: "1" });
+  };
+
+  const validateNewMaterial = () => {
     if (!newMaterial.name || !newMaterial.cost) {
       toast.error("Please fill in all fields");
-      return;
+      return false;
     }
+    return true;
+  };
 
-    const { error } = await supabase
-      .from("project_materials")
-      .insert({
-        project_id: project.id,
-        name: newMaterial.name,
-        cost: parseFloat(newMaterial.cost),
-        quantity: parseInt(newMaterial.quantity),
-      });
+  const handleAddMaterial = async () => {
+    if (!validateNewMaterial()) return;
+
+    const { error } = await supabase.from("project_materials").insert({
+      project_id: project.id,
+      name: newMaterial.name,
+      cost: parseFloat(newMaterial.cost),
+      quantity: parseInt(newMaterial.quantity),
+    });
 
     if (error) {
       toast.error("Failed to add material");
@@ -84,9 +112,9 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
     }
 
     toast.success("Material added successfully");
-    setNewMaterial({ name: "", cost: "", quantity: "1" });
+    resetNewMaterialForm();
     const updatedMaterials = await fetchMaterials();
-    updateProjectTotalCost(updatedMaterials || materials);
+    updateProjectTotalCost(updatedMaterials);
   };
 
   const handleDeleteMaterial = async (id: string) => {
@@ -101,7 +129,7 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
     }
 
     toast.success("Material deleted successfully");
-    const updatedMaterials = materials.filter(m => m.id !== id);
+    const updatedMaterials = materials.filter((m) => m.id !== id);
     setMaterials(updatedMaterials);
     updateProjectTotalCost(updatedMaterials);
   };
@@ -123,7 +151,9 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
               <Input
                 placeholder="Material name"
                 value={newMaterial.name}
-                onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
+                onChange={(e) =>
+                  setNewMaterial({ ...newMaterial, name: e.target.value })
+                }
               />
               <Input
                 type="number"
@@ -131,14 +161,18 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
                 min="0"
                 placeholder="Cost"
                 value={newMaterial.cost}
-                onChange={(e) => setNewMaterial({ ...newMaterial, cost: e.target.value })}
+                onChange={(e) =>
+                  setNewMaterial({ ...newMaterial, cost: e.target.value })
+                }
               />
               <Input
                 type="number"
                 min="1"
                 placeholder="Quantity"
                 value={newMaterial.quantity}
-                onChange={(e) => setNewMaterial({ ...newMaterial, quantity: e.target.value })}
+                onChange={(e) =>
+                  setNewMaterial({ ...newMaterial, quantity: e.target.value })
+                }
               />
             </div>
             <Button onClick={handleAddMaterial} className="w-full">
@@ -149,7 +183,10 @@ export function ProjectMaterialsDialog({ project, open, onOpenChange }: ProjectM
 
           <div className="space-y-2">
             {materials.map((material) => (
-              <div key={material.id} className="flex items-center justify-between p-2 border rounded">
+              <div
+                key={material.id}
+                className="flex items-center justify-between p-2 border rounded"
+              >
                 <div>
                   <p className="font-medium">{material.name}</p>
                   <p className="text-sm text-muted-foreground">
