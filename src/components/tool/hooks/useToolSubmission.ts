@@ -95,6 +95,15 @@ export function useToolSubmission() {
 
       console.log('Tool created successfully:', newTool)
 
+      // Store tool ID in case we need it for error recovery
+      if (parsedAnnotation) {
+        const updatedAnnotation = {
+          ...parsedAnnotation,
+          toolId: newTool.id
+        }
+        localStorage.setItem('pendingAnnotation', JSON.stringify(updatedAnnotation))
+      }
+
       // Handle file uploads
       if (showAdditionalInfo) {
         if (warrantyFile) {
@@ -139,7 +148,8 @@ export function useToolSubmission() {
         if (annotationError) {
           console.error('Error creating annotation:', annotationError)
           toast.error('Failed to create tool annotation')
-          // Don't return false here as the tool was created successfully
+          // Keep the annotation data in localStorage for potential retry
+          return true // Still return true as the tool was created successfully
         } else {
           console.log('Annotation created successfully')
           // Only remove annotation data after successful annotation creation
