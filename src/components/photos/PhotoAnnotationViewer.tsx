@@ -47,7 +47,6 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
 
       if (data) {
         console.log('Raw annotation data:', data)
-        // Transform the data to match our Annotation type
         const transformedAnnotations = data.map(item => ({
           id: item.id,
           coordinates: typeof item.coordinates === 'string' 
@@ -75,13 +74,15 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       return
     }
 
-    // Format coordinates as numbers to ensure proper JSON serialization
+    // Ensure coordinates are numbers and create a clean object
     const formattedCoordinates = {
       x: Number(coordinates.x),
       y: Number(coordinates.y),
       width: Number(coordinates.width),
       height: Number(coordinates.height)
     }
+
+    console.log('Formatted coordinates:', formattedCoordinates)
 
     const annotationData = {
       photoId: photo.id,
@@ -93,6 +94,9 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     console.log('Saving annotation data to localStorage:', annotationData)
     localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
     
+    // Close the dialog before navigating
+    onClose()
+    
     console.log('Navigating to add-tool route...')
     navigate('/add-tool')
   }
@@ -103,13 +107,10 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) onClose()
     }}>
-      <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0" aria-describedby="photo-annotation-description">
+      <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader>
           <DialogTitle>Photo Annotations</DialogTitle>
         </DialogHeader>
-        <p id="photo-annotation-description" className="sr-only">
-          View and add tool annotations to this photo
-        </p>
         <div className="relative w-full h-[80vh]">
           <AnnotationCanvas
             imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
