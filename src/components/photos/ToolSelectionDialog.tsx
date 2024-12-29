@@ -64,7 +64,6 @@ export function ToolSelectionDialog({
           user_id: user.id
         })
         .select()
-        .single();
 
       if (error) {
         console.error('Supabase error:', error);
@@ -75,13 +74,7 @@ export function ToolSelectionDialog({
       console.log('Successfully created annotation:', data);
       
       // Clear the pending annotation data since we've successfully created the annotation
-      const storedData = localStorage.getItem('pendingAnnotation');
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        const updatedData = { ...parsedData };
-        delete updatedData.coordinates; // Remove coordinates after successful save
-        localStorage.setItem('pendingAnnotation', JSON.stringify(updatedData));
-      }
+      localStorage.removeItem('pendingAnnotation');
 
       toast.success('Tool annotation saved');
       onToolSelect(toolId);
