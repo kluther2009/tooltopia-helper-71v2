@@ -32,12 +32,19 @@ export function AnnotationCanvas({
     setIsDrawing
   } = useCanvasInteraction({
     canvasRef,
-    onRectangleDrawn,
+    onRectangleDrawn: (coords) => {
+      console.log('Rectangle drawn with coordinates:', coords);
+      if (onRectangleDrawn) {
+        console.log('Calling onRectangleDrawn with coordinates:', coords);
+        onRectangleDrawn(coords);
+      }
+    },
     imageMetrics
   });
 
   // Load image and initialize canvas
   useEffect(() => {
+    console.log('Loading image:', imageUrl);
     const img = new Image();
     img.src = imageUrl;
     img.onload = () => {
@@ -48,6 +55,7 @@ export function AnnotationCanvas({
 
   // Redraw canvas when annotations change
   useEffect(() => {
+    console.log('Existing annotations changed:', existingAnnotations);
     if (imageRef.current && existingAnnotations) {
       drawCanvas();
     }
@@ -77,8 +85,9 @@ export function AnnotationCanvas({
 
     // Draw all existing annotations
     if (existingAnnotations && existingAnnotations.length > 0) {
+      console.log('Drawing annotations:', existingAnnotations);
       existingAnnotations.forEach(annotation => {
-        if (annotation.tool?.name) {  // Only draw if we have a tool name
+        if (annotation.tool?.name) {
           drawAnnotation(ctx, annotation, metrics);
         }
       });

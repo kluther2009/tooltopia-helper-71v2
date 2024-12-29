@@ -66,6 +66,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
   }
 
   const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
+    console.log('Rectangle drawn, saving coordinates to localStorage:', coordinates);
     localStorage.setItem('pendingAnnotation', JSON.stringify({
       photoId: photo?.id,
       coordinates,
