@@ -40,7 +40,19 @@ export function useToolSubmission() {
         return false
       }
 
-      // Create the tool first
+      // Get annotation data before creating tool
+      const annotationData = localStorage.getItem('pendingAnnotation')
+      let parsedAnnotation = null
+      if (annotationData) {
+        try {
+          parsedAnnotation = JSON.parse(annotationData)
+          console.log('Found annotation data:', parsedAnnotation)
+        } catch (error) {
+          console.error('Error parsing annotation data:', error)
+        }
+      }
+
+      // Create the tool
       const { data: newTool, error: toolError } = await supabase
         .from('tools')
         .insert({
@@ -57,8 +69,14 @@ export function useToolSubmission() {
         .select()
         .single()
 
-      if (toolError) throw toolError
+      if (toolError) {
+        console.error('Error creating tool:', toolError)
+        throw toolError
+      }
 
+      console.log('Tool created successfully:', newTool)
+
+      // Handle file uploads if needed
       if (showAdditionalInfo) {
         if (warrantyFile) {
           const warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
@@ -81,31 +99,30 @@ export function useToolSubmission() {
         }
       }
 
-      // Handle annotation if present
-      const annotationData = localStorage.getItem('pendingAnnotation')
-      if (annotationData) {
-        try {
-          const data = JSON.parse(annotationData)
-          if (data.coordinates && data.photoId) {
-            const { error: annotationError } = await supabase
-              .from('tool_annotations')
-              .insert({
-                photo_id: data.photoId,
-                tool_id: newTool.id,
-                coordinates: data.coordinates,
-                user_id: user.id
-              })
+      // Create annotation if data exists
+      if (parsedAnnotation && parsedAnnotation.photoId && parsedAnnotation.coordinates) {
+        console.log('Creating annotation with data:', {
+          photo_id: parsedAnnotation.photoId,
+          tool_id: newTool.id,
+          coordinates: parsedAnnotation.coordinates,
+          user_id: user.id
+        })
 
-            if (annotationError) {
-              console.error('Error creating annotation:', annotationError)
-              toast.error('Failed to create tool annotation')
-            } else {
-              console.log('Successfully created annotation')
-              localStorage.removeItem('pendingAnnotation')
-            }
-          }
-        } catch (error) {
-          console.error('Error handling annotation:', error)
+        const { error: annotationError } = await supabase
+          .from('tool_annotations')
+          .insert({
+            photo_id: parsedAnnotation.photoId,
+            tool_id: newTool.id,
+            coordinates: parsedAnnotation.coordinates,
+            user_id: user.id
+          })
+
+        if (annotationError) {
+          console.error('Error creating annotation:', annotationError)
+          toast.error('Failed to create tool annotation')
+        } else {
+          console.log('Annotation created successfully')
+          localStorage.removeItem('pendingAnnotation')
         }
       }
 
