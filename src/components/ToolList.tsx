@@ -44,7 +44,11 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
                     {...provided.dragHandleProps}
                     style={provided.draggableProps.style}
                   >
-                    <ToolCard {...tool} />
+                    <ToolCard 
+                      {...tool}
+                      name={tool.name}
+                      location={tool.location}
+                    />
                   </div>
                 )}
               </Draggable>
