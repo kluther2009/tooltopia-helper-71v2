@@ -36,6 +36,7 @@ export function AnnotationCanvas({
     imageMetrics
   });
 
+  // Load image and initialize canvas
   useEffect(() => {
     const img = new Image();
     img.src = imageUrl;
@@ -45,12 +46,14 @@ export function AnnotationCanvas({
     };
   }, [imageUrl]);
 
+  // Redraw canvas when annotations change
   useEffect(() => {
-    if (imageRef.current) {
+    if (imageRef.current && existingAnnotations) {
       drawCanvas();
     }
   }, [existingAnnotations]);
 
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       if (imageRef.current) {
@@ -72,9 +75,14 @@ export function AnnotationCanvas({
     const metrics = drawImageOnCanvas(ctx, imageRef.current, canvas);
     setImageMetrics(metrics);
 
-    existingAnnotations.forEach(annotation => {
-      drawAnnotation(ctx, annotation, metrics);
-    });
+    // Draw all existing annotations
+    if (existingAnnotations && existingAnnotations.length > 0) {
+      existingAnnotations.forEach(annotation => {
+        if (annotation.tool?.name) {  // Only draw if we have a tool name
+          drawAnnotation(ctx, annotation, metrics);
+        }
+      });
+    }
   };
 
   return (

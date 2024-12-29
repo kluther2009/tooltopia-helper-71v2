@@ -68,6 +68,8 @@ export const drawAnnotation = (
   annotation: Annotation,
   imageMetrics: { scale: number; x: number; y: number }
 ) => {
+  if (!annotation.coordinates || !annotation.tool?.name) return;
+
   const { coordinates, tool } = annotation;
   
   // Convert stored coordinates back to canvas space
