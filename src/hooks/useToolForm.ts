@@ -32,7 +32,10 @@ export function useToolForm() {
       console.log('Found annotation data in navigation state:', state.pendingAnnotation)
       annotationData = state.pendingAnnotation
       // Save to localStorage as backup
-      localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
+      localStorage.setItem('pendingAnnotation', JSON.stringify({
+        ...annotationData,
+        timestamp: Date.now()
+      }))
       // Clear navigation state
       navigate(location.pathname, { replace: true })
     } else {
@@ -40,6 +43,7 @@ export function useToolForm() {
       const storedData = localStorage.getItem('pendingAnnotation')
       if (storedData) {
         try {
+          console.log('Found stored annotation data:', storedData)
           annotationData = JSON.parse(storedData)
           // Verify data freshness (30 minute timeout)
           const timestamp = annotationData.timestamp
@@ -47,16 +51,21 @@ export function useToolForm() {
             console.log('Annotation data expired')
             localStorage.removeItem('pendingAnnotation')
             annotationData = null
+          } else {
+            console.log('Using stored annotation data:', annotationData)
           }
         } catch (error) {
-          console.error('Error parsing annotation data:', error)
+          console.error('Error parsing stored annotation data:', error)
           localStorage.removeItem('pendingAnnotation')
         }
+      } else {
+        console.log('No stored annotation data found')
       }
     }
 
     // Set form data if we have valid annotation data
     if (annotationData) {
+      console.log('Setting form data from annotation:', annotationData)
       setPrimaryLocation(annotationData.location || "")
       if (annotationData.subLocation) {
         setSubLocation(annotationData.subLocation)
@@ -80,6 +89,7 @@ export function useToolForm() {
       return
     }
 
+    console.log('Starting tool submission process')
     const success = await handleToolSubmission({
       toolName,
       primaryLocation,
@@ -95,14 +105,13 @@ export function useToolForm() {
     })
 
     if (success) {
-      // Only clear localStorage after successful tool creation
-      localStorage.removeItem('pendingAnnotation')
+      console.log('Tool submission successful, navigating to initial-inventory')
       navigate('/initial-inventory')
     }
   }
 
   const handleCancel = () => {
-    // Keep annotation data in localStorage when canceling
+    console.log('Form cancelled, keeping annotation data for later use')
     navigate('/initial-inventory')
   }
 

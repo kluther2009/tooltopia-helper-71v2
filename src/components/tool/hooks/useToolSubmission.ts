@@ -43,12 +43,14 @@ export function useToolSubmission() {
       // Get and validate annotation data first
       console.log('Checking for annotation data...')
       const annotationData = localStorage.getItem('pendingAnnotation')
+      console.log('Raw annotation data from localStorage:', annotationData)
+      
       let parsedAnnotation = null
       
       if (annotationData) {
         try {
           parsedAnnotation = JSON.parse(annotationData)
-          console.log('Found annotation data:', parsedAnnotation)
+          console.log('Successfully parsed annotation data:', parsedAnnotation)
           
           // Validate required fields
           if (!parsedAnnotation.photoId || !parsedAnnotation.coordinates) {
@@ -56,6 +58,8 @@ export function useToolSubmission() {
             toast.error('Invalid annotation data')
             return false
           }
+
+          console.log('Annotation data validation passed')
         } catch (error) {
           console.error('Error parsing annotation data:', error)
           toast.error('Error parsing annotation data')
@@ -99,8 +103,10 @@ export function useToolSubmission() {
       if (parsedAnnotation) {
         const updatedAnnotation = {
           ...parsedAnnotation,
-          toolId: newTool.id
+          toolId: newTool.id,
+          timestamp: Date.now() // Refresh timestamp
         }
+        console.log('Updating annotation data in localStorage with tool ID:', updatedAnnotation)
         localStorage.setItem('pendingAnnotation', JSON.stringify(updatedAnnotation))
       }
 
@@ -129,7 +135,7 @@ export function useToolSubmission() {
 
       // Create annotation if data exists
       if (parsedAnnotation) {
-        console.log('Creating annotation with data:', {
+        console.log('Preparing to create annotation with data:', {
           photo_id: parsedAnnotation.photoId,
           tool_id: newTool.id,
           coordinates: parsedAnnotation.coordinates,
@@ -147,8 +153,8 @@ export function useToolSubmission() {
 
         if (annotationError) {
           console.error('Error creating annotation:', annotationError)
+          console.log('Keeping annotation data in localStorage for retry. Current data:', localStorage.getItem('pendingAnnotation'))
           toast.error('Failed to create tool annotation')
-          // Keep the annotation data in localStorage for potential retry
           return true // Still return true as the tool was created successfully
         } else {
           console.log('Annotation created successfully')
