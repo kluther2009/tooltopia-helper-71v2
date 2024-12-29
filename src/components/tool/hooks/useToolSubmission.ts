@@ -40,7 +40,8 @@ export function useToolSubmission() {
         return false
       }
 
-      const { data: newTool, error } = await supabase
+      // Create the tool first
+      const { data: newTool, error: toolError } = await supabase
         .from('tools')
         .insert({
           name: toolName.trim(),
@@ -56,7 +57,7 @@ export function useToolSubmission() {
         .select()
         .single()
 
-      if (error) throw error
+      if (toolError) throw toolError
 
       if (showAdditionalInfo) {
         if (warrantyFile) {
@@ -85,7 +86,7 @@ export function useToolSubmission() {
       if (annotationData) {
         try {
           const data = JSON.parse(annotationData)
-          if (data.coordinates) {
+          if (data.coordinates && data.photoId) {
             const { error: annotationError } = await supabase
               .from('tool_annotations')
               .insert({
@@ -98,17 +99,13 @@ export function useToolSubmission() {
             if (annotationError) {
               console.error('Error creating annotation:', annotationError)
               toast.error('Failed to create tool annotation')
-              return false
+            } else {
+              console.log('Successfully created annotation')
+              localStorage.removeItem('pendingAnnotation')
             }
-
-            // Don't remove the pendingAnnotation data, just clear the coordinates
-            const updatedData = { ...data }
-            delete updatedData.coordinates
-            localStorage.setItem('pendingAnnotation', JSON.stringify(updatedData))
           }
         } catch (error) {
-          console.error('Error parsing annotation data:', error)
-          localStorage.removeItem('pendingAnnotation')
+          console.error('Error handling annotation:', error)
         }
       }
 
