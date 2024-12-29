@@ -2,10 +2,11 @@ import { useState, useRef, useEffect } from "react"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { useToolSubmission } from "@/components/tool/hooks/useToolSubmission"
 import { toast } from "sonner"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 
 export function useToolForm() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [toolName, setToolName] = useState("")
   const [primaryLocation, setPrimaryLocation] = useState("")
   const [subLocation, setSubLocation] = useState("")
@@ -23,17 +24,31 @@ export function useToolForm() {
   const { handleToolSubmission, isUploading } = useToolSubmission()
 
   useEffect(() => {
-    const annotationData = localStorage.getItem('pendingAnnotation')
-    if (annotationData) {
-      try {
-        const data = JSON.parse(annotationData)
-        setPrimaryLocation(data.location || "")
-        if (data.subLocation) {
-          setSubLocation(data.subLocation)
+    // First check location state for annotation data
+    const state = location.state as { pendingAnnotation?: any }
+    if (state?.pendingAnnotation) {
+      console.log('Found annotation data in navigation state:', state.pendingAnnotation)
+      localStorage.setItem('pendingAnnotation', JSON.stringify(state.pendingAnnotation))
+      setPrimaryLocation(state.pendingAnnotation.location || "")
+      if (state.pendingAnnotation.subLocation) {
+        setSubLocation(state.pendingAnnotation.subLocation)
+      }
+      // Clear the state after using it
+      navigate(location.pathname, { replace: true })
+    } else {
+      // Fallback to localStorage if no state is present
+      const annotationData = localStorage.getItem('pendingAnnotation')
+      if (annotationData) {
+        try {
+          const data = JSON.parse(annotationData)
+          setPrimaryLocation(data.location || "")
+          if (data.subLocation) {
+            setSubLocation(data.subLocation)
+          }
+        } catch (error) {
+          console.error('Error parsing annotation data:', error)
+          localStorage.removeItem('pendingAnnotation')
         }
-      } catch (error) {
-        console.error('Error parsing annotation data:', error)
-        localStorage.removeItem('pendingAnnotation')
       }
     }
   }, [])

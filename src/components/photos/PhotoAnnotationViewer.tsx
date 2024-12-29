@@ -97,8 +97,13 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     // Close the dialog before navigating
     onClose()
     
-    console.log('Navigating to add-tool route...')
-    navigate('/add-tool')
+    // Use state parameter in navigation to preserve data
+    console.log('Navigating to add-tool route with annotation data...')
+    navigate('/add-tool', { 
+      state: { 
+        pendingAnnotation: annotationData 
+      }
+    })
   }
 
   if (!photo || !isOpen) return null
