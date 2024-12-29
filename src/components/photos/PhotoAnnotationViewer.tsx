@@ -66,14 +66,26 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
   }
 
   const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
-    console.log('Rectangle drawn, saving coordinates to localStorage:', coordinates);
-    localStorage.setItem('pendingAnnotation', JSON.stringify({
-      photoId: photo?.id,
-      coordinates,
-      location: photo?.location,
-      subLocation: photo?.sub_location
-    }))
+    console.log('=== Starting annotation process ===')
+    console.log('Rectangle drawn, coordinates:', coordinates)
+    console.log('Current photo:', photo)
     
+    if (!photo) {
+      console.error('No photo selected for annotation')
+      return
+    }
+
+    const annotationData = {
+      photoId: photo.id,
+      coordinates,
+      location: photo.location,
+      subLocation: photo.sub_location
+    }
+    
+    console.log('Saving annotation data to localStorage:', annotationData)
+    localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
+    
+    console.log('Navigating to add-tool route...')
     navigate('/add-tool')
   }
 
