@@ -88,6 +88,35 @@ export const useToolEditor = (toolId: string | undefined) => {
     checkAuthAndFetchTool();
   }, [toolId, navigate]);
 
+  const uploadFile = async (file: File, type: 'warranty' | 'receipt'): Promise<string | null> => {
+    if (!file || !toolId) return null;
+
+    try {
+      const timestamp = new Date().getTime();
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${toolId}/${type}_${timestamp}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('warranty-files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Enable upsert to handle duplicate files
+        });
+
+      if (uploadError) {
+        console.error(`Error uploading ${type} file:`, uploadError);
+        toast.error(`Failed to upload ${type} file`);
+        return null;
+      }
+
+      return filePath;
+    } catch (error) {
+      console.error(`Error in uploadFile:`, error);
+      toast.error(`Failed to upload ${type} file`);
+      return null;
+    }
+  };
+
   const updateTool = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -110,6 +139,21 @@ export const useToolEditor = (toolId: string | undefined) => {
         updateData.purchase_date = state.purchaseDate || null;
         updateData.warranty_length = state.warrantyLength ? parseInt(state.warrantyLength) : null;
         updateData.purchase_cost = state.purchaseCost ? parseFloat(state.purchaseCost) : null;
+
+        // Handle file uploads
+        if (state.warrantyFile) {
+          const warrantyPath = await uploadFile(state.warrantyFile, 'warranty');
+          if (warrantyPath) {
+            updateData.warranty_file_path = warrantyPath;
+          }
+        }
+
+        if (state.receiptFile) {
+          const receiptPath = await uploadFile(state.receiptFile, 'receipt');
+          if (receiptPath) {
+            updateData.receipt_file_path = receiptPath;
+          }
+        }
       } else {
         updateData.purchase_date = null;
         updateData.warranty_length = null;
@@ -125,36 +169,6 @@ export const useToolEditor = (toolId: string | undefined) => {
 
       if (error) throw error;
 
-      if (state.showAdditionalInfo) {
-        if (state.warrantyFile) {
-          const warrantyPath = `warranty-files/${toolId}/${state.warrantyFile.name}`;
-          const { error: uploadError } = await supabase.storage
-            .from('warranty-files')
-            .upload(warrantyPath, state.warrantyFile);
-          
-          if (!uploadError) {
-            await supabase
-              .from('tools')
-              .update({ warranty_file_path: warrantyPath })
-              .eq('id', toolId);
-          }
-        }
-
-        if (state.receiptFile) {
-          const receiptPath = `warranty-files/${toolId}/${state.receiptFile.name}`;
-          const { error: uploadError } = await supabase.storage
-            .from('warranty-files')
-            .upload(receiptPath, state.receiptFile);
-          
-          if (!uploadError) {
-            await supabase
-              .from('tools')
-              .update({ receipt_file_path: receiptPath })
-              .eq('id', toolId);
-          }
-        }
-      }
-      
       toast.success("Tool updated successfully");
       navigate('/');
     } catch (error) {
