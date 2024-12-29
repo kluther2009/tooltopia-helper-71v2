@@ -4,25 +4,12 @@ import { supabase } from "@/integrations/supabase/client"
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { Annotation } from "./canvas/types"
 
 interface PhotoAnnotationViewerProps {
   photo: LocationPhoto | null
   isOpen: boolean
   onClose: () => void
-}
-
-interface Annotation {
-  id: string
-  coordinates: {
-    x: number
-    y: number
-    width: number
-    height: number
-  }
-  tool_id: string
-  tool: {
-    name: string
-  }
 }
 
 export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotationViewerProps) {
@@ -60,7 +47,16 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
 
       if (data) {
         console.log('Fetched annotations:', data)
-        setAnnotations(data as Annotation[])
+        // Transform the data to match our Annotation type
+        const transformedAnnotations = data.map(item => ({
+          ...item,
+          coordinates: typeof item.coordinates === 'string' 
+            ? JSON.parse(item.coordinates) 
+            : item.coordinates
+        })) as Annotation[]
+        
+        console.log('Transformed annotations:', transformedAnnotations)
+        setAnnotations(transformedAnnotations)
       }
     } catch (error) {
       console.error('Error in fetchAnnotations:', error)
@@ -68,7 +64,6 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
   }
 
   const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
-    // Store coordinates in localStorage for the Add Tool page to use
     localStorage.setItem('pendingAnnotation', JSON.stringify({
       photoId: photo?.id,
       coordinates,
@@ -76,7 +71,6 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       subLocation: photo?.sub_location
     }))
     
-    // Navigate to Add Tool page
     navigate('/add-tool')
   }
 

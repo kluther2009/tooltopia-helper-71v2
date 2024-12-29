@@ -6,7 +6,9 @@ export interface Annotation {
     width: number;
     height: number;
   };
+  tool_id: string;
   tool: {
+    id: string;
     name: string;
   };
 }
