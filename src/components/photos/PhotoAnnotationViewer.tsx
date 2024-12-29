@@ -5,6 +5,7 @@ import { AnnotationCanvas } from "./canvas/AnnotationCanvas"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Annotation } from "./canvas/types"
+import { toast } from "sonner"
 
 interface PhotoAnnotationViewerProps {
   photo: LocationPhoto | null
@@ -65,12 +66,8 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
   }
 
   const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
-    console.log('=== Starting annotation process ===')
-    console.log('Rectangle drawn with coordinates:', coordinates)
-    console.log('Current photo:', photo)
-    
     if (!photo) {
-      console.error('No photo selected for annotation')
+      toast.error('No photo selected for annotation')
       return
     }
 
@@ -82,27 +79,30 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       height: Number(coordinates.height)
     }
 
-    console.log('Formatted coordinates:', formattedCoordinates)
-
-    const annotationData = {
+    console.log('Saving annotation data:', {
       photoId: photo.id,
       coordinates: formattedCoordinates,
       location: photo.location,
       subLocation: photo.sub_location
+    })
+
+    // Save to localStorage with a timestamp to ensure freshness
+    const annotationData = {
+      photoId: photo.id,
+      coordinates: formattedCoordinates,
+      location: photo.location,
+      subLocation: photo.sub_location,
+      timestamp: Date.now()
     }
     
-    console.log('Saving annotation data to localStorage:', annotationData)
     localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
     
     // Close the dialog before navigating
     onClose()
     
-    // Use state parameter in navigation to preserve data
-    console.log('Navigating to add-tool route with annotation data...')
+    // Navigate with state as backup
     navigate('/add-tool', { 
-      state: { 
-        pendingAnnotation: annotationData 
-      }
+      state: { pendingAnnotation: annotationData }
     })
   }
 

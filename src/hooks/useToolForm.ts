@@ -24,31 +24,42 @@ export function useToolForm() {
   const { handleToolSubmission, isUploading } = useToolSubmission()
 
   useEffect(() => {
-    // First check location state for annotation data
+    let annotationData = null
+
+    // First check navigation state
     const state = location.state as { pendingAnnotation?: any }
     if (state?.pendingAnnotation) {
       console.log('Found annotation data in navigation state:', state.pendingAnnotation)
-      localStorage.setItem('pendingAnnotation', JSON.stringify(state.pendingAnnotation))
-      setPrimaryLocation(state.pendingAnnotation.location || "")
-      if (state.pendingAnnotation.subLocation) {
-        setSubLocation(state.pendingAnnotation.subLocation)
-      }
-      // Clear the state after using it
+      annotationData = state.pendingAnnotation
+      // Save to localStorage as backup
+      localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
+      // Clear navigation state
       navigate(location.pathname, { replace: true })
     } else {
-      // Fallback to localStorage if no state is present
-      const annotationData = localStorage.getItem('pendingAnnotation')
-      if (annotationData) {
+      // Fallback to localStorage
+      const storedData = localStorage.getItem('pendingAnnotation')
+      if (storedData) {
         try {
-          const data = JSON.parse(annotationData)
-          setPrimaryLocation(data.location || "")
-          if (data.subLocation) {
-            setSubLocation(data.subLocation)
+          annotationData = JSON.parse(storedData)
+          // Verify data freshness (30 minute timeout)
+          const timestamp = annotationData.timestamp
+          if (timestamp && Date.now() - timestamp > 30 * 60 * 1000) {
+            console.log('Annotation data expired')
+            localStorage.removeItem('pendingAnnotation')
+            annotationData = null
           }
         } catch (error) {
           console.error('Error parsing annotation data:', error)
           localStorage.removeItem('pendingAnnotation')
         }
+      }
+    }
+
+    // Set form data if we have valid annotation data
+    if (annotationData) {
+      setPrimaryLocation(annotationData.location || "")
+      if (annotationData.subLocation) {
+        setSubLocation(annotationData.subLocation)
       }
     }
   }, [])
@@ -84,11 +95,14 @@ export function useToolForm() {
     })
 
     if (success) {
+      // Only clear localStorage after successful tool creation
+      localStorage.removeItem('pendingAnnotation')
       navigate('/initial-inventory')
     }
   }
 
   const handleCancel = () => {
+    // Keep annotation data in localStorage when canceling
     navigate('/initial-inventory')
   }
 
