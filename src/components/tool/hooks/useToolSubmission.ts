@@ -127,7 +127,7 @@ export function useToolSubmission() {
           user_id: user.id
         })
 
-        const { data: annotation, error: annotationError } = await supabase
+        const { error: annotationError } = await supabase
           .from('tool_annotations')
           .insert({
             photo_id: parsedAnnotation.photoId,
@@ -135,15 +135,14 @@ export function useToolSubmission() {
             coordinates: parsedAnnotation.coordinates,
             user_id: user.id
           })
-          .select()
-          .single()
 
         if (annotationError) {
           console.error('Error creating annotation:', annotationError)
           toast.error('Failed to create tool annotation')
           // Don't return false here as the tool was created successfully
         } else {
-          console.log('Annotation created successfully:', annotation)
+          console.log('Annotation created successfully')
+          // Only remove annotation data after successful annotation creation
           localStorage.removeItem('pendingAnnotation')
         }
       } else {
