@@ -29,52 +29,50 @@ export function ToolSelectionDialog({
   const photoLocation = usePhotoLocation(photoId, isOpen)
 
   const handleToolSelect = async (toolId: string) => {
+    console.log('=== Starting Tool Selection Process ===');
+    console.log('Input parameters:', { toolId, photoId, coordinates });
+    
     try {
-      console.log('Starting annotation save process...', {
-        photoId,
-        toolId,
-        coordinates
-      });
-
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('Auth check result:', user ? 'User authenticated' : 'No user found');
+      
       if (!user) {
-        console.error('No authenticated user found');
+        console.error('Authentication check failed - no user found');
         toast.error('You must be logged in to create annotations')
         return
       }
 
-      console.log('Authenticated user:', user.id);
-
       // Get stored coordinates from localStorage
       const storedData = localStorage.getItem('pendingAnnotation');
+      console.log('Retrieved stored data:', storedData);
+      
       if (!storedData) {
-        console.error('No pending annotation data found');
-        toast.error('No annotation coordinates found');
+        console.error('No stored annotation data found');
+        toast.error('No annotation data found');
         return;
       }
 
       const parsedData = JSON.parse(storedData);
+      console.log('Parsed stored data:', parsedData);
+      
       if (!parsedData.coordinates) {
-        console.error('No coordinates in pending annotation data');
+        console.error('No coordinates in stored data');
         toast.error('No annotation coordinates found');
         return;
       }
 
-      console.log('Creating annotation with data:', {
+      const annotationData = {
         photo_id: photoId,
         tool_id: toolId,
         coordinates: parsedData.coordinates,
         user_id: user.id
-      });
+      };
+      
+      console.log('Attempting to save annotation with data:', annotationData);
 
       const { data, error } = await supabase
         .from('tool_annotations')
-        .insert({
-          photo_id: photoId,
-          tool_id: toolId,
-          coordinates: parsedData.coordinates,
-          user_id: user.id
-        })
+        .insert(annotationData)
         .select()
         .single();
 
@@ -86,8 +84,11 @@ export function ToolSelectionDialog({
 
       console.log('Successfully created annotation:', data);
       
-      // Clear the pending annotation data
-      localStorage.removeItem('pendingAnnotation');
+      // Clear the coordinates from stored data
+      const updatedData = { ...parsedData };
+      delete updatedData.coordinates;
+      localStorage.setItem('pendingAnnotation', JSON.stringify(updatedData));
+      console.log('Updated localStorage data:', updatedData);
 
       toast.success('Tool annotation saved');
       onToolSelect(toolId);
@@ -106,12 +107,12 @@ export function ToolSelectionDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby="tool-selection-description">
           <DialogHeader>
             <DialogTitle>Select Tool</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">
+            <p id="tool-selection-description" className="text-sm text-gray-500">
               Select an existing tool or create a new one to annotate this location.
             </p>
             
