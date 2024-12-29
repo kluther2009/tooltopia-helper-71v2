@@ -8,12 +8,16 @@ import { ProjectMaterialsDialog } from "./ProjectMaterialsDialog";
 import { ProjectHeader } from "./project-card/ProjectHeader";
 import { ProjectTools } from "./project-card/ProjectTools";
 import { ProjectMaterials } from "./project-card/ProjectMaterials";
+import { ProjectHelper } from "./ProjectHelper";
+import { Button } from "../ui/button";
+import { MessageSquare } from "lucide-react";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isToolsDialogOpen, setIsToolsDialogOpen] = useState(false);
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
+  const [showProjectHelper, setShowProjectHelper] = useState(false);
 
   return (
     <Card className="p-4 bg-slate-800 text-white">
@@ -34,6 +38,24 @@ export function ProjectCard({ project }: { project: Project }) {
         {project.notes && (
           <div className="text-sm text-slate-300">
             <span className="font-medium">Note:</span> {project.notes}
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowProjectHelper(!showProjectHelper)}
+            className="text-slate-300 hover:text-white hover:bg-slate-700"
+          >
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Project Helper
+          </Button>
+        </div>
+
+        {showProjectHelper && (
+          <div className="mt-4 border-t border-slate-700 pt-4">
+            <ProjectHelper projectId={project.id} />
           </div>
         )}
       </div>
