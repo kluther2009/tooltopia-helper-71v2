@@ -28,25 +28,33 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       if (error) throw error;
       return data;
     },
-    staleTime: 1000,
   });
 
   // Fetch selected tools for this project
-  const { data: selectedToolIds = [] } = useQuery({
+  const { data: projectTools = [] } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("project_tools")
-        .select("tool_id")
+        .select(`
+          id,
+          tool_id,
+          tool:tools (
+            id,
+            name
+          )
+        `)
         .eq("project_id", projectId);
       
       if (error) throw error;
-      return data.map(pt => pt.tool_id);
+      return data;
     },
-    enabled: open,
-    staleTime: 1000,
-    refetchOnWindowFocus: true,
+    enabled: open && !!projectId,
+    staleTime: 0,
   });
+
+  // Get array of selected tool IDs
+  const selectedToolIds = projectTools.map(pt => pt.tool_id);
 
   // Filter tools into available and selected lists
   const selectedTools = allTools.filter(tool => selectedToolIds.includes(tool.id));
@@ -86,10 +94,11 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         toast.success('Tool added to project');
       }
       
-      // Invalidate relevant queries
-      await queryClient.invalidateQueries({ 
-        queryKey: ["project-tools", projectId]
-      });
+      // Invalidate both the dialog's tools query and the project card's tools query
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] })
+      ]);
     } catch (error) {
       console.error('Error managing project tool:', error);
       toast.error('Failed to update project tools');
