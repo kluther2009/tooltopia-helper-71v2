@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 import { useFileUpload } from "@/hooks/useFileUpload"
 
 export function useToolSubmission() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { uploadFile, isUploading } = useFileUpload()
 
   const handleToolSubmission = async ({
@@ -40,18 +41,21 @@ export function useToolSubmission() {
         return false
       }
 
-      // Get and validate annotation data first
-      console.log('Checking for annotation data...')
-      const annotationData = localStorage.getItem('pendingAnnotation')
-      console.log('Raw annotation data from localStorage:', annotationData)
-      
-      // Store the annotation data in session storage before we start creating the tool
-      // This ensures it persists through the navigation
-      if (annotationData) {
-        sessionStorage.setItem('tempAnnotationData', annotationData)
-        console.log('Stored annotation data in session storage')
+      // First check navigation state for annotation data
+      console.log('Starting tool submission process')
+      const state = location.state as { pendingAnnotation?: any }
+      let annotationData = null
+
+      if (state?.pendingAnnotation) {
+        console.log('Found annotation data in navigation state:', state.pendingAnnotation)
+        annotationData = JSON.stringify(state.pendingAnnotation)
+      } else {
+        // Fallback to localStorage if not in navigation state
+        annotationData = localStorage.getItem('pendingAnnotation')
       }
 
+      console.log('Annotation data for tool creation:', annotationData)
+      
       let parsedAnnotation = null
       
       if (annotationData) {
@@ -66,7 +70,9 @@ export function useToolSubmission() {
             return false
           }
 
-          console.log('Annotation data validation passed')
+          // Store in sessionStorage for persistence through navigation
+          sessionStorage.setItem('tempAnnotationData', annotationData)
+          console.log('Stored annotation data in session storage')
         } catch (error) {
           console.error('Error parsing annotation data:', error)
           toast.error('Error parsing annotation data')
@@ -130,7 +136,6 @@ export function useToolSubmission() {
       }
 
       // Create annotation if data exists
-      // Retrieve from session storage instead of local storage
       const tempAnnotationData = sessionStorage.getItem('tempAnnotationData')
       console.log('Retrieved annotation data from session storage:', tempAnnotationData)
 
@@ -151,13 +156,13 @@ export function useToolSubmission() {
           if (annotationError) {
             console.error('Error creating annotation:', annotationError)
             toast.error('Failed to create tool annotation')
-            // Keep the data in storage for retry
             return true
           } else {
             console.log('Annotation created successfully')
-            // Only remove data after successful creation
             localStorage.removeItem('pendingAnnotation')
             sessionStorage.removeItem('tempAnnotationData')
+            // Clear navigation state
+            navigate(location.pathname, { replace: true, state: {} })
           }
         } catch (error) {
           console.error('Error processing annotation data:', error)
