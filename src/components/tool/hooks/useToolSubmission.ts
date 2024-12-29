@@ -1,12 +1,11 @@
 import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useFileUpload } from "@/hooks/useFileUpload"
 
 export function useToolSubmission() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { uploadFile, isUploading } = useFileUpload()
 
   const handleToolSubmission = async ({
@@ -20,7 +19,8 @@ export function useToolSubmission() {
     warrantyLength,
     purchaseCost,
     warrantyFile,
-    receiptFile
+    receiptFile,
+    annotationData // Add this parameter
   }: {
     toolName: string
     primaryLocation: string
@@ -33,6 +33,7 @@ export function useToolSubmission() {
     purchaseCost: string
     warrantyFile: File | null
     receiptFile: File | null
+    annotationData: any // Add this type
   }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -41,44 +42,7 @@ export function useToolSubmission() {
         return false
       }
 
-      // First check navigation state for annotation data
-      console.log('Starting tool submission process')
-      const state = location.state as { pendingAnnotation?: any }
-      let annotationData = null
-
-      if (state?.pendingAnnotation) {
-        console.log('Found annotation data in navigation state:', state.pendingAnnotation)
-        annotationData = JSON.stringify(state.pendingAnnotation)
-      } else {
-        // Fallback to localStorage if not in navigation state
-        annotationData = localStorage.getItem('pendingAnnotation')
-      }
-
-      console.log('Annotation data for tool creation:', annotationData)
-      
-      let parsedAnnotation = null
-      
-      if (annotationData) {
-        try {
-          parsedAnnotation = JSON.parse(annotationData)
-          console.log('Successfully parsed annotation data:', parsedAnnotation)
-          
-          // Validate required fields
-          if (!parsedAnnotation.photoId || !parsedAnnotation.coordinates) {
-            console.error('Invalid annotation data - missing required fields:', parsedAnnotation)
-            toast.error('Invalid annotation data')
-            return false
-          }
-
-          // Store in sessionStorage for persistence through navigation
-          sessionStorage.setItem('tempAnnotationData', annotationData)
-          console.log('Stored annotation data in session storage')
-        } catch (error) {
-          console.error('Error parsing annotation data:', error)
-          toast.error('Error parsing annotation data')
-          return false
-        }
-      }
+      console.log('Starting tool submission process with annotation data:', annotationData)
 
       // Create the tool
       console.log('Creating tool with data:', {
@@ -136,20 +100,21 @@ export function useToolSubmission() {
       }
 
       // Create annotation if data exists
-      const tempAnnotationData = sessionStorage.getItem('tempAnnotationData')
-      console.log('Retrieved annotation data from session storage:', tempAnnotationData)
-
-      if (tempAnnotationData) {
+      if (annotationData) {
         try {
-          const annotationInfo = JSON.parse(tempAnnotationData)
-          console.log('Processing annotation data for creation:', annotationInfo)
+          console.log('Creating annotation with data:', {
+            photoId: annotationData.photoId,
+            toolId: newTool.id,
+            coordinates: annotationData.coordinates,
+            userId: user.id
+          })
 
           const { error: annotationError } = await supabase
             .from('tool_annotations')
             .insert({
-              photo_id: annotationInfo.photoId,
+              photo_id: annotationData.photoId,
               tool_id: newTool.id,
-              coordinates: annotationInfo.coordinates,
+              coordinates: annotationData.coordinates,
               user_id: user.id
             })
 
@@ -160,15 +125,12 @@ export function useToolSubmission() {
           } else {
             console.log('Annotation created successfully')
             localStorage.removeItem('pendingAnnotation')
-            sessionStorage.removeItem('tempAnnotationData')
-            // Clear navigation state
-            navigate(location.pathname, { replace: true, state: {} })
           }
         } catch (error) {
           console.error('Error processing annotation data:', error)
         }
       } else {
-        console.log('No annotation data found in session storage')
+        console.log('No annotation data provided')
       }
 
       toast.success(`${toolName} has been added`)

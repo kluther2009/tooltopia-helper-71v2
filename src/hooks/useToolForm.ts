@@ -23,47 +23,42 @@ export function useToolForm() {
   const { checkToolExists } = useToolManagement()
   const { handleToolSubmission, isUploading } = useToolSubmission()
 
-  useEffect(() => {
-    let annotationData = null
+  // Store annotation data in state to preserve it
+  const [annotationData, setAnnotationData] = useState<any>(null)
 
+  useEffect(() => {
     // First check navigation state
     const state = location.state as { pendingAnnotation?: any }
     if (state?.pendingAnnotation) {
       console.log('Found annotation data in navigation state:', state.pendingAnnotation)
-      annotationData = state.pendingAnnotation
+      setAnnotationData(state.pendingAnnotation)
       // Save to localStorage as backup
-      localStorage.setItem('pendingAnnotation', JSON.stringify({
-        ...annotationData,
-        timestamp: Date.now()
-      }))
-      // Clear navigation state
-      navigate(location.pathname, { replace: true })
+      localStorage.setItem('pendingAnnotation', JSON.stringify(state.pendingAnnotation))
     } else {
       // Fallback to localStorage
       const storedData = localStorage.getItem('pendingAnnotation')
       if (storedData) {
         try {
-          console.log('Found stored annotation data:', storedData)
-          annotationData = JSON.parse(storedData)
+          const parsed = JSON.parse(storedData)
+          console.log('Found stored annotation data:', parsed)
+          setAnnotationData(parsed)
+          
           // Verify data freshness (30 minute timeout)
-          const timestamp = annotationData.timestamp
+          const timestamp = parsed.timestamp
           if (timestamp && Date.now() - timestamp > 30 * 60 * 1000) {
             console.log('Annotation data expired')
             localStorage.removeItem('pendingAnnotation')
-            annotationData = null
-          } else {
-            console.log('Using stored annotation data:', annotationData)
+            setAnnotationData(null)
           }
         } catch (error) {
           console.error('Error parsing stored annotation data:', error)
           localStorage.removeItem('pendingAnnotation')
         }
-      } else {
-        console.log('No stored annotation data found')
       }
     }
+  }, [location.state])
 
-    // Set form data if we have valid annotation data
+  useEffect(() => {
     if (annotationData) {
       console.log('Setting form data from annotation:', annotationData)
       setPrimaryLocation(annotationData.location || "")
@@ -71,7 +66,7 @@ export function useToolForm() {
         setSubLocation(annotationData.subLocation)
       }
     }
-  }, [])
+  }, [annotationData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,7 +84,7 @@ export function useToolForm() {
       return
     }
 
-    console.log('Starting tool submission process')
+    console.log('Starting tool submission with annotation data:', annotationData)
     const success = await handleToolSubmission({
       toolName,
       primaryLocation,
@@ -101,7 +96,8 @@ export function useToolForm() {
       warrantyLength,
       purchaseCost,
       warrantyFile,
-      receiptFile
+      receiptFile,
+      annotationData // Pass the annotation data directly
     })
 
     if (success) {
