@@ -17,7 +17,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   const queryClient = useQueryClient();
 
   // Fetch all tools
-  const { data: tools = [] } = useQuery({
+  const { data: allTools = [] } = useQuery({
     queryKey: ["tools"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -32,7 +32,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   });
 
   // Fetch selected tools for this project
-  const { data: selectedTools = [] } = useQuery({
+  const { data: selectedToolIds = [] } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -41,16 +41,16 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         .eq("project_id", projectId);
       
       if (error) throw error;
-      return data;
+      return data.map(pt => pt.tool_id);
     },
     enabled: open,
     staleTime: 1000,
     refetchOnWindowFocus: true,
   });
 
-  const isToolSelected = (toolId: string) => {
-    return selectedTools.some(pt => pt.tool_id === toolId);
-  };
+  // Filter tools into available and selected lists
+  const selectedTools = allTools.filter(tool => selectedToolIds.includes(tool.id));
+  const availableTools = allTools.filter(tool => !selectedToolIds.includes(tool.id));
 
   const handleToolSelect = async (toolId: string) => {
     try {
@@ -95,9 +95,6 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       toast.error('Failed to update project tools');
     }
   };
-
-  const availableTools = tools.filter(tool => !isToolSelected(tool.id));
-  const projectTools = tools.filter(tool => isToolSelected(tool.id));
 
   const ToolList = ({ tools, title }: { tools: any[], title: string }) => (
     <Card className="flex-1 p-4">
@@ -150,18 +147,18 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
               variant="outline"
               size="icon"
               onClick={() => {
-                const selectedTool = projectTools[0];
+                const selectedTool = selectedTools[0];
                 if (selectedTool) {
                   handleToolSelect(selectedTool.id);
                 }
               }}
-              disabled={projectTools.length === 0}
+              disabled={selectedTools.length === 0}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </div>
 
-          <ToolList tools={projectTools} title="Selected Tools" />
+          <ToolList tools={selectedTools} title="Selected Tools" />
         </div>
       </DialogContent>
     </Dialog>
