@@ -41,8 +41,10 @@ export function useToolSubmission() {
       }
 
       // Get and validate annotation data first
+      console.log('Checking for annotation data...')
       const annotationData = localStorage.getItem('pendingAnnotation')
       let parsedAnnotation = null
+      
       if (annotationData) {
         try {
           parsedAnnotation = JSON.parse(annotationData)
@@ -50,7 +52,7 @@ export function useToolSubmission() {
           
           // Validate required fields
           if (!parsedAnnotation.photoId || !parsedAnnotation.coordinates) {
-            console.error('Invalid annotation data:', parsedAnnotation)
+            console.error('Invalid annotation data - missing required fields:', parsedAnnotation)
             toast.error('Invalid annotation data')
             return false
           }
@@ -62,7 +64,13 @@ export function useToolSubmission() {
       }
 
       // Create the tool
-      console.log('Creating tool...')
+      console.log('Creating tool with data:', {
+        name: toolName,
+        location: primaryLocation,
+        sub_location_a: subLocation,
+        status
+      })
+
       const { data: newTool, error: toolError } = await supabase
         .from('tools')
         .insert({
@@ -112,8 +120,14 @@ export function useToolSubmission() {
 
       // Create annotation if data exists
       if (parsedAnnotation) {
-        console.log('Creating annotation...')
-        const { error: annotationError } = await supabase
+        console.log('Creating annotation with data:', {
+          photo_id: parsedAnnotation.photoId,
+          tool_id: newTool.id,
+          coordinates: parsedAnnotation.coordinates,
+          user_id: user.id
+        })
+
+        const { data: annotation, error: annotationError } = await supabase
           .from('tool_annotations')
           .insert({
             photo_id: parsedAnnotation.photoId,
@@ -121,15 +135,19 @@ export function useToolSubmission() {
             coordinates: parsedAnnotation.coordinates,
             user_id: user.id
           })
+          .select()
+          .single()
 
         if (annotationError) {
           console.error('Error creating annotation:', annotationError)
           toast.error('Failed to create tool annotation')
-          // Even if annotation fails, we don't return false as the tool was created successfully
+          // Don't return false here as the tool was created successfully
         } else {
-          console.log('Annotation created successfully')
+          console.log('Annotation created successfully:', annotation)
           localStorage.removeItem('pendingAnnotation')
         }
+      } else {
+        console.log('No annotation data found, skipping annotation creation')
       }
 
       toast.success(`${toolName} has been added`)
