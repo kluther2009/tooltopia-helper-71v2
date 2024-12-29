@@ -45,15 +45,19 @@ export function useToolSubmission() {
       const annotationData = localStorage.getItem('pendingAnnotation')
       console.log('Raw annotation data from localStorage:', annotationData)
       
+      // Store the annotation data in session storage before we start creating the tool
+      // This ensures it persists through the navigation
+      if (annotationData) {
+        sessionStorage.setItem('tempAnnotationData', annotationData)
+        console.log('Stored annotation data in session storage')
+      }
+
       let parsedAnnotation = null
       
       if (annotationData) {
         try {
           parsedAnnotation = JSON.parse(annotationData)
           console.log('Successfully parsed annotation data:', parsedAnnotation)
-          
-          // Store annotation data in a temporary key that won't be cleared during navigation
-          localStorage.setItem('tempAnnotationData', annotationData)
           
           // Validate required fields
           if (!parsedAnnotation.photoId || !parsedAnnotation.coordinates) {
@@ -126,12 +130,14 @@ export function useToolSubmission() {
       }
 
       // Create annotation if data exists
-      // Retrieve from temporary storage
-      const tempAnnotationData = localStorage.getItem('tempAnnotationData')
+      // Retrieve from session storage instead of local storage
+      const tempAnnotationData = sessionStorage.getItem('tempAnnotationData')
+      console.log('Retrieved annotation data from session storage:', tempAnnotationData)
+
       if (tempAnnotationData) {
         try {
           const annotationInfo = JSON.parse(tempAnnotationData)
-          console.log('Retrieved annotation data for creation:', annotationInfo)
+          console.log('Processing annotation data for creation:', annotationInfo)
 
           const { error: annotationError } = await supabase
             .from('tool_annotations')
@@ -145,19 +151,19 @@ export function useToolSubmission() {
           if (annotationError) {
             console.error('Error creating annotation:', annotationError)
             toast.error('Failed to create tool annotation')
-            // Don't remove temp data so we can retry later if needed
-            return true // Still return true as the tool was created successfully
+            // Keep the data in storage for retry
+            return true
           } else {
             console.log('Annotation created successfully')
-            // Only remove annotation data after successful annotation creation
+            // Only remove data after successful creation
             localStorage.removeItem('pendingAnnotation')
-            localStorage.removeItem('tempAnnotationData')
+            sessionStorage.removeItem('tempAnnotationData')
           }
         } catch (error) {
           console.error('Error processing annotation data:', error)
         }
       } else {
-        console.log('No annotation data found in temporary storage')
+        console.log('No annotation data found in session storage')
       }
 
       toast.success(`${toolName} has been added`)
