@@ -67,7 +67,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
 
   const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
     console.log('=== Starting annotation process ===')
-    console.log('Rectangle drawn, coordinates:', coordinates)
+    console.log('Rectangle drawn with coordinates:', coordinates)
     console.log('Current photo:', photo)
     
     if (!photo) {
@@ -75,9 +75,17 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       return
     }
 
+    // Format coordinates as numbers to ensure proper JSON serialization
+    const formattedCoordinates = {
+      x: Number(coordinates.x),
+      y: Number(coordinates.y),
+      width: Number(coordinates.width),
+      height: Number(coordinates.height)
+    }
+
     const annotationData = {
       photoId: photo.id,
-      coordinates,
+      coordinates: formattedCoordinates,
       location: photo.location,
       subLocation: photo.sub_location
     }
