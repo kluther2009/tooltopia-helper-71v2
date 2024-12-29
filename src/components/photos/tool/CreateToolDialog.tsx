@@ -14,6 +14,11 @@ interface CreateToolDialogProps {
   initialLocation: string
 }
 
+interface LocationInfo {
+  location: string
+  subLocation?: string | null
+}
+
 export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocation }: CreateToolDialogProps) {
   const [name, setName] = useState("")
   const [status, setStatus] = useState("available")
@@ -28,18 +33,21 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
 
     setIsSubmitting(true)
     try {
+      console.log('Starting tool creation process...')
+      
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not authenticated")
 
       // Get location information from localStorage if it exists
       const annotationData = localStorage.getItem('pendingAnnotation')
-      let locationInfo = { location: initialLocation }
+      let locationInfo: LocationInfo = { location: initialLocation }
       
       if (annotationData) {
+        console.log('Found pending annotation data:', annotationData)
         const data = JSON.parse(annotationData)
         locationInfo = {
           location: data.location || initialLocation,
-          sub_location_a: data.subLocation || null
+          subLocation: data.subLocation || null
         }
       }
 
@@ -51,21 +59,37 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
         .insert({
           name: name.trim(),
           location: locationInfo.location,
-          sub_location_a: locationInfo.sub_location_a,
+          sub_location_a: locationInfo.subLocation,
           status,
           user_id: user.id
         })
         .select('id')
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating tool:', error)
+        throw error
+      }
 
       console.log('Tool created successfully:', data)
+      
+      // If we have annotation data, make sure we keep it for the next step
+      if (annotationData) {
+        const parsedData = JSON.parse(annotationData)
+        if (parsedData.coordinates && parsedData.photoId) {
+          console.log('Preserving annotation data for tool annotation creation')
+          localStorage.setItem('pendingAnnotation', JSON.stringify({
+            ...parsedData,
+            toolId: data.id
+          }))
+        }
+      }
+
       toast.success("Tool created successfully")
       onToolCreated(data.id)
       onClose()
     } catch (error) {
-      console.error('Error creating tool:', error)
+      console.error('Error in handleSubmit:', error)
       toast.error("Failed to create tool")
     } finally {
       setIsSubmitting(false)
