@@ -30,47 +30,63 @@ export function ToolSelectionDialog({
 
   const handleToolSelect = async (toolId: string) => {
     try {
-      console.log('Attempting to save annotation with:', {
+      console.log('Starting annotation save process...');
+      console.log('Input data:', {
         photoId,
         toolId,
-        coordinates
+        coordinates,
+        isOpen
       });
 
       const { data: { user } } = await supabase.auth.getUser()
+      console.log('Current user:', user);
+
       if (!user) {
+        console.error('No user found');
         toast.error('You must be logged in to create annotations')
         return
       }
+
+      // Ensure coordinates are properly formatted
+      const formattedCoordinates = {
+        x: Number(coordinates.x),
+        y: Number(coordinates.y),
+        width: Number(coordinates.width),
+        height: Number(coordinates.height)
+      };
+
+      console.log('Formatted coordinates:', formattedCoordinates);
 
       const { data, error } = await supabase
         .from('tool_annotations')
         .insert({
           photo_id: photoId,
           tool_id: toolId,
-          coordinates: coordinates,
+          coordinates: formattedCoordinates,
           user_id: user.id
         })
         .select()
-        .single()
+        .single();
 
       if (error) {
-        console.error('Error saving annotation:', error)
-        throw error
+        console.error('Supabase error details:', error);
+        toast.error(`Failed to save annotation: ${error.message}`);
+        throw error;
       }
 
-      console.log('Successfully saved annotation:', data)
+      console.log('Successfully saved annotation:', data);
       
-      toast.success('Tool annotation saved')
-      onToolSelect(toolId)
-      onClose()
+      toast.success('Tool annotation saved');
+      onToolSelect(toolId);
+      onClose();
     } catch (error) {
-      console.error('Error saving tool annotation:', error)
-      toast.error('Failed to save tool annotation')
+      console.error('Error in handleToolSelect:', error);
+      toast.error('Failed to save tool annotation');
     }
   }
 
   const handleCreateTool = async (toolId: string) => {
-    await handleToolSelect(toolId)
+    await handleToolSelect(toolId);
   }
 
   return (
