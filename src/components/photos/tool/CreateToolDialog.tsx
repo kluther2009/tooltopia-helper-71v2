@@ -31,15 +31,27 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Not authenticated")
 
-      // Split location into main location and sub-location if it contains ">"
-      const [mainLocation, subLocation] = initialLocation.split(" > ").map(part => part.trim())
+      // Get location information from localStorage if it exists
+      const annotationData = localStorage.getItem('pendingAnnotation')
+      let locationInfo = { location: initialLocation }
+      
+      if (annotationData) {
+        const data = JSON.parse(annotationData)
+        locationInfo = {
+          location: data.location || initialLocation,
+          sub_location_a: data.subLocation || null
+        }
+      }
 
+      console.log('Creating tool with location:', locationInfo)
+
+      // Create the tool with location information
       const { data, error } = await supabase
         .from('tools')
         .insert({
           name: name.trim(),
-          location: mainLocation,
-          sub_location_a: subLocation || null,
+          location: locationInfo.location,
+          sub_location_a: locationInfo.sub_location_a,
           status,
           user_id: user.id
         })
@@ -48,6 +60,7 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
 
       if (error) throw error
 
+      console.log('Tool created successfully:', data)
       toast.success("Tool created successfully")
       onToolCreated(data.id)
       onClose()
