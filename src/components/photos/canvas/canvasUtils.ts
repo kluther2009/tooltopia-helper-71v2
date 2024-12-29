@@ -68,7 +68,10 @@ export const drawAnnotation = (
   annotation: Annotation,
   imageMetrics: { scale: number; x: number; y: number }
 ) => {
-  if (!annotation.coordinates || !annotation.tool?.name) return;
+  if (!annotation.coordinates || !annotation.tool?.name) {
+    console.log('Missing coordinates or tool name for annotation:', annotation);
+    return;
+  }
 
   const { coordinates, tool } = annotation;
   

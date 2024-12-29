@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LocationPhoto } from "@/types/photos"
 import { supabase } from "@/integrations/supabase/client"
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas"
@@ -38,20 +38,32 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
   const fetchAnnotations = async () => {
     if (!photo?.id) return
 
-    const { data, error } = await supabase
-      .from('tool_annotations')
-      .select(`
-        id,
-        coordinates,
-        tool_id,
-        tool:tools (
-          name
-        )
-      `)
-      .eq('photo_id', photo.id)
+    try {
+      console.log('Fetching annotations for photo:', photo.id)
+      const { data, error } = await supabase
+        .from('tool_annotations')
+        .select(`
+          id,
+          coordinates,
+          tool_id,
+          tool:tools (
+            id,
+            name
+          )
+        `)
+        .eq('photo_id', photo.id)
 
-    if (!error && data) {
-      setAnnotations(data as Annotation[])
+      if (error) {
+        console.error('Error fetching annotations:', error)
+        return
+      }
+
+      if (data) {
+        console.log('Fetched annotations:', data)
+        setAnnotations(data as Annotation[])
+      }
+    } catch (error) {
+      console.error('Error in fetchAnnotations:', error)
     }
   }
 
@@ -75,6 +87,9 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       if (!open) onClose()
     }}>
       <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader>
+          <DialogTitle className="px-4 py-2">Photo Annotations</DialogTitle>
+        </DialogHeader>
         <div className="relative w-full h-[80vh]">
           <AnnotationCanvas
             imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
