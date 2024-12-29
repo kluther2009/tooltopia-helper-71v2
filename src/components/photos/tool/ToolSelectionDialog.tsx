@@ -30,7 +30,7 @@ export function ToolSelectionDialog({
 
   const handleToolSelect = async (toolId: string) => {
     try {
-      console.log('Starting annotation save process with data:', {
+      console.log('Starting annotation save process...', {
         photoId,
         toolId,
         coordinates
@@ -42,6 +42,8 @@ export function ToolSelectionDialog({
         toast.error('You must be logged in to create annotations')
         return
       }
+
+      console.log('Authenticated user:', user.id);
 
       // Get stored coordinates from localStorage
       const storedData = localStorage.getItem('pendingAnnotation');
@@ -58,7 +60,12 @@ export function ToolSelectionDialog({
         return;
       }
 
-      console.log('Creating annotation with coordinates:', parsedData.coordinates);
+      console.log('Creating annotation with data:', {
+        photo_id: photoId,
+        tool_id: toolId,
+        coordinates: parsedData.coordinates,
+        user_id: user.id
+      });
 
       const { data, error } = await supabase
         .from('tool_annotations')
@@ -99,12 +106,12 @@ export function ToolSelectionDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[425px]" aria-describedby="tool-selection-description">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Select Tool</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p id="tool-selection-description" className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500">
               Select an existing tool or create a new one to annotate this location.
             </p>
             
