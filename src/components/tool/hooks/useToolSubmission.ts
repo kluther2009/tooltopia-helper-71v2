@@ -40,19 +40,29 @@ export function useToolSubmission() {
         return false
       }
 
-      // Get annotation data before creating tool
+      // Get and validate annotation data first
       const annotationData = localStorage.getItem('pendingAnnotation')
       let parsedAnnotation = null
       if (annotationData) {
         try {
           parsedAnnotation = JSON.parse(annotationData)
           console.log('Found annotation data:', parsedAnnotation)
+          
+          // Validate required fields
+          if (!parsedAnnotation.photoId || !parsedAnnotation.coordinates) {
+            console.error('Invalid annotation data:', parsedAnnotation)
+            toast.error('Invalid annotation data')
+            return false
+          }
         } catch (error) {
           console.error('Error parsing annotation data:', error)
+          toast.error('Error parsing annotation data')
+          return false
         }
       }
 
       // Create the tool
+      console.log('Creating tool...')
       const { data: newTool, error: toolError } = await supabase
         .from('tools')
         .insert({
@@ -71,12 +81,13 @@ export function useToolSubmission() {
 
       if (toolError) {
         console.error('Error creating tool:', toolError)
-        throw toolError
+        toast.error('Failed to create tool')
+        return false
       }
 
       console.log('Tool created successfully:', newTool)
 
-      // Handle file uploads if needed
+      // Handle file uploads
       if (showAdditionalInfo) {
         if (warrantyFile) {
           const warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
@@ -100,14 +111,8 @@ export function useToolSubmission() {
       }
 
       // Create annotation if data exists
-      if (parsedAnnotation && parsedAnnotation.photoId && parsedAnnotation.coordinates) {
-        console.log('Creating annotation with data:', {
-          photo_id: parsedAnnotation.photoId,
-          tool_id: newTool.id,
-          coordinates: parsedAnnotation.coordinates,
-          user_id: user.id
-        })
-
+      if (parsedAnnotation) {
+        console.log('Creating annotation...')
         const { error: annotationError } = await supabase
           .from('tool_annotations')
           .insert({
@@ -120,6 +125,7 @@ export function useToolSubmission() {
         if (annotationError) {
           console.error('Error creating annotation:', annotationError)
           toast.error('Failed to create tool annotation')
+          // Even if annotation fails, we don't return false as the tool was created successfully
         } else {
           console.log('Annotation created successfully')
           localStorage.removeItem('pendingAnnotation')
@@ -129,7 +135,7 @@ export function useToolSubmission() {
       toast.success(`${toolName} has been added`)
       return true
     } catch (error) {
-      console.error('Error adding tool:', error)
+      console.error('Error in handleToolSubmission:', error)
       toast.error("Failed to add tool")
       return false
     }
