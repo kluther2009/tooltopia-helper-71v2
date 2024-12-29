@@ -30,22 +30,35 @@ export function ToolSelectionDialog({
 
   const handleToolSelect = async (toolId: string) => {
     try {
+      console.log('Attempting to save annotation with:', {
+        photoId,
+        toolId,
+        coordinates
+      });
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         toast.error('You must be logged in to create annotations')
         return
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('tool_annotations')
         .insert({
           photo_id: photoId,
           tool_id: toolId,
-          coordinates,
+          coordinates: coordinates,
           user_id: user.id
         })
+        .select()
+        .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error saving annotation:', error)
+        throw error
+      }
+
+      console.log('Successfully saved annotation:', data)
       
       toast.success('Tool annotation saved')
       onToolSelect(toolId)
