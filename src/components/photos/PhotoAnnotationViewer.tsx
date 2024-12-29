@@ -46,14 +46,16 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       }
 
       if (data) {
-        console.log('Fetched annotations:', data)
+        console.log('Raw annotation data:', data)
         // Transform the data to match our Annotation type
         const transformedAnnotations = data.map(item => ({
-          ...item,
+          id: item.id,
           coordinates: typeof item.coordinates === 'string' 
             ? JSON.parse(item.coordinates) 
-            : item.coordinates
-        })) as Annotation[]
+            : item.coordinates,
+          tool_id: item.tool_id,
+          tool: item.tool
+        }))
         
         console.log('Transformed annotations:', transformedAnnotations)
         setAnnotations(transformedAnnotations)
@@ -80,10 +82,13 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) onClose()
     }}>
-      <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0" aria-describedby="photo-annotation-description">
         <DialogHeader>
-          <DialogTitle className="px-4 py-2">Photo Annotations</DialogTitle>
+          <DialogTitle>Photo Annotations</DialogTitle>
         </DialogHeader>
+        <p id="photo-annotation-description" className="sr-only">
+          View and add tool annotations to this photo
+        </p>
         <div className="relative w-full h-[80vh]">
           <AnnotationCanvas
             imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}

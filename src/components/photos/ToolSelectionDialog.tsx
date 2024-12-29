@@ -30,24 +30,22 @@ export function ToolSelectionDialog({
 
   const handleToolSelect = async (toolId: string) => {
     try {
-      console.log('Starting annotation save process...');
-      console.log('Input data:', {
+      console.log('Starting annotation save process with data:', {
         photoId,
         toolId,
-        coordinates,
-        isOpen
+        coordinates
       });
 
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('Current user:', user);
-
       if (!user) {
-        console.error('No user found');
+        console.error('No authenticated user found');
         toast.error('You must be logged in to create annotations')
         return
       }
 
-      // Ensure coordinates are properly formatted
+      console.log('Creating annotation with user:', user.id);
+
+      // Store coordinates as a stringified JSON object
       const formattedCoordinates = {
         x: Number(coordinates.x),
         y: Number(coordinates.y),
@@ -69,13 +67,22 @@ export function ToolSelectionDialog({
         .single();
 
       if (error) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase error:', error);
         toast.error(`Failed to save annotation: ${error.message}`);
         throw error;
       }
 
-      console.log('Successfully saved annotation:', data);
+      console.log('Successfully created annotation:', data);
       
+      // Clear the pending annotation data since we've successfully created the annotation
+      const storedData = localStorage.getItem('pendingAnnotation');
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        const updatedData = { ...parsedData };
+        delete updatedData.coordinates; // Remove coordinates after successful save
+        localStorage.setItem('pendingAnnotation', JSON.stringify(updatedData));
+      }
+
       toast.success('Tool annotation saved');
       onToolSelect(toolId);
       onClose();
@@ -86,17 +93,22 @@ export function ToolSelectionDialog({
   }
 
   const handleCreateTool = async (toolId: string) => {
+    console.log('Tool created, proceeding to create annotation with toolId:', toolId);
     await handleToolSelect(toolId);
   }
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" aria-describedby="tool-selection-description">
           <DialogHeader>
             <DialogTitle>Select Tool</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <p id="tool-selection-description" className="text-sm text-gray-500">
+              Select an existing tool or create a new one to annotate this location.
+            </p>
+            
             <ToolSearch
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
