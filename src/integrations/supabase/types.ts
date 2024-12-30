@@ -179,6 +179,30 @@ export type Database = {
         }
         Relationships: []
       }
+      temp_audio_files: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          file_path: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          file_path: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          file_path?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       tool_annotations: {
         Row: {
           coordinates: Json
@@ -314,7 +338,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_audio_files: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

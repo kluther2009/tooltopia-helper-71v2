@@ -11,10 +11,49 @@ export function AIChat() {
   const playAudio = async (audioBlob: Blob) => {
     try {
       console.log('Creating audio URL from blob size:', audioBlob.size)
-      const audioUrl = URL.createObjectURL(audioBlob)
-      console.log('Created audio URL:', audioUrl)
       
-      const audio = new Audio(audioUrl)
+      // Upload the audio blob to Supabase storage
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to use this feature')
+        return
+      }
+
+      const fileName = `${crypto.randomUUID()}.mp3`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('temp-audio')
+        .upload(fileName, audioBlob)
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw new Error('Failed to upload audio file')
+      }
+
+      // Create a record in temp_audio_files table
+      const expiresAt = new Date()
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5) // Expire in 5 minutes
+
+      const { error: dbError } = await supabase
+        .from('temp_audio_files')
+        .insert({
+          file_path: fileName,
+          user_id: user.id,
+          expires_at: expiresAt.toISOString()
+        })
+
+      if (dbError) {
+        console.error('Database error:', dbError)
+        throw new Error('Failed to save audio file record')
+      }
+
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('temp-audio')
+        .getPublicUrl(fileName)
+
+      console.log('Created audio URL:', publicUrl)
+      
+      const audio = new Audio(publicUrl)
       
       audio.onerror = (e) => {
         console.error('Audio loading error:', e)
@@ -23,10 +62,7 @@ export function AIChat() {
       
       await audio.play()
       
-      // Cleanup URL after playback
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl)
-      }
+      // Cleanup will be handled by the database trigger
     } catch (error) {
       console.error('Audio playback error:', error)
       toast.error('Failed to play audio')
