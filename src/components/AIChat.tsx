@@ -37,14 +37,47 @@ export function AIChat() {
 
       recognitionRef.current.onend = () => {
         setIsListening(false)
-        if (recognitionRef.current) {
+        if (recognitionRef.current && message.trim()) {
           handleSubmit()
         }
       }
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognitionRef.current.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript
         setMessage(transcript)
+        
+        // Immediately play back what was said
+        if (!isMuted) {
+          try {
+            const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
+              body: { text: transcript }
+            })
+
+            if (error) throw error
+
+            const blob = new Blob([data], { type: 'audio/mpeg' })
+            const audioUrl = URL.createObjectURL(blob)
+
+            if (audioRef.current) {
+              audioRef.current.src = audioUrl
+              const playPromise = audioRef.current.play()
+              
+              if (playPromise !== undefined) {
+                playPromise
+                  .catch(error => {
+                    console.error("Audio playback error:", error)
+                    toast.error("Failed to play audio response")
+                  })
+                  .finally(() => {
+                    URL.revokeObjectURL(audioUrl)
+                  })
+              }
+            }
+          } catch (error) {
+            console.error("TTS error:", error)
+            toast.error("Failed to convert text to speech")
+          }
+        }
       }
 
       recognitionRef.current.onerror = (event: any) => {
@@ -59,7 +92,7 @@ export function AIChat() {
         recognitionRef.current.abort()
       }
     }
-  }, [])
+  }, [isMuted, message])
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
