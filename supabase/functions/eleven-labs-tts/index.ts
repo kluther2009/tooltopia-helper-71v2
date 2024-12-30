@@ -4,11 +4,9 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
 serve(async (req) => {
-  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -19,10 +17,6 @@ serve(async (req) => {
 
     if (!apiKey) {
       throw new Error('Eleven Labs API key not configured')
-    }
-
-    if (!text) {
-      throw new Error('No text provided for TTS conversion')
     }
 
     console.log('Converting text to speech:', text)
@@ -53,15 +47,14 @@ serve(async (req) => {
       throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the audio data as an ArrayBuffer
-    const audioBuffer = await response.arrayBuffer()
+    // Get the audio data directly as an ArrayBuffer
+    const audioData = await response.arrayBuffer()
     
     // Return the audio data with proper headers
-    return new Response(audioBuffer, {
+    return new Response(audioData, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
-        'Content-Length': audioBuffer.byteLength.toString()
       },
     })
   } catch (error) {

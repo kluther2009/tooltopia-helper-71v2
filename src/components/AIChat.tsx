@@ -9,7 +9,7 @@ export function AIChat() {
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const playAudio = async (audioData: ArrayBuffer) => {
+  const playAudio = async (audioData: Uint8Array) => {
     try {
       // Create a new audio element if it doesn't exist
       if (!audioRef.current) {
@@ -19,6 +19,8 @@ export function AIChat() {
       // Create blob and URL
       const blob = new Blob([audioData], { type: 'audio/mpeg' })
       const url = URL.createObjectURL(blob)
+      
+      console.log('Created blob:', { blobSize: blob.size, blobType: blob.type })
       
       // Set up audio element
       audioRef.current.src = url
@@ -70,9 +72,8 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // Convert response data to ArrayBuffer
-            const audioData = await response.data.arrayBuffer()
-            await playAudio(audioData)
+            // The response.data is already a Uint8Array that we can use directly
+            await playAudio(response.data)
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
