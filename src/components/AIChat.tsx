@@ -5,75 +5,9 @@ import { toast } from 'sonner'
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [message, setMessage] = useState('')
-  const [isMuted, setIsMuted] = useState(false)
+  const [isMuted, setIsMuted] = useState(true) // Default to muted since audio isn't supported
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
-
-  // Test audio playback capability
-  const testAudioPlayback = async () => {
-    try {
-      const testAudio = new Audio()
-      // Try to play a very short silent audio
-      const silentAudioBase64 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ=='
-      testAudio.src = silentAudioBase64
-      
-      console.log('Testing audio playback...')
-      await testAudio.play()
-      console.log('Audio playback is supported!')
-      return true
-    } catch (error) {
-      console.error('Audio playback test failed:', error)
-      toast.error('Audio playback is not supported in this environment')
-      return false
-    }
-  }
-
-  const playAudio = async (audioData: Uint8Array) => {
-    try {
-      // First check if audio playback is supported
-      const isSupported = await testAudioPlayback()
-      if (!isSupported) {
-        throw new Error('Audio playback is not supported in this environment')
-      }
-
-      // Create a new audio element if it doesn't exist
-      if (!audioRef.current) {
-        audioRef.current = new Audio()
-      }
-
-      // Create blob and URL
-      const blob = new Blob([audioData], { type: 'audio/mpeg' })
-      const url = URL.createObjectURL(blob)
-      
-      console.log('Created blob:', { blobSize: blob.size, blobType: blob.type })
-      
-      // Set up audio element
-      audioRef.current.src = url
-      
-      // Wait for audio to load before playing
-      await new Promise((resolve, reject) => {
-        if (!audioRef.current) return reject(new Error('No audio element'))
-        
-        audioRef.current.oncanplaythrough = resolve
-        audioRef.current.onerror = (e) => {
-          console.error('Audio loading error:', e)
-          URL.revokeObjectURL(url)
-          reject(new Error('Failed to load audio'))
-        }
-      })
-
-      // Play the audio
-      await audioRef.current.play()
-      
-      // Clean up when done
-      audioRef.current.onended = () => {
-        URL.revokeObjectURL(url)
-      }
-    } catch (error) {
-      console.error('Audio playback error:', error)
-      toast.error('Audio playback failed')
-    }
-  }
 
   const startListening = () => {
     if (!recognitionRef.current) {
@@ -97,8 +31,9 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // The response.data is already a Uint8Array that we can use directly
-            await playAudio(response.data)
+            // Store the response but don't try to play it since we know audio isn't supported
+            console.log('Received TTS response successfully')
+            toast.info('Audio response received but playback is not supported in this environment')
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
@@ -117,6 +52,7 @@ export function AIChat() {
     recognitionRef.current.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error)
       setIsListening(false)
+      toast.error('Speech recognition error occurred')
     }
   }
 
@@ -128,6 +64,9 @@ export function AIChat() {
   }
 
   const toggleMute = () => {
+    if (!isMuted) {
+      toast.info('Audio playback is not supported in this environment')
+    }
     setIsMuted(!isMuted)
   }
 
@@ -158,6 +97,8 @@ export function AIChat() {
                 ? 'bg-gray-500 hover:bg-gray-600' 
                 : 'bg-green-500 hover:bg-green-600'
             } text-white`}
+            disabled={true}
+            title="Audio playback is not supported in this environment"
           >
             {isMuted ? 'Unmute' : 'Mute'}
           </button>
