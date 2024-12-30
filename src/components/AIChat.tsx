@@ -45,36 +45,58 @@ export function AIChat() {
       recognitionRef.current.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript
         setMessage(transcript)
+        console.log("Speech recognized:", transcript)
         
         // Immediately play back what was said
         if (!isMuted) {
           try {
+            console.log("Calling eleven-labs-tts with text:", transcript)
             const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
               body: { text: transcript }
             })
 
-            if (error) throw error
+            if (error) {
+              console.error("Supabase function error:", error)
+              throw error
+            }
+
+            console.log("Received response from eleven-labs-tts:", {
+              dataType: typeof data,
+              dataLength: data?.length,
+              isArrayBuffer: data instanceof ArrayBuffer
+            })
 
             const blob = new Blob([data], { type: 'audio/mpeg' })
+            console.log("Created blob:", {
+              blobSize: blob.size,
+              blobType: blob.type
+            })
+
             const audioUrl = URL.createObjectURL(blob)
+            console.log("Created audio URL:", audioUrl)
 
             if (audioRef.current) {
+              console.log("Setting audio source and playing")
               audioRef.current.src = audioUrl
               const playPromise = audioRef.current.play()
               
               if (playPromise !== undefined) {
                 playPromise
+                  .then(() => {
+                    console.log("Audio playback started successfully")
+                  })
                   .catch(error => {
                     console.error("Audio playback error:", error)
                     toast.error("Failed to play audio response")
                   })
                   .finally(() => {
+                    console.log("Revoking audio URL")
                     URL.revokeObjectURL(audioUrl)
                   })
               }
             }
           } catch (error) {
-            console.error("TTS error:", error)
+            console.error("TTS pipeline error:", error)
             toast.error("Failed to convert text to speech")
           }
         }
@@ -103,32 +125,53 @@ export function AIChat() {
       setResponse(aiResponse)
       if (!isMuted) {
         try {
+          console.log("Getting AI response TTS for:", aiResponse)
           const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
             body: { text: aiResponse }
           })
 
-          if (error) throw error
+          if (error) {
+            console.error("Supabase function error in AI response:", error)
+            throw error
+          }
+
+          console.log("Received AI response audio data:", {
+            dataType: typeof data,
+            dataLength: data?.length,
+            isArrayBuffer: data instanceof ArrayBuffer
+          })
 
           const blob = new Blob([data], { type: 'audio/mpeg' })
+          console.log("Created AI response blob:", {
+            blobSize: blob.size,
+            blobType: blob.type
+          })
+
           const audioUrl = URL.createObjectURL(blob)
+          console.log("Created AI response audio URL:", audioUrl)
 
           if (audioRef.current) {
+            console.log("Playing AI response audio")
             audioRef.current.src = audioUrl
             const playPromise = audioRef.current.play()
             
             if (playPromise !== undefined) {
               playPromise
+                .then(() => {
+                  console.log("AI response audio playback started")
+                })
                 .catch(error => {
-                  console.error("Audio playback error:", error)
+                  console.error("AI response audio playback error:", error)
                   toast.error("Failed to play audio response")
                 })
                 .finally(() => {
+                  console.log("Revoking AI response audio URL")
                   URL.revokeObjectURL(audioUrl)
                 })
             }
           }
         } catch (error) {
-          console.error("TTS error:", error)
+          console.error("AI response TTS error:", error)
           toast.error("Failed to convert text to speech")
         }
       }
