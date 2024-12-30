@@ -2,21 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://lovable.dev',
-  'Access-Control-Allow-Headers': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true'
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
 serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Origin': req.headers.get('origin') || 'https://lovable.dev',
-      }
-    })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -55,18 +49,19 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorData = await response.json()
+      console.error('Eleven Labs API error:', errorData)
       throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the audio blob directly
-    const audioBlob = await response.blob()
+    // Get the audio data as an ArrayBuffer
+    const audioBuffer = await response.arrayBuffer()
     
-    // Return the blob directly
-    return new Response(audioBlob, {
+    // Return the audio data with proper headers
+    return new Response(audioBuffer, {
       headers: {
         ...corsHeaders,
-        'Access-Control-Allow-Origin': req.headers.get('origin') || 'https://lovable.dev',
         'Content-Type': 'audio/mpeg',
+        'Content-Length': audioBuffer.byteLength.toString()
       },
     })
   } catch (error) {
@@ -77,7 +72,6 @@ serve(async (req) => {
         status: 500,
         headers: { 
           ...corsHeaders,
-          'Access-Control-Allow-Origin': req.headers.get('origin') || 'https://lovable.dev',
           'Content-Type': 'application/json' 
         },
       }

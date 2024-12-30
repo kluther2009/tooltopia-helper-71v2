@@ -7,24 +7,34 @@ export function AIChat() {
   const [message, setMessage] = useState('')
   const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const playAudio = async (audioData: Uint8Array) => {
+  const playAudio = async (audioData: ArrayBuffer) => {
     try {
-      const audio = new Audio()
+      // Create a new audio element if it doesn't exist
+      if (!audioRef.current) {
+        audioRef.current = new Audio()
+      }
+
+      // Convert ArrayBuffer to Blob
       const blob = new Blob([audioData], { type: 'audio/mpeg' })
       const url = URL.createObjectURL(blob)
       
-      audio.src = url
+      // Set up audio element
+      audioRef.current.src = url
       
-      audio.onerror = (e) => {
+      // Set up error handling
+      audioRef.current.onerror = (e) => {
         console.error('Audio loading error:', e)
         toast.error('Failed to load audio')
         URL.revokeObjectURL(url)
       }
 
-      await audio.play()
+      // Play the audio
+      await audioRef.current.play()
       
-      audio.onended = () => {
+      // Clean up when done
+      audioRef.current.onended = () => {
         URL.revokeObjectURL(url)
       }
     } catch (error) {
@@ -58,8 +68,9 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // Handle the audio data as Uint8Array
-            await playAudio(response.data)
+            // Convert response data to ArrayBuffer
+            const audioData = await response.data.arrayBuffer()
+            await playAudio(audioData)
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
