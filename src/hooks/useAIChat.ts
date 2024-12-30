@@ -20,9 +20,15 @@ export function useAIChat() {
           message,
           userId: user.id
         },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Claude error:', error)
+        throw error
+      }
 
       if (!data?.content?.[0]?.text) {
         throw new Error('Invalid response format from AI')

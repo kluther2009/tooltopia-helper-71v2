@@ -21,9 +21,15 @@ export function useProjectHelper(projectId: string) {
           userId: user.id,
           projectId
         },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Project Helper error:', error)
+        throw error
+      }
 
       if (!data?.content?.[0]?.text) {
         throw new Error('Invalid response format from AI')
