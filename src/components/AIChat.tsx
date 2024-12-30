@@ -1,55 +1,143 @@
-// ... (keep existing imports)
+import { useRef, useState } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 export function AIChat() {
-  // ... (keep existing state and refs)
+  const [isListening, setIsListening] = useState(false)
+  const [message, setMessage] = useState('')
+  const [isMuted, setIsMuted] = useState(false)
+  const recognitionRef = useRef<any>(null)
 
   const playAudio = async (audioData: ArrayBuffer) => {
     try {
-      // Create audio context for web audio API
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      console.log('Starting audio playback with data size:', audioData.byteLength)
       
-      // Decode the array buffer
-      const audioBuffer = await audioContext.decodeAudioData(audioData)
+      // Create blob from array buffer with correct MIME type
+      const blob = new Blob([audioData], { type: 'audio/mpeg' })
+      console.log('Created blob:', {
+        blobSize: blob.size,
+        blobType: blob.type
+      })
+
+      // Create object URL
+      const url = URL.createObjectURL(blob)
+      console.log('Created audio URL:', url)
+
+      // Create and configure audio element
+      const audio = new Audio()
       
-      // Create buffer source
-      const source = audioContext.createBufferSource()
-      source.buffer = audioBuffer
-      source.connect(audioContext.destination)
-      
-      // Play the audio
-      source.start(0)
-      
-      // Clean up
-      source.onended = () => {
-        source.disconnect()
-        audioContext.close()
+      audio.onerror = (e) => {
+        console.error('Audio loading error:', audio.error)
+        toast.error('Failed to play audio')
+        URL.revokeObjectURL(url)
       }
+
+      audio.onended = () => {
+        URL.revokeObjectURL(url)
+      }
+
+      // Set source and play
+      audio.src = url
+      await audio.play()
+      
     } catch (error) {
-      console.error("Audio playback error:", error)
-      toast.error("Failed to play audio")
+      console.error('Audio playback error:', error)
+      toast.error('Failed to play audio')
     }
   }
 
   const recognitionRef.current.onresult = async (event: any) => {
     const transcript = event.results[0][0].transcript
     setMessage(transcript)
+    console.log('Speech recognized:', transcript)
     
     if (!isMuted) {
       try {
+        console.log('Calling eleven-labs-tts with text:', transcript)
+        
         const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
           body: { text: transcript }
         })
 
         if (error) throw error
 
-        // Play using Web Audio API
+        console.log('Received response from eleven-labs-tts:', {
+          dataExists: !!data,
+          dataType: typeof data
+        })
+
+        // Play using Audio element
         await playAudio(data)
       } catch (error) {
-        console.error("TTS error:", error)
-        toast.error("Failed to convert text to speech")
+        console.error('TTS error:', error)
+        toast.error('Failed to convert text to speech')
       }
     }
   }
 
-  // ... (keep rest of the component the same)
+  const startListening = () => {
+    if (!recognitionRef.current) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      recognitionRef.current = new SpeechRecognition()
+      recognitionRef.current.continuous = false
+      recognitionRef.current.interimResults = false
+    }
+
+    recognitionRef.current.start()
+    setIsListening(true)
+
+    recognitionRef.current.onend = () => {
+      setIsListening(false)
+    }
+
+    recognitionRef.current.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error)
+      setIsListening(false)
+    }
+  }
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+    }
+    setIsListening(false)
+  }
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted)
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="space-y-4 w-full max-w-md">
+        <div className="flex justify-between items-center">
+          <button
+            onClick={isListening ? stopListening : startListening}
+            className={`px-4 py-2 rounded ${
+              isListening 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : 'bg-blue-500 hover:bg-blue-600'
+            } text-white`}
+          >
+            {isListening ? 'Stop Listening' : 'Start Listening'}
+          </button>
+          <button
+            onClick={toggleMute}
+            className={`px-4 py-2 rounded ${
+              isMuted 
+                ? 'bg-gray-500 hover:bg-gray-600' 
+                : 'bg-green-500 hover:bg-green-600'
+            } text-white`}
+          >
+            {isMuted ? 'Unmute' : 'Mute'}
+          </button>
+        </div>
+        {message && (
+          <div className="bg-white p-4 rounded shadow">
+            <p className="text-gray-700">{message}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
