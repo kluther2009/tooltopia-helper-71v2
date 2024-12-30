@@ -10,35 +10,39 @@ export function AIChat() {
 
   const playAudio = async (audioBlob: Blob) => {
     try {
-      // Ensure we're creating a proper audio blob with MIME type
-      const audioData = new Blob([audioBlob], { type: 'audio/mpeg' })
-      const audioUrl = URL.createObjectURL(audioData)
+      // Create audio element
       const audio = new Audio()
       
-      audio.onerror = (e) => {
-        console.error('Audio loading error:', e)
-        toast.error('Failed to load audio')
-        URL.revokeObjectURL(audioUrl)
+      // Convert blob to base64
+      const reader = new FileReader()
+      reader.readAsDataURL(audioBlob)
+      
+      reader.onload = async () => {
+        try {
+          // Set the base64 data as the audio source
+          audio.src = reader.result as string
+          
+          audio.onerror = (e) => {
+            console.error('Audio loading error:', e)
+            toast.error('Failed to load audio')
+          }
+
+          // Play the audio
+          try {
+            await audio.play()
+          } catch (playError) {
+            console.error('Playback failed:', playError)
+            toast.error('Failed to play audio')
+          }
+        } catch (error) {
+          console.error('Error setting up audio:', error)
+          toast.error('Failed to setup audio')
+        }
       }
 
-      // Set the source and load the audio before playing
-      audio.src = audioUrl
-      await audio.load()
-      
-      const playPromise = audio.play()
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            // Audio is playing
-            audio.onended = () => {
-              URL.revokeObjectURL(audioUrl)
-            }
-          })
-          .catch(error => {
-            console.error('Playback failed:', error)
-            toast.error('Failed to play audio')
-            URL.revokeObjectURL(audioUrl)
-          })
+      reader.onerror = (error) => {
+        console.error('Error reading blob:', error)
+        toast.error('Failed to process audio')
       }
     } catch (error) {
       console.error('Audio playback error:', error)
@@ -68,7 +72,6 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // Convert base64 to Blob if response is base64
             const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
             console.log('Created blob:', { blobSize: audioBlob.size, blobType: audioBlob.type })
 
