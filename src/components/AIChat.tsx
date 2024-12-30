@@ -46,41 +46,42 @@ export function AIChat() {
     }
   }
 
-  const recognitionRef.current.onresult = async (event: any) => {
-    const transcript = event.results[0][0].transcript
-    setMessage(transcript)
-    console.log('Speech recognized:', transcript)
-    
-    if (!isMuted) {
-      try {
-        console.log('Calling eleven-labs-tts with text:', transcript)
-        
-        const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
-          body: { text: transcript }
-        })
-
-        if (error) throw error
-
-        console.log('Received response from eleven-labs-tts:', {
-          dataExists: !!data,
-          dataType: typeof data
-        })
-
-        // Play using Audio element
-        await playAudio(data)
-      } catch (error) {
-        console.error('TTS error:', error)
-        toast.error('Failed to convert text to speech')
-      }
-    }
-  }
-
   const startListening = () => {
     if (!recognitionRef.current) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
       recognitionRef.current = new SpeechRecognition()
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = false
+
+      // Set up the onresult handler
+      recognitionRef.current.onresult = async (event: any) => {
+        const transcript = event.results[0][0].transcript
+        setMessage(transcript)
+        console.log('Speech recognized:', transcript)
+        
+        if (!isMuted) {
+          try {
+            console.log('Calling eleven-labs-tts with text:', transcript)
+            
+            const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
+              body: { text: transcript }
+            })
+
+            if (error) throw error
+
+            console.log('Received response from eleven-labs-tts:', {
+              dataExists: !!data,
+              dataType: typeof data
+            })
+
+            // Play using Audio element
+            await playAudio(data)
+          } catch (error) {
+            console.error('TTS error:', error)
+            toast.error('Failed to convert text to speech')
+          }
+        }
+      }
     }
 
     recognitionRef.current.start()
