@@ -58,17 +58,15 @@ serve(async (req) => {
       throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the binary audio data
-    const audioData = await response.arrayBuffer()
-    console.log('Received audio data size:', audioData.byteLength)
+    // Get the audio blob directly
+    const audioBlob = await response.blob()
     
-    // Return the binary data directly
-    return new Response(audioData, {
+    // Return the blob directly
+    return new Response(audioBlob, {
       headers: {
         ...corsHeaders,
         'Access-Control-Allow-Origin': req.headers.get('origin') || 'https://lovable.dev',
         'Content-Type': 'audio/mpeg',
-        'Content-Length': audioData.byteLength.toString(),
       },
     })
   } catch (error) {
