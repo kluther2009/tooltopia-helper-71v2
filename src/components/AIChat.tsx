@@ -10,39 +10,26 @@ export function AIChat() {
 
   const playAudio = async (audioBlob: Blob) => {
     try {
-      // Create audio element
       const audio = new Audio()
+      const url = URL.createObjectURL(audioBlob)
       
-      // Convert blob to base64
-      const reader = new FileReader()
-      reader.readAsDataURL(audioBlob)
+      audio.src = url
       
-      reader.onload = async () => {
-        try {
-          // Set the base64 data as the audio source
-          audio.src = reader.result as string
-          
-          audio.onerror = (e) => {
-            console.error('Audio loading error:', e)
-            toast.error('Failed to load audio')
-          }
-
-          // Play the audio
-          try {
-            await audio.play()
-          } catch (playError) {
-            console.error('Playback failed:', playError)
-            toast.error('Failed to play audio')
-          }
-        } catch (error) {
-          console.error('Error setting up audio:', error)
-          toast.error('Failed to setup audio')
-        }
+      audio.onerror = (e) => {
+        console.error('Audio loading error:', e)
+        toast.error('Failed to load audio')
+        URL.revokeObjectURL(url)
       }
 
-      reader.onerror = (error) => {
-        console.error('Error reading blob:', error)
-        toast.error('Failed to process audio')
+      try {
+        await audio.play()
+        audio.onended = () => {
+          URL.revokeObjectURL(url)
+        }
+      } catch (playError) {
+        console.error('Playback failed:', playError)
+        toast.error('Failed to play audio')
+        URL.revokeObjectURL(url)
       }
     } catch (error) {
       console.error('Audio playback error:', error)
@@ -67,7 +54,8 @@ export function AIChat() {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
             const response = await supabase.functions.invoke('eleven-labs-tts', {
-              body: { text: transcript }
+              body: { text: transcript },
+              responseType: 'arrayBuffer'
             })
 
             if (response.error) throw response.error
