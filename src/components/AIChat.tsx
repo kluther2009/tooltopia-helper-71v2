@@ -9,8 +9,33 @@ export function AIChat() {
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // Test audio playback capability
+  const testAudioPlayback = async () => {
+    try {
+      const testAudio = new Audio()
+      // Try to play a very short silent audio
+      const silentAudioBase64 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABhgBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ=='
+      testAudio.src = silentAudioBase64
+      
+      console.log('Testing audio playback...')
+      await testAudio.play()
+      console.log('Audio playback is supported!')
+      return true
+    } catch (error) {
+      console.error('Audio playback test failed:', error)
+      toast.error('Audio playback is not supported in this environment')
+      return false
+    }
+  }
+
   const playAudio = async (audioData: Uint8Array) => {
     try {
+      // First check if audio playback is supported
+      const isSupported = await testAudioPlayback()
+      if (!isSupported) {
+        throw new Error('Audio playback is not supported in this environment')
+      }
+
       // Create a new audio element if it doesn't exist
       if (!audioRef.current) {
         audioRef.current = new Audio()
@@ -46,7 +71,7 @@ export function AIChat() {
       }
     } catch (error) {
       console.error('Audio playback error:', error)
-      toast.error('Failed to play audio')
+      toast.error('Audio playback failed')
     }
   }
 
