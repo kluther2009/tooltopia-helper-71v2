@@ -89,11 +89,9 @@ serve(async (req) => {
 
     if (!tools || tools.length === 0) {
       return new Response(
-        JSON.stringify({
-          content: [{
-            text: "I don't see any tools in your inventory yet. Would you like help adding some tools?"
-          }]
-        }),
+        JSON.stringify(
+          "I don't see any tools in your inventory yet. Would you like help adding some tools?"
+        ),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -126,14 +124,20 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
+        'anthropic-version': '2024-01-01',
       },
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: systemPrompt.replace('{toolInventory}', toolInventory),
         messages: [
-          { role: 'user', content: message }
+          { 
+            role: 'assistant',
+            content: systemPrompt.replace('{toolInventory}', toolInventory)
+          },
+          { 
+            role: 'user',
+            content: message 
+          }
         ],
       }),
     })
@@ -147,12 +151,7 @@ serve(async (req) => {
     const data = await response.json()
     console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
     
-    if (!data.content || !data.content[0] || !data.content[0].text) {
-      console.error('Invalid response format from Claude:', data)
-      throw new Error('Invalid response format from Claude API')
-    }
-
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(data.content[0].text), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
