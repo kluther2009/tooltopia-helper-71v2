@@ -8,44 +8,29 @@ export function AIChat() {
   const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
 
-  const playAudio = async (audioData: string) => {
+  const playAudio = async (audioData: ArrayBuffer) => {
     try {
-      console.log('Starting audio playback with data size:', audioData.length)
+      console.log('Starting audio playback with data size:', audioData.byteLength)
       
-      // Convert base64 to array buffer
-      const binaryString = window.atob(audioData);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+      // Create audio context
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
       
-      // Create blob from array buffer
-      const blob = new Blob([bytes], { type: 'audio/mpeg' })
-      console.log('Created blob:', {
-        blobSize: blob.size,
-        blobType: blob.type
-      })
-
-      // Create object URL
-      const url = URL.createObjectURL(blob)
-      console.log('Created audio URL:', url)
-
-      // Create and configure audio element
-      const audio = new Audio()
+      // Decode the audio data
+      const audioBuffer = await audioContext.decodeAudioData(audioData)
       
-      audio.onerror = (e) => {
-        console.error('Audio loading error:', audio.error)
-        toast.error('Failed to play audio')
-        URL.revokeObjectURL(url)
+      // Create and configure source
+      const source = audioContext.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(audioContext.destination)
+      
+      // Play the audio
+      source.start(0)
+      
+      // Cleanup when done
+      source.onended = () => {
+        source.disconnect()
+        audioContext.close()
       }
-
-      audio.onended = () => {
-        URL.revokeObjectURL(url)
-      }
-
-      // Set source and play
-      audio.src = url
-      await audio.play()
       
     } catch (error) {
       console.error('Audio playback error:', error)
@@ -69,18 +54,17 @@ export function AIChat() {
           try {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
-            const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
+            const response = await supabase.functions.invoke('eleven-labs-tts', {
               body: { text: transcript }
             })
 
-            if (error) throw error
+            if (response.error) throw response.error
 
-            console.log('Received response from eleven-labs-tts:', {
-              dataExists: !!data,
-              dataType: typeof data
-            })
+            // Convert response data to ArrayBuffer
+            const arrayBuffer = await fetch(`data:audio/mpeg;base64,${response.data}`).then(r => r.arrayBuffer())
+            console.log('Received audio data of size:', arrayBuffer.byteLength)
 
-            await playAudio(data)
+            await playAudio(arrayBuffer)
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
