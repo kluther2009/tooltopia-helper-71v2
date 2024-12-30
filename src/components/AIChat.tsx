@@ -47,13 +47,17 @@ export function AIChat() {
       }
 
       // Get the public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = await supabase.storage
         .from('temp-audio')
-        .getPublicUrl(fileName)
+        .createSignedUrl(fileName, 300) // 5 minutes expiry
 
-      console.log('Created audio URL:', publicUrl)
+      if (!urlData?.signedUrl) {
+        throw new Error('Failed to get signed URL')
+      }
+
+      console.log('Created audio URL:', urlData.signedUrl)
       
-      const audio = new Audio(publicUrl)
+      const audio = new Audio(urlData.signedUrl)
       
       audio.onerror = (e) => {
         console.error('Audio loading error:', e)
