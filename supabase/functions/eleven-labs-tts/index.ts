@@ -2,10 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://lovable.dev',  // Updated for lovable.dev
-  'Access-Control-Allow-Headers': '*',  // Allow all headers
+  'Access-Control-Allow-Origin': 'https://lovable.dev',
+  'Access-Control-Allow-Headers': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true'  // Important for lovable.dev
+  'Access-Control-Allow-Credentials': 'true'
 }
 
 serve(async (req) => {
@@ -30,6 +30,8 @@ serve(async (req) => {
     if (!text) {
       throw new Error('No text provided for TTS conversion')
     }
+
+    console.log('Converting text to speech:', text)
 
     const voiceId = "21m00Tcm4TlvDq8ikWAM"
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
@@ -56,8 +58,11 @@ serve(async (req) => {
       throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
+    // Get the binary audio data
     const audioData = await response.arrayBuffer()
+    console.log('Received audio data size:', audioData.byteLength)
     
+    // Return the binary data directly
     return new Response(audioData, {
       headers: {
         ...corsHeaders,
@@ -67,6 +72,7 @@ serve(async (req) => {
       },
     })
   } catch (error) {
+    console.error('TTS error:', error)
     return new Response(
       JSON.stringify({ error: error.message || 'An unexpected error occurred' }),
       {

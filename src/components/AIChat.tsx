@@ -13,7 +13,7 @@ export function AIChat() {
       console.log('Starting audio playback with data size:', audioData.byteLength)
       
       // Create audio context
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+      const audioContext = new AudioContext()
       
       // Decode the audio data
       const audioBuffer = await audioContext.decodeAudioData(audioData)
@@ -60,11 +60,11 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // Convert response data to ArrayBuffer
-            const arrayBuffer = await fetch(`data:audio/mpeg;base64,${response.data}`).then(r => r.arrayBuffer())
-            console.log('Received audio data of size:', arrayBuffer.byteLength)
+            // Get the binary audio data directly
+            const audioData = response.data
+            console.log('Received audio data of size:', audioData.byteLength)
 
-            await playAudio(arrayBuffer)
+            await playAudio(audioData)
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
