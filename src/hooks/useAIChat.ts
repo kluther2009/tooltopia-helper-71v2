@@ -15,6 +15,8 @@ export function useAIChat() {
         return null
       }
 
+      console.log('Sending message to Claude:', { message, userId: user.id })
+      
       const { data, error } = await supabase.functions.invoke('chat-with-claude', {
         body: { 
           message,
@@ -30,7 +32,10 @@ export function useAIChat() {
         throw error
       }
 
+      console.log('Received response from Claude:', data)
+
       if (!data?.content?.[0]?.text) {
+        console.error('Invalid response format:', data)
         throw new Error('Invalid response format from AI')
       }
 

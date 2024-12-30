@@ -15,6 +15,8 @@ export function useProjectHelper(projectId: string) {
         return null
       }
 
+      console.log('Sending message to Project Helper:', { message, userId: user.id, projectId })
+
       const { data, error } = await supabase.functions.invoke('chat-with-project-helper', {
         body: { 
           message,
@@ -31,7 +33,10 @@ export function useProjectHelper(projectId: string) {
         throw error
       }
 
+      console.log('Received response from Project Helper:', data)
+
       if (!data?.content?.[0]?.text) {
+        console.error('Invalid response format:', data)
         throw new Error('Invalid response format from AI')
       }
 
