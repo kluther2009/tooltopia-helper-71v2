@@ -9,25 +9,31 @@ export function AIChat() {
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const playAudio = async (audioData: Blob) => {
+  const playAudio = async (audioData: ArrayBuffer) => {
     try {
       // Create a new audio element if it doesn't exist
       if (!audioRef.current) {
         audioRef.current = new Audio()
       }
 
-      // Create URL from blob directly
-      const url = URL.createObjectURL(audioData)
+      // Create blob and URL
+      const blob = new Blob([audioData], { type: 'audio/mpeg' })
+      const url = URL.createObjectURL(blob)
       
       // Set up audio element
       audioRef.current.src = url
       
-      // Set up error handling
-      audioRef.current.onerror = (e) => {
-        console.error('Audio loading error:', e)
-        toast.error('Failed to load audio')
-        URL.revokeObjectURL(url)
-      }
+      // Wait for audio to load before playing
+      await new Promise((resolve, reject) => {
+        if (!audioRef.current) return reject(new Error('No audio element'))
+        
+        audioRef.current.oncanplaythrough = resolve
+        audioRef.current.onerror = (e) => {
+          console.error('Audio loading error:', e)
+          URL.revokeObjectURL(url)
+          reject(new Error('Failed to load audio'))
+        }
+      })
 
       // Play the audio
       await audioRef.current.play()
@@ -59,17 +65,14 @@ export function AIChat() {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
             const response = await supabase.functions.invoke('eleven-labs-tts', {
-              body: { text: transcript },
-              headers: {
-                'Accept': 'audio/mpeg'
-              }
+              body: { text: transcript }
             })
 
             if (response.error) throw response.error
 
-            // Get the response as a blob directly
-            const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
-            await playAudio(audioBlob)
+            // Convert response data to ArrayBuffer
+            const audioData = await response.data.arrayBuffer()
+            await playAudio(audioData)
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
