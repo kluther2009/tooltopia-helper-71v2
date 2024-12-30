@@ -8,12 +8,19 @@ export function AIChat() {
   const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
 
-  const playAudio = async (audioData: ArrayBuffer) => {
+  const playAudio = async (audioData: string) => {
     try {
-      console.log('Starting audio playback with data size:', audioData.byteLength)
+      console.log('Starting audio playback with data size:', audioData.length)
       
-      // Create blob from array buffer with correct MIME type
-      const blob = new Blob([audioData], { type: 'audio/mpeg' })
+      // Convert base64 to array buffer
+      const binaryString = window.atob(audioData);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      // Create blob from array buffer
+      const blob = new Blob([bytes], { type: 'audio/mpeg' })
       console.log('Created blob:', {
         blobSize: blob.size,
         blobType: blob.type
@@ -53,7 +60,6 @@ export function AIChat() {
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = false
 
-      // Set up the onresult handler
       recognitionRef.current.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript
         setMessage(transcript)
@@ -74,7 +80,6 @@ export function AIChat() {
               dataType: typeof data
             })
 
-            // Play using Audio element
             await playAudio(data)
           } catch (error) {
             console.error('TTS error:', error)
