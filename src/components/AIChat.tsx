@@ -10,20 +10,35 @@ export function AIChat() {
 
   const playAudio = async (audioBlob: Blob) => {
     try {
-      // Create URL directly from blob and play it
-      const audioUrl = URL.createObjectURL(audioBlob)
-      const audio = new Audio(audioUrl)
+      // Ensure we're creating a proper audio blob with MIME type
+      const audioData = new Blob([audioBlob], { type: 'audio/mpeg' })
+      const audioUrl = URL.createObjectURL(audioData)
+      const audio = new Audio()
       
       audio.onerror = (e) => {
         console.error('Audio loading error:', e)
         toast.error('Failed to load audio')
-      }
-      
-      await audio.play()
-      
-      // Clean up the URL after playback
-      audio.onended = () => {
         URL.revokeObjectURL(audioUrl)
+      }
+
+      // Set the source and load the audio before playing
+      audio.src = audioUrl
+      await audio.load()
+      
+      const playPromise = audio.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Audio is playing
+            audio.onended = () => {
+              URL.revokeObjectURL(audioUrl)
+            }
+          })
+          .catch(error => {
+            console.error('Playback failed:', error)
+            toast.error('Failed to play audio')
+            URL.revokeObjectURL(audioUrl)
+          })
       }
     } catch (error) {
       console.error('Audio playback error:', error)
@@ -53,7 +68,7 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // Convert response data to Blob
+            // Convert base64 to Blob if response is base64
             const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
             console.log('Created blob:', { blobSize: audioBlob.size, blobType: audioBlob.type })
 
