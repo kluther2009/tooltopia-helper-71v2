@@ -57,14 +57,43 @@ Here is the current tool inventory:
 `
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { message, userId } = await req.json()
+    // Validate request body
+    let body
+    try {
+      body = await req.json()
+    } catch (e) {
+      console.error('Failed to parse request body:', e)
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const { message, userId } = body
+    
+    if (!message || !userId) {
+      console.error('Missing required fields:', { message, userId })
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     console.log('Received request with message:', message, 'and userId:', userId)
 
+    // Fetch tools with error handling
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
       .select(`
@@ -81,22 +110,27 @@ serve(async (req) => {
 
     if (toolsError) {
       console.error('Error fetching tools:', toolsError)
-      throw toolsError
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch tools' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
-
-    console.log('Fetched tools count:', tools?.length || 0)
-    console.log('Sample tool data:', tools?.[0])
 
     if (!tools || tools.length === 0) {
       return new Response(
-        JSON.stringify(
-          "I don't see any tools in your inventory yet. Would you like help adding some tools?"
-        ),
+        JSON.stringify({
+          content: [{
+            text: "I don't see any tools in your inventory yet. Would you like help adding some tools?"
+          }]
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Format tool inventory with better spacing
+    // Format tool inventory
     const toolInventory = tools.map(tool => {
       const location = [
         tool.location,
@@ -119,7 +153,8 @@ serve(async (req) => {
 
     console.log('Formatted tool inventory sample:', toolInventory.substring(0, 200))
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Call Claude API with error handling
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -142,23 +177,44 @@ serve(async (req) => {
       }),
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Claude API error:', response.status, errorText)
-      throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
+    if (!claudeResponse.ok) {
+      const errorText = await claudeResponse.text()
+      console.error('Claude API error:', claudeResponse.status, errorText)
+      return new Response(
+        JSON.stringify({ error: `Claude API error: ${claudeResponse.status}` }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
-    const data = await response.json()
+    const data = await claudeResponse.json()
     console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
     
-    return new Response(JSON.stringify(data.content[0].text), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    if (!data?.content?.[0]?.text) {
+      console.error('Invalid Claude response format:', data)
+      return new Response(
+        JSON.stringify({ error: 'Invalid response format from Claude' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ content: [{ text: data.content[0].text }] }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     console.error('Error in chat-with-claude function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
 })
