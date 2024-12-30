@@ -55,7 +55,9 @@ export function AIChat() {
             
             const response = await supabase.functions.invoke('eleven-labs-tts', {
               body: { text: transcript },
-              responseType: 'arrayBuffer'
+              headers: {
+                'Accept': 'audio/mpeg'
+              }
             })
 
             if (response.error) throw response.error
