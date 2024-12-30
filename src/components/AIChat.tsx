@@ -51,37 +51,47 @@ export function AIChat() {
         if (!isMuted) {
           try {
             console.log("Calling eleven-labs-tts with text:", transcript)
-            const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
+            const response = await supabase.functions.invoke('eleven-labs-tts', {
               body: { text: transcript }
             })
 
-            if (error) {
-              console.error("Supabase function error:", error)
-              throw error
+            if (response.error) {
+              console.error("Supabase function error:", response.error)
+              throw response.error
             }
 
             console.log("Received response from eleven-labs-tts:", {
-              dataType: typeof data,
-              dataLength: data?.length,
-              isArrayBuffer: data instanceof ArrayBuffer
+              dataExists: !!response.data,
+              dataType: typeof response.data
             })
 
-            const blob = new Blob([data], { type: 'audio/mpeg' })
+            const audioData = response.data
+            const blob = new Blob([audioData], { type: 'audio/mpeg' })
             console.log("Created blob:", {
               blobSize: blob.size,
               blobType: blob.type
             })
 
+            if (blob.size === 0) {
+              console.error("Empty audio blob created")
+              throw new Error("Empty audio data received")
+            }
+
             const audioUrl = URL.createObjectURL(blob)
             console.log("Created audio URL:", audioUrl)
 
             if (audioRef.current) {
-              console.log("Setting audio source and playing")
-              audioRef.current.src = audioUrl
-              const playPromise = audioRef.current.play()
+              const audio = audioRef.current
+              audio.src = audioUrl
               
-              if (playPromise !== undefined) {
-                playPromise
+              // Set up audio element event listeners
+              audio.onloadedmetadata = () => {
+                console.log("Audio metadata loaded, duration:", audio.duration)
+              }
+              
+              audio.oncanplay = () => {
+                console.log("Audio is ready to play")
+                audio.play()
                   .then(() => {
                     console.log("Audio playback started successfully")
                   })
@@ -90,13 +100,17 @@ export function AIChat() {
                     toast.error("Failed to play audio response")
                   })
                   .finally(() => {
-                    console.log("Revoking audio URL")
                     URL.revokeObjectURL(audioUrl)
                   })
               }
+
+              audio.onerror = () => {
+                console.error("Audio loading error:", audio.error)
+                toast.error("Failed to load audio")
+              }
             }
           } catch (error) {
-            console.error("TTS pipeline error:", error)
+            console.error("Complete error in TTS pipeline:", error)
             toast.error("Failed to convert text to speech")
           }
         }
@@ -114,7 +128,7 @@ export function AIChat() {
         recognitionRef.current.abort()
       }
     }
-  }, [isMuted, message])
+  }, [isMuted]) // Removed message dependency
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -126,48 +140,42 @@ export function AIChat() {
       if (!isMuted) {
         try {
           console.log("Getting AI response TTS for:", aiResponse)
-          const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
+          const response = await supabase.functions.invoke('eleven-labs-tts', {
             body: { text: aiResponse }
           })
 
-          if (error) {
-            console.error("Supabase function error in AI response:", error)
-            throw error
+          if (response.error) {
+            console.error("Supabase function error in AI response:", response.error)
+            throw response.error
           }
 
-          console.log("Received AI response audio data:", {
-            dataType: typeof data,
-            dataLength: data?.length,
-            isArrayBuffer: data instanceof ArrayBuffer
-          })
-
-          const blob = new Blob([data], { type: 'audio/mpeg' })
-          console.log("Created AI response blob:", {
-            blobSize: blob.size,
-            blobType: blob.type
-          })
+          const audioData = response.data
+          const blob = new Blob([audioData], { type: 'audio/mpeg' })
+          
+          if (blob.size === 0) {
+            throw new Error("Empty audio data received")
+          }
 
           const audioUrl = URL.createObjectURL(blob)
-          console.log("Created AI response audio URL:", audioUrl)
 
           if (audioRef.current) {
-            console.log("Playing AI response audio")
-            audioRef.current.src = audioUrl
-            const playPromise = audioRef.current.play()
+            const audio = audioRef.current
+            audio.src = audioUrl
             
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log("AI response audio playback started")
-                })
+            audio.oncanplay = () => {
+              audio.play()
                 .catch(error => {
                   console.error("AI response audio playback error:", error)
                   toast.error("Failed to play audio response")
                 })
                 .finally(() => {
-                  console.log("Revoking AI response audio URL")
                   URL.revokeObjectURL(audioUrl)
                 })
+            }
+
+            audio.onerror = () => {
+              console.error("AI response audio loading error:", audio.error)
+              toast.error("Failed to load AI response audio")
             }
           }
         } catch (error) {
