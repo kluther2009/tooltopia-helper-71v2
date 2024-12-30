@@ -9,16 +9,15 @@ export function AIChat() {
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const playAudio = async (audioData: ArrayBuffer) => {
+  const playAudio = async (audioData: Blob) => {
     try {
       // Create a new audio element if it doesn't exist
       if (!audioRef.current) {
         audioRef.current = new Audio()
       }
 
-      // Convert ArrayBuffer to Blob
-      const blob = new Blob([audioData], { type: 'audio/mpeg' })
-      const url = URL.createObjectURL(blob)
+      // Create URL from blob directly
+      const url = URL.createObjectURL(audioData)
       
       // Set up audio element
       audioRef.current.src = url
@@ -68,9 +67,9 @@ export function AIChat() {
 
             if (response.error) throw response.error
 
-            // Convert response data to ArrayBuffer
-            const audioData = await response.data.arrayBuffer()
-            await playAudio(audioData)
+            // Get the response as a blob directly
+            const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
+            await playAudio(audioBlob)
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
@@ -104,8 +103,14 @@ export function AIChat() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div 
+      className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4"
+      aria-describedby="ai-chat-description"
+    >
       <div className="space-y-4 w-full max-w-md">
+        <p id="ai-chat-description" className="sr-only">
+          AI Chat interface for voice interaction and text-to-speech responses
+        </p>
         <div className="flex justify-between items-center">
           <button
             onClick={isListening ? stopListening : startListening}
