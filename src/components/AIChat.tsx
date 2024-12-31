@@ -2,6 +2,9 @@ import { useRef, useState, useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 
+const SUPABASE_URL = "https://bnwztdwbdejiubjfpigj.supabase.co"
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJud3p0ZHdiZGVqaXViamZwaWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM1OTY1NTgsImV4cCI6MjA0OTE3MjU1OH0.sxCfIL5HXXQVkwOYLBXRrAj5FALgfecsFLc9vdS54yQ"
+
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [message, setMessage] = useState('')
@@ -37,18 +40,23 @@ export function AIChat() {
           try {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
-            const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
-              body: { text: transcript },
-              noResolveJson: true // Don't parse response as JSON
+            const functionUrl = `${SUPABASE_URL}/functions/v1/eleven-labs-tts`
+            const response = await fetch(functionUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({ text: transcript }),
             })
 
-            if (error) {
-              console.error('Supabase function error:', error)
-              throw error
+            if (!response.ok) {
+              console.error('Edge function error:', response.status)
+              throw new Error(`Failed to convert text to speech: ${response.statusText}`)
             }
 
             // Get binary audio data
-            const audioArrayBuffer = await data.arrayBuffer()
+            const audioArrayBuffer = await response.arrayBuffer()
             console.log('Received audio data size:', audioArrayBuffer.byteLength, 'bytes')
 
             // Clean up previous audio resources
