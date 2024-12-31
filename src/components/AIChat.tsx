@@ -59,7 +59,6 @@ export function AIChat() {
     }
   }
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       cleanupAudioResources()
@@ -68,7 +67,7 @@ export function AIChat() {
 
   return (
     <div 
-      className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4"
+      className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4"
       aria-describedby="ai-chat-description"
     >
       <div className="space-y-4 w-full max-w-md">
@@ -81,7 +80,7 @@ export function AIChat() {
             className={`px-4 py-2 rounded ${
               isListening 
                 ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-blue-500 hover:bg-blue-600'
+                : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
             } text-white`}
           >
             {isListening ? 'Stop Listening' : 'Start Listening'}
@@ -91,15 +90,15 @@ export function AIChat() {
             className={`px-4 py-2 rounded ${
               isMuted 
                 ? 'bg-gray-500 hover:bg-gray-600' 
-                : 'bg-green-500 hover:bg-green-600'
+                : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
             } text-white`}
           >
             {isMuted ? 'Unmute' : 'Mute'}
           </button>
         </div>
         {message && (
-          <div className="bg-white p-4 rounded shadow">
-            <p className="text-gray-700">{message}</p>
+          <div className="bg-transparent border-2 border-white rounded-lg p-4">
+            <p className="text-white">{message}</p>
           </div>
         )}
       </div>
