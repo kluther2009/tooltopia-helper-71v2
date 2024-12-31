@@ -38,12 +38,21 @@ export function AIChat() {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
             const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
-              body: { text: transcript }
+              body: { text: transcript },
+              headers: {
+                'Accept': 'audio/mpeg',
+                'Content-Type': 'application/json'
+              },
+              responseType: 'arraybuffer'
             })
 
             if (error) {
               console.error('Supabase function error:', error)
               throw error
+            }
+
+            if (!data || !(data instanceof ArrayBuffer)) {
+              throw new Error('Invalid audio data received')
             }
 
             // Clean up previous audio resources
