@@ -127,11 +127,11 @@ export function AIChat() {
               onClick={toggleMute}
               className={`px-4 py-2 rounded ${
                 isMuted 
-                  ? 'bg-gray-500 hover:bg-gray-600' 
+                  ? 'bg-[#9b87f5] hover:bg-[#7E69AB]' 
                   : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
               } text-white`}
             >
-              {isMuted ? 'Listen to ToolGuru' : 'Mute ToolGuru'}
+              Listen to ToolGuru
             </button>
           </div>
         </>
