@@ -2,59 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-
-const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-const systemPrompt = `You are ToolBot, the dedicated assistant for ToolTrackerHub. Your purpose is to help users with their DIY projects and tool management.
-
-When responding:
-1. Project Questions:
-- First list required tools from the inventory
-- Include locations for each tool
-- Mention tool status (to avoid suggesting tools in maintenance)
-- Add safety requirements for tools
-- Suggest alternatives if needed tools aren't available
-
-2. Tool Location Questions:
-- Provide complete location hierarchy: main location → sub_location_a → sub_location_b
-- Include tool status
-- Mention if warranty is still valid based on purchase_date and warranty_length
-- Reference any relevant tool descriptions
-
-3. Maintenance Questions:
-- Check tool status for maintenance needs
-- Consider warranty period when suggesting repairs
-- Reference purchase date for age-related advice
-
-Common Response Patterns:
-Tool Location: "The [tool] is in [location], specifically [sub_location_a], [sub_location_b]. Status: [status]"
-
-Project Advice: 
-"For [project], you'll need:
-1. [Tool Name]
-   - Location: [full location path]
-   - Status: [status]
-   - Safety Note: [specific safety requirement]
-   [Add warranty info if relevant]"
-
-Always:
-- Focus on tools in inventory
-- Emphasize safety
-- Consider tool status before recommending
-- Reference specific locations
-- Include relevant warranty information
-
-Here is the current tool inventory:
-{toolInventory}
-`
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -70,7 +21,7 @@ serve(async (req) => {
     } catch (e) {
       console.error('Failed to parse request body:', e)
       return new Response(
-        JSON.stringify({ error: 'Invalid request body' }),
+        JSON.stringify({ error: 'Invalid request body format' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -83,7 +34,7 @@ serve(async (req) => {
     if (!message || !userId) {
       console.error('Missing required fields:', { message, userId })
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields: message and userId are required' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -91,7 +42,25 @@ serve(async (req) => {
       )
     }
 
-    console.log('Received request with message:', message, 'and userId:', userId)
+    console.log('Processing request with message:', message, 'and userId:', userId)
+
+    // Initialize Supabase client
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !ANTHROPIC_API_KEY) {
+      console.error('Missing required environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     // Fetch tools with error handling
     const { data: tools, error: toolsError } = await supabase
@@ -111,7 +80,7 @@ serve(async (req) => {
     if (toolsError) {
       console.error('Error fetching tools:', toolsError)
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch tools' }),
+        JSON.stringify({ error: 'Failed to fetch tools data' }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -153,12 +122,54 @@ serve(async (req) => {
 
     console.log('Formatted tool inventory sample:', toolInventory.substring(0, 200))
 
-    // Call Claude API with error handling
+    // Call Claude API
+    const systemPrompt = `You are ToolBot, the dedicated assistant for ToolTrackerHub. Your purpose is to help users with their DIY projects and tool management.
+
+When responding:
+1. Project Questions:
+- First list required tools from the inventory
+- Include locations for each tool
+- Mention tool status (to avoid suggesting tools in maintenance)
+- Add safety requirements for tools
+- Suggest alternatives if needed tools aren't available
+
+2. Tool Location Questions:
+- Provide complete location hierarchy: main location → sub_location_a → sub_location_b
+- Include tool status
+- Mention if warranty is still valid based on purchase_date and warranty_length
+- Reference any relevant tool descriptions
+
+3. Maintenance Questions:
+- Check tool status for maintenance needs
+- Consider warranty period when suggesting repairs
+- Reference purchase date for age-related advice
+
+Common Response Patterns:
+Tool Location: "The [tool] is in [location], specifically [sub_location_a], [sub_location_b]. Status: [status]"
+
+Project Advice: 
+"For [project], you'll need:
+1. [Tool Name]
+   - Location: [full location path]
+   - Status: [status]
+   - Safety Note: [specific safety requirement]
+   [Add warranty info if relevant]"
+
+Always:
+- Focus on tools in inventory
+- Emphasize safety
+- Consider tool status before recommending
+- Reference specific locations
+- Include relevant warranty information
+
+Here is the current tool inventory:
+${toolInventory}`
+
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY!,
+        'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2024-01-01',
       },
       body: JSON.stringify({
@@ -167,7 +178,7 @@ serve(async (req) => {
         messages: [
           { 
             role: 'assistant',
-            content: systemPrompt.replace('{toolInventory}', toolInventory)
+            content: systemPrompt
           },
           { 
             role: 'user',
@@ -181,7 +192,7 @@ serve(async (req) => {
       const errorText = await claudeResponse.text()
       console.error('Claude API error:', claudeResponse.status, errorText)
       return new Response(
-        JSON.stringify({ error: `Claude API error: ${claudeResponse.status}` }),
+        JSON.stringify({ error: `Failed to get response from AI service` }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -195,7 +206,7 @@ serve(async (req) => {
     if (!data?.content?.[0]?.text) {
       console.error('Invalid Claude response format:', data)
       return new Response(
-        JSON.stringify({ error: 'Invalid response format from Claude' }),
+        JSON.stringify({ error: 'Invalid response format from AI service' }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -210,7 +221,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-with-claude function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
