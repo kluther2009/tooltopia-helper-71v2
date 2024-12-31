@@ -38,11 +38,7 @@ export function AIChat() {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
             const response = await supabase.functions.invoke('eleven-labs-tts', {
-              body: { text: transcript },
-              headers: {
-                'Accept': 'audio/mpeg',
-                'Content-Type': 'application/json'
-              }
+              body: { text: transcript }
             })
 
             if (response.error) {
@@ -50,14 +46,11 @@ export function AIChat() {
               throw response.error
             }
 
-            // Convert the response data to an ArrayBuffer
-            const arrayBuffer = await response.data.arrayBuffer()
-
             // Clean up previous audio resources
             cleanupAudioResources()
 
-            // Create a new blob from the audio data
-            const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
+            // Create a new blob directly from the response data
+            const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
             const audioUrl = URL.createObjectURL(audioBlob)
             audioUrlRef.current = audioUrl
 
