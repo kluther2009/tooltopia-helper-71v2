@@ -25,11 +25,14 @@ export function AIChat() {
           try {
             console.log('Calling eleven-labs-tts with text:', transcript)
             
-            const response = await supabase.functions.invoke('eleven-labs-tts', {
+            const { data, error } = await supabase.functions.invoke('eleven-labs-tts', {
               body: { text: transcript }
             })
 
-            if (response.error) throw response.error
+            if (error) {
+              console.error('Supabase function error:', error)
+              throw error
+            }
 
             // Store the response but don't try to play it since we know audio isn't supported
             console.log('Received TTS response successfully')
