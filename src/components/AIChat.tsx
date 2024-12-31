@@ -56,10 +56,13 @@ export function AIChat() {
     setIsListening(false)
   }
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted)
-    if (!isMuted) {
-      cleanupAudioResources()
+  const handleListenToResponse = async () => {
+    try {
+      const audioArrayBuffer = await convertTextToSpeech(aiResponse)
+      await playAudio(audioArrayBuffer)
+    } catch (error) {
+      console.error('TTS error:', error)
+      toast.error('Failed to convert AI response to speech')
     }
   }
 
@@ -124,7 +127,7 @@ export function AIChat() {
           />
           <div className="flex justify-center">
             <button
-              onClick={toggleMute}
+              onClick={handleListenToResponse}
               className="px-4 py-2 rounded bg-[#9b87f5] hover:bg-[#7E69AB] text-white"
             >
               Listen to ToolGuru
