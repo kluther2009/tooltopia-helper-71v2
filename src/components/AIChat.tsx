@@ -66,42 +66,32 @@ export function AIChat() {
   }, [cleanupAudioResources])
 
   return (
-    <div 
-      className="flex flex-col items-center justify-center min-h-screen bg-transparent p-4"
-      aria-describedby="ai-chat-description"
-    >
-      <div className="space-y-4 w-full max-w-md">
-        <p id="ai-chat-description" className="sr-only">
-          AI Chat interface for voice interaction and text-to-speech responses
-        </p>
-        <div className="flex justify-between items-center">
-          <button
-            onClick={isListening ? stopListening : startListening}
-            className={`px-4 py-2 rounded ${
-              isListening 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
-            } text-white`}
-          >
-            {isListening ? 'Stop Listening' : 'Start Listening'}
-          </button>
-          <button
-            onClick={toggleMute}
-            className={`px-4 py-2 rounded ${
-              isMuted 
-                ? 'bg-gray-500 hover:bg-gray-600' 
-                : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
-            } text-white`}
-          >
-            {isMuted ? 'Unmute' : 'Mute'}
-          </button>
-        </div>
-        {message && (
-          <div className="bg-transparent border-2 border-white rounded-lg p-4">
-            <p className="text-white">{message}</p>
-          </div>
-        )}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <button
+          onClick={isListening ? stopListening : startListening}
+          className={`px-4 py-2 rounded ${
+            isListening 
+              ? 'bg-red-500 hover:bg-red-600' 
+              : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
+          } text-white`}
+        >
+          {isListening ? 'Stop Listening' : 'Start Listening'}
+        </button>
+        <button
+          onClick={toggleMute}
+          className={`px-4 py-2 rounded ${
+            isMuted 
+              ? 'bg-gray-500 hover:bg-gray-600' 
+              : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
+          } text-white`}
+        >
+          {isMuted ? 'Unmute' : 'Mute'}
+        </button>
       </div>
+      {message && (
+        <p className="text-white">{message}</p>
+      )}
     </div>
   )
 }
