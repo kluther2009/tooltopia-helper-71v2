@@ -22,7 +22,7 @@ serve(async (req) => {
     console.log('Converting text to speech:', text)
 
     const voiceId = "21m00Tcm4TlvDq8ikWAM"
-    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
 
     const response = await fetch(url, {
       method: 'POST',
@@ -47,17 +47,29 @@ serve(async (req) => {
       throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the audio data as an ArrayBuffer
+    // Get the audio data and verify it's not empty
     const audioData = await response.arrayBuffer()
-    
-    // Return the audio data with proper headers
-    return new Response(audioData, {
+    if (audioData.byteLength === 0) {
+      throw new Error('Received empty audio data from Eleven Labs')
+    }
+
+    console.log('Received audio data of size:', audioData.byteLength, 'bytes')
+
+    // Create a Response with the audio data and proper headers
+    const audioResponse = new Response(audioData, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
         'Content-Length': audioData.byteLength.toString(),
       },
     })
+
+    // Verify the response is valid
+    if (!audioResponse.body) {
+      throw new Error('Failed to create audio response')
+    }
+
+    return audioResponse
   } catch (error) {
     console.error('TTS error:', error)
     return new Response(
