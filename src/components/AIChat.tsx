@@ -5,20 +5,26 @@ import { toast } from 'sonner'
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [message, setMessage] = useState('')
-  const [isMuted, setIsMuted] = useState(false) // Changed to false to enable audio by default
+  const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const testAudio = async () => {
     try {
-      const audio = new Audio();
-      audio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
-      await audio.play();
-      console.log('Audio playback test succeeded');
-      return true;
+      const audio = new Audio()
+      audio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA=='
+      
+      // Add event listeners for debugging
+      audio.addEventListener('canplaythrough', () => console.log('Audio can play through'))
+      audio.addEventListener('error', (e) => console.error('Audio error:', e))
+      
+      console.log('Attempting to play test audio...')
+      await audio.play()
+      console.log('Audio playback test succeeded')
+      return true
     } catch (error) {
-      console.error('Audio playback test failed:', error);
-      return false;
+      console.error('Audio playback test failed:', error)
+      return false
     }
   }
 
@@ -47,13 +53,25 @@ export function AIChat() {
               throw error
             }
 
+            console.log('TTS response:', data)
+
             if (data?.audio_url) {
               const canPlayAudio = await testAudio()
               if (canPlayAudio) {
                 if (audioRef.current) {
                   audioRef.current.pause()
                 }
+                
+                console.log('Creating new Audio instance with URL:', data.audio_url)
                 audioRef.current = new Audio(data.audio_url)
+                
+                // Add event listeners for debugging
+                audioRef.current.addEventListener('canplaythrough', () => console.log('Response audio can play through'))
+                audioRef.current.addEventListener('error', (e) => console.error('Response audio error:', e))
+                audioRef.current.addEventListener('playing', () => console.log('Audio started playing'))
+                audioRef.current.addEventListener('ended', () => console.log('Audio finished playing'))
+                
+                console.log('Attempting to play response audio...')
                 await audioRef.current.play()
                 console.log('Playing audio response')
               } else {
