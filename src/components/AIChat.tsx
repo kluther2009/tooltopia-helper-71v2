@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { setupSpeechRecognition } from '@/utils/speechRecognition'
 import { convertTextToSpeech } from '@/utils/textToSpeech'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { Textarea } from '@/components/ui/textarea'
 
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
@@ -67,7 +68,13 @@ export function AIChat() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <Textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message or use voice input..."
+        className="min-h-[200px] bg-transparent border-2 border-white text-white placeholder:text-gray-400 resize-none"
+      />
+      <div className="flex justify-between items-center mt-4">
         <button
           onClick={isListening ? stopListening : startListening}
           className={`px-4 py-2 rounded ${
@@ -89,9 +96,6 @@ export function AIChat() {
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
       </div>
-      {message && (
-        <p className="text-white">{message}</p>
-      )}
     </div>
   )
 }

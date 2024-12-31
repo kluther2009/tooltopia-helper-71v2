@@ -27,9 +27,7 @@ export function ToolGuruDialog() {
             <div className="text-sm text-[#8E9196]">
               Welcome to ToolGuru - Your smart assistant for all tool-related questions. How can I help you today?
             </div>
-            <div className="border-2 border-white rounded-lg p-4 bg-[#1A1F2C]">
-              <AIChat />
-            </div>
+            <AIChat />
           </div>
         </Card>
       </SheetContent>
