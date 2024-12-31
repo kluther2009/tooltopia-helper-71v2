@@ -116,25 +116,21 @@ export function AIChat() {
         </button>
       </div>
       {aiResponse && (
-        <>
+        <div className="space-y-4">
           <Textarea
             value={aiResponse}
             readOnly
-            className="min-h-[200px] bg-transparent border-2 border-white text-white resize-none mt-4"
+            className="min-h-[200px] bg-transparent border-2 border-white text-white resize-none"
           />
-          <div className="flex justify-center mt-2">
+          <div className="flex justify-center">
             <button
               onClick={toggleMute}
-              className={`px-4 py-2 rounded ${
-                isMuted 
-                  ? 'bg-[#9b87f5] hover:bg-[#7E69AB]' 
-                  : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
-              } text-white`}
+              className="px-4 py-2 rounded bg-[#9b87f5] hover:bg-[#7E69AB] text-white"
             >
               Listen to ToolGuru
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   )
