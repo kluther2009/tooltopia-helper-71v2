@@ -47,11 +47,11 @@ serve(async (req) => {
       throw new Error(`Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the raw audio data
+    // Get the raw audio data as ArrayBuffer
     const audioBuffer = await response.arrayBuffer()
     console.log('Received audio data size:', audioBuffer.byteLength, 'bytes')
 
-    // Pass through the raw audio data with correct headers
+    // Return the raw binary audio data with correct headers
     return new Response(audioBuffer, {
       headers: {
         ...corsHeaders,
