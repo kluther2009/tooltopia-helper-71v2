@@ -8,22 +8,24 @@ export function useAIChat() {
   const sendMessage = async (message: string) => {
     setIsLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      // First get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
       
-      if (!user) {
+      if (userError || !user) {
+        console.error('Auth error:', userError)
         toast.error("You must be logged in to use ToolGuru")
         return null
       }
 
-      console.log('Sending message to Claude:', { message, userId: user.id })
+      console.log('Sending message to Claude:', { 
+        message, 
+        userId: user.id 
+      })
       
       const { data, error } = await supabase.functions.invoke('chat-with-claude', {
         body: { 
           message,
           userId: user.id
-        },
-        headers: {
-          'Content-Type': 'application/json'
         }
       })
 
