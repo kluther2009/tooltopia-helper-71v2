@@ -5,9 +5,22 @@ import { toast } from 'sonner'
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [message, setMessage] = useState('')
-  const [isMuted, setIsMuted] = useState(true) // Default to muted since audio isn't supported
+  const [isMuted, setIsMuted] = useState(false) // Changed to false to enable audio by default
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const testAudio = async () => {
+    try {
+      const audio = new Audio();
+      audio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==';
+      await audio.play();
+      console.log('Audio playback test succeeded');
+      return true;
+    } catch (error) {
+      console.error('Audio playback test failed:', error);
+      return false;
+    }
+  }
 
   const startListening = () => {
     if (!recognitionRef.current) {
@@ -34,9 +47,19 @@ export function AIChat() {
               throw error
             }
 
-            // Store the response but don't try to play it since we know audio isn't supported
-            console.log('Received TTS response successfully')
-            toast.info('Audio response received but playback is not supported in this environment')
+            if (data?.audio_url) {
+              const canPlayAudio = await testAudio()
+              if (canPlayAudio) {
+                if (audioRef.current) {
+                  audioRef.current.pause()
+                }
+                audioRef.current = new Audio(data.audio_url)
+                await audioRef.current.play()
+                console.log('Playing audio response')
+              } else {
+                toast.info('Audio playback is not supported in this environment')
+              }
+            }
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
@@ -66,9 +89,13 @@ export function AIChat() {
     setIsListening(false)
   }
 
-  const toggleMute = () => {
-    if (!isMuted) {
-      toast.info('Audio playback is not supported in this environment')
+  const toggleMute = async () => {
+    if (isMuted) {
+      const canPlayAudio = await testAudio()
+      if (!canPlayAudio) {
+        toast.info('Audio playback is not supported in this environment')
+        return
+      }
     }
     setIsMuted(!isMuted)
   }
@@ -100,8 +127,6 @@ export function AIChat() {
                 ? 'bg-gray-500 hover:bg-gray-600' 
                 : 'bg-green-500 hover:bg-green-600'
             } text-white`}
-            disabled={true}
-            title="Audio playback is not supported in this environment"
           >
             {isMuted ? 'Unmute' : 'Mute'}
           </button>
