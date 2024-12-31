@@ -8,23 +8,16 @@ export function AIChat() {
   const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioUrlRef = useRef<string | null>(null)
 
-  const testAudio = async () => {
-    try {
-      const audio = new Audio()
-      audio.src = 'data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA=='
-      
-      // Add event listeners for debugging
-      audio.addEventListener('canplaythrough', () => console.log('Audio can play through'))
-      audio.addEventListener('error', (e) => console.error('Audio error:', e))
-      
-      console.log('Attempting to play test audio...')
-      await audio.play()
-      console.log('Audio playback test succeeded')
-      return true
-    } catch (error) {
-      console.error('Audio playback test failed:', error)
-      return false
+  const cleanupAudioResources = () => {
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current)
+      audioUrlRef.current = null
+    }
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
     }
   }
 
@@ -53,31 +46,28 @@ export function AIChat() {
               throw error
             }
 
-            console.log('TTS response:', data)
+            // Clean up previous audio resources
+            cleanupAudioResources()
 
-            if (data?.audio_url) {
-              const canPlayAudio = await testAudio()
-              if (canPlayAudio) {
-                if (audioRef.current) {
-                  audioRef.current.pause()
-                }
-                
-                console.log('Creating new Audio instance with URL:', data.audio_url)
-                audioRef.current = new Audio(data.audio_url)
-                
-                // Add event listeners for debugging
-                audioRef.current.addEventListener('canplaythrough', () => console.log('Response audio can play through'))
-                audioRef.current.addEventListener('error', (e) => console.error('Response audio error:', e))
-                audioRef.current.addEventListener('playing', () => console.log('Audio started playing'))
-                audioRef.current.addEventListener('ended', () => console.log('Audio finished playing'))
-                
-                console.log('Attempting to play response audio...')
-                await audioRef.current.play()
-                console.log('Playing audio response')
-              } else {
-                toast.info('Audio playback is not supported in this environment')
-              }
-            }
+            // Create a new blob from the audio data
+            const audioBlob = new Blob([data], { type: 'audio/mpeg' })
+            const audioUrl = URL.createObjectURL(audioBlob)
+            audioUrlRef.current = audioUrl
+
+            // Create and play the audio
+            const audio = new Audio(audioUrl)
+            audio.addEventListener('error', (e) => {
+              console.error('Audio playback error:', e)
+              toast.error('Failed to play audio response')
+            })
+            
+            audio.addEventListener('ended', () => {
+              console.log('Audio playback completed')
+            })
+
+            audioRef.current = audio
+            await audio.play()
+            console.log('Playing audio response')
           } catch (error) {
             console.error('TTS error:', error)
             toast.error('Failed to convert text to speech')
@@ -107,16 +97,19 @@ export function AIChat() {
     setIsListening(false)
   }
 
-  const toggleMute = async () => {
-    if (isMuted) {
-      const canPlayAudio = await testAudio()
-      if (!canPlayAudio) {
-        toast.info('Audio playback is not supported in this environment')
-        return
-      }
-    }
+  const toggleMute = () => {
     setIsMuted(!isMuted)
+    if (!isMuted) {
+      cleanupAudioResources()
+    }
   }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupAudioResources()
+    }
+  }, [])
 
   return (
     <div 

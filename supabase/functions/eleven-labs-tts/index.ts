@@ -42,34 +42,22 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error('Eleven Labs API error:', errorData)
-      throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
+      const errorText = await response.text()
+      console.error('Eleven Labs API error response:', errorText)
+      throw new Error(`Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the audio data and verify it's not empty
-    const audioData = await response.arrayBuffer()
-    if (audioData.byteLength === 0) {
-      throw new Error('Received empty audio data from Eleven Labs')
-    }
+    // Get the raw audio data
+    const audioBuffer = await response.arrayBuffer()
+    console.log('Received audio data size:', audioBuffer.byteLength, 'bytes')
 
-    console.log('Received audio data of size:', audioData.byteLength, 'bytes')
-
-    // Create a Response with the audio data and proper headers
-    const audioResponse = new Response(audioData, {
+    // Pass through the raw audio data with correct headers
+    return new Response(audioBuffer, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
-        'Content-Length': audioData.byteLength.toString(),
       },
     })
-
-    // Verify the response is valid
-    if (!audioResponse.body) {
-      throw new Error('Failed to create audio response')
-    }
-
-    return audioResponse
   } catch (error) {
     console.error('TTS error:', error)
     return new Response(
