@@ -16,7 +16,8 @@ export function AIChat() {
     
     if (!isMuted) {
       try {
-        const audioArrayBuffer = await convertTextToSpeech(transcript)
+        const textToSpeak = `You said ${transcript}`
+        const audioArrayBuffer = await convertTextToSpeech(textToSpeak)
         await playAudio(audioArrayBuffer)
       } catch (error) {
         console.error('TTS error:', error)
