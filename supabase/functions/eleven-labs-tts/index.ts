@@ -22,7 +22,7 @@ serve(async (req) => {
     console.log('Converting text to speech:', text)
 
     const voiceId = "21m00Tcm4TlvDq8ikWAM"
-    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`
 
     const response = await fetch(url, {
       method: 'POST',
@@ -47,7 +47,7 @@ serve(async (req) => {
       throw new Error(errorData.detail?.message || `Failed to generate speech: ${response.statusText}`)
     }
 
-    // Get the audio data directly as an ArrayBuffer
+    // Get the audio data as an ArrayBuffer
     const audioData = await response.arrayBuffer()
     
     // Return the audio data with proper headers
@@ -55,6 +55,7 @@ serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
+        'Content-Length': audioData.byteLength.toString(),
       },
     })
   } catch (error) {
