@@ -1,106 +1,47 @@
 import { useRef, useState, useEffect } from 'react'
-import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-
-const SUPABASE_URL = "https://bnwztdwbdejiubjfpigj.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJud3p0ZHdiZGVqaXViamZwaWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM1OTY1NTgsImV4cCI6MjA0OTE3MjU1OH0.sxCfIL5HXXQVkwOYLBXRrAj5FALgfecsFLc9vdS54yQ"
+import { setupSpeechRecognition } from '@/utils/speechRecognition'
+import { convertTextToSpeech } from '@/utils/textToSpeech'
+import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [message, setMessage] = useState('')
   const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const audioUrlRef = useRef<string | null>(null)
+  const { playAudio, cleanupAudioResources } = useAudioPlayer()
 
-  const cleanupAudioResources = () => {
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current)
-      audioUrlRef.current = null
-    }
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
+  const handleSpeechResult = async (transcript: string) => {
+    setMessage(transcript)
+    
+    if (!isMuted) {
+      try {
+        const audioArrayBuffer = await convertTextToSpeech(transcript)
+        await playAudio(audioArrayBuffer)
+      } catch (error) {
+        console.error('TTS error:', error)
+        toast.error('Failed to convert text to speech')
+      }
     }
   }
 
   const startListening = () => {
     if (!recognitionRef.current) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-      recognitionRef.current = new SpeechRecognition()
-      recognitionRef.current.continuous = false
-      recognitionRef.current.interimResults = false
-
-      recognitionRef.current.onresult = async (event: any) => {
-        const transcript = event.results[0][0].transcript
-        setMessage(transcript)
-        console.log('Speech recognized:', transcript)
-        
-        if (!isMuted) {
-          try {
-            console.log('Calling eleven-labs-tts with text:', transcript)
-            
-            const functionUrl = `${SUPABASE_URL}/functions/v1/eleven-labs-tts`
-            const response = await fetch(functionUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({ text: transcript }),
-            })
-
-            if (!response.ok) {
-              console.error('Edge function error:', response.status)
-              throw new Error(`Failed to convert text to speech: ${response.statusText}`)
-            }
-
-            // Get binary audio data
-            const audioArrayBuffer = await response.arrayBuffer()
-            console.log('Received audio data size:', audioArrayBuffer.byteLength, 'bytes')
-
-            // Clean up previous audio resources
-            cleanupAudioResources()
-
-            // Create a new blob and URL
-            const audioBlob = new Blob([audioArrayBuffer], { type: 'audio/mpeg' })
-            const audioUrl = URL.createObjectURL(audioBlob)
-            audioUrlRef.current = audioUrl
-
-            // Create and play the audio
-            const audio = new Audio(audioUrl)
-            audio.addEventListener('error', (e) => {
-              console.error('Audio playback error:', e)
-              toast.error('Failed to play audio response')
-            })
-            
-            audio.addEventListener('ended', () => {
-              console.log('Audio playback completed')
-            })
-
-            audioRef.current = audio
-            await audio.play()
-            console.log('Playing audio response')
-          } catch (error) {
-            console.error('TTS error:', error)
-            toast.error('Failed to convert text to speech')
-          }
+      recognitionRef.current = setupSpeechRecognition(
+        handleSpeechResult,
+        (error) => {
+          setIsListening(false)
+          toast.error('Speech recognition error occurred')
         }
+      )
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false)
       }
     }
 
     recognitionRef.current.start()
     setIsListening(true)
-
-    recognitionRef.current.onend = () => {
-      setIsListening(false)
-    }
-
-    recognitionRef.current.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error)
-      setIsListening(false)
-      toast.error('Speech recognition error occurred')
-    }
   }
 
   const stopListening = () => {
@@ -122,7 +63,7 @@ export function AIChat() {
     return () => {
       cleanupAudioResources()
     }
-  }, [])
+  }, [cleanupAudioResources])
 
   return (
     <div 
