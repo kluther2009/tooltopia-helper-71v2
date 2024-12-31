@@ -8,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -41,8 +40,6 @@ serve(async (req) => {
         }
       )
     }
-
-    console.log('Processing request with message:', message, 'and userId:', userId)
 
     // Initialize Supabase client
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
@@ -165,6 +162,8 @@ Always:
 Here is the current tool inventory:
 ${toolInventory}`
 
+    console.log('Calling Claude API with system prompt length:', systemPrompt.length)
+
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -191,13 +190,7 @@ ${toolInventory}`
     if (!claudeResponse.ok) {
       const errorText = await claudeResponse.text()
       console.error('Claude API error:', claudeResponse.status, errorText)
-      return new Response(
-        JSON.stringify({ error: `Failed to get response from AI service` }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      throw new Error(`Claude API error: ${claudeResponse.status} ${errorText}`)
     }
 
     const data = await claudeResponse.json()
@@ -205,13 +198,7 @@ ${toolInventory}`
     
     if (!data?.content?.[0]?.text) {
       console.error('Invalid Claude response format:', data)
-      return new Response(
-        JSON.stringify({ error: 'Invalid response format from AI service' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
+      throw new Error('Invalid response format from Claude API')
     }
 
     return new Response(
@@ -221,7 +208,7 @@ ${toolInventory}`
   } catch (error) {
     console.error('Error in chat-with-claude function:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
