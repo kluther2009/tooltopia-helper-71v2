@@ -3,14 +3,17 @@ import { toast } from 'sonner'
 import { setupSpeechRecognition } from '@/utils/speechRecognition'
 import { convertTextToSpeech } from '@/utils/textToSpeech'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
+import { useAIChat } from '@/hooks/useAIChat'
 import { Textarea } from '@/components/ui/textarea'
 
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
   const [message, setMessage] = useState('')
+  const [aiResponse, setAiResponse] = useState('')
   const [isMuted, setIsMuted] = useState(false)
   const recognitionRef = useRef<any>(null)
   const { playAudio, cleanupAudioResources } = useAudioPlayer()
+  const { sendMessage, isLoading } = useAIChat()
 
   const handleSpeechResult = async (transcript: string) => {
     setMessage(transcript)
@@ -60,6 +63,23 @@ export function AIChat() {
     }
   }
 
+  const handleAskToolGuru = async () => {
+    if (!message.trim()) {
+      toast.error('Please enter a message first')
+      return
+    }
+
+    try {
+      const response = await sendMessage(message)
+      if (response) {
+        setAiResponse(response)
+      }
+    } catch (error) {
+      console.error('Error asking ToolGuru:', error)
+      toast.error('Failed to get response from ToolGuru')
+    }
+  }
+
   useEffect(() => {
     return () => {
       cleanupAudioResources()
@@ -96,6 +116,22 @@ export function AIChat() {
           {isMuted ? 'Unmute' : 'Mute'}
         </button>
       </div>
+      <div className="flex justify-center">
+        <button
+          onClick={handleAskToolGuru}
+          disabled={isLoading}
+          className="px-6 py-2 rounded bg-primary hover:bg-primary/90 text-white font-medium"
+        >
+          {isLoading ? 'Thinking...' : 'Ask ToolGuru'}
+        </button>
+      </div>
+      {aiResponse && (
+        <Textarea
+          value={aiResponse}
+          readOnly
+          className="min-h-[200px] bg-transparent border-2 border-white text-white resize-none mt-4"
+        />
+      )}
     </div>
   )
 }
