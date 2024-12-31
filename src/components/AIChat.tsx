@@ -105,16 +105,6 @@ export function AIChat() {
         >
           {isListening ? 'Stop Listening' : 'Start Listening'}
         </button>
-        <button
-          onClick={toggleMute}
-          className={`px-4 py-2 rounded ${
-            isMuted 
-              ? 'bg-gray-500 hover:bg-gray-600' 
-              : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
-          } text-white`}
-        >
-          {isMuted ? 'Unmute' : 'Mute'}
-        </button>
       </div>
       <div className="flex justify-center">
         <button
@@ -126,11 +116,25 @@ export function AIChat() {
         </button>
       </div>
       {aiResponse && (
-        <Textarea
-          value={aiResponse}
-          readOnly
-          className="min-h-[200px] bg-transparent border-2 border-white text-white resize-none mt-4"
-        />
+        <>
+          <Textarea
+            value={aiResponse}
+            readOnly
+            className="min-h-[200px] bg-transparent border-2 border-white text-white resize-none mt-4"
+          />
+          <div className="flex justify-center mt-2">
+            <button
+              onClick={toggleMute}
+              className={`px-4 py-2 rounded ${
+                isMuted 
+                  ? 'bg-gray-500 hover:bg-gray-600' 
+                  : 'bg-[#9b87f5] hover:bg-[#7E69AB]'
+              } text-white`}
+            >
+              {isMuted ? 'Listen to ToolGuru' : 'Mute ToolGuru'}
+            </button>
+          </div>
+        </>
       )}
     </div>
   )
