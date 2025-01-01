@@ -91,6 +91,47 @@ export function HelpButton() {
             </>
           )
         };
+      case "/projects":
+        return {
+          title: "Projects Help",
+          description: (
+            <>
+              <p className="mb-4">Welcome to the Projects page! Here's how to manage your projects:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Creating a New Project:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>Click the "New Project" button in the top-right</li>
+                    <li>Enter a project name, status, and optional target date</li>
+                    <li>Add any relevant notes about the project</li>
+                  </ul>
+                </li>
+                <li>Managing Materials:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>Click the "$" icon on any project card</li>
+                    <li>Enter material name, cost, and quantity</li>
+                    <li>Click "Add Material" to save</li>
+                    <li>View all materials in the project card</li>
+                  </ul>
+                </li>
+                <li>Managing Tools:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>Click the "wrench" icon on any project card</li>
+                    <li>Select tools from your inventory to assign to the project</li>
+                    <li>Use arrows to move tools between available and selected lists</li>
+                  </ul>
+                </li>
+                <li>Project Features:
+                  <ul className="list-disc pl-6 mt-2 space-y-1">
+                    <li>Edit project details using the pencil icon</li>
+                    <li>Delete projects with the trash icon</li>
+                    <li>Track project status: Planned, Ongoing, or Completed</li>
+                    <li>Use "Project Helper" for AI assistance with your project</li>
+                  </ul>
+                </li>
+              </ul>
+            </>
+          )
+        };
       default:
         return {
           title: "Help",
