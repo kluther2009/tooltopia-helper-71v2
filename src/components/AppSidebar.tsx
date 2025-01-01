@@ -15,6 +15,10 @@ export function AppSidebar() {
 
   const isCollapsed = state === "collapsed";
 
+  const handleToolGuruClick = () => {
+    document.getElementById('toolGuruTrigger')?.click();
+  };
+
   return (
     <aside
       className={cn(
@@ -44,7 +48,7 @@ export function AppSidebar() {
               {...route}
               isActive={location.pathname === route.href}
               isCollapsed={isCollapsed}
-              onClick={route.isDialog ? () => document.querySelector<HTMLButtonElement>('[aria-label="Open ToolGuru"]')?.click() : undefined}
+              onClick={route.isDialog ? handleToolGuruClick : undefined}
             />
           ))}
         </div>
