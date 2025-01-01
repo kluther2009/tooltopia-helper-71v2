@@ -1,5 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { HelpButton } from "./HelpButton";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             Developed by K.Luther
           </div>
         </main>
+        <HelpButton />
       </div>
     </SidebarProvider>
   );
