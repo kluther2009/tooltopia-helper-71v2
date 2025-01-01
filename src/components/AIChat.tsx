@@ -5,6 +5,8 @@ import { convertTextToSpeech } from '@/utils/textToSpeech'
 import { useAudioPlayer } from '@/hooks/useAudioPlayer'
 import { useAIChat } from '@/hooks/useAIChat'
 import { Textarea } from '@/components/ui/textarea'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/integrations/supabase/client'
 
 export function AIChat() {
   const [isListening, setIsListening] = useState(false)
@@ -14,6 +16,31 @@ export function AIChat() {
   const recognitionRef = useRef<any>(null)
   const { playAudio, cleanupAudioResources } = useAudioPlayer()
   const { sendMessage, isLoading } = useAIChat()
+  const navigate = useNavigate()
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        toast.error('Please sign in to use ToolGuru')
+        navigate('/login')
+      }
+    }
+    
+    checkAuth()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/login')
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [navigate])
 
   const handleSpeechResult = async (transcript: string) => {
     setMessage(transcript)
