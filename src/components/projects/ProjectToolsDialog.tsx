@@ -5,28 +5,47 @@ import { FileText, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { LocationPhotoViewer } from "../photos/LocationPhotoViewer";
 import { useState } from "react";
-
-interface Tool {
-  id: string;
-  name: string;
-  location: string;
-  status: string;
-  warranty_file_path?: string | null;
-  receipt_file_path?: string | null;
-}
+import { useQuery } from "@tanstack/react-query";
+import { Tool } from "../tool/types/Tool";
 
 interface ProjectToolsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  tools: Tool[];
-  projectName: string;
+  projectId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function ProjectToolsDialog({ isOpen, onClose, tools, projectName }: ProjectToolsDialogProps) {
+export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
   const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
   const [selectedToolLocation, setSelectedToolLocation] = useState<string | null>(null);
+
+  const { data: projectTools } = useQuery({
+    queryKey: ["project-tools", projectId],
+    queryFn: async () => {
+      const { data: toolsData, error } = await supabase
+        .from("project_tools")
+        .select(`
+          tool:tools (
+            id,
+            name,
+            location,
+            status,
+            warranty_file_path,
+            receipt_file_path
+          )
+        `)
+        .eq('project_id', projectId);
+
+      if (error) {
+        console.error("Error fetching tools:", error);
+        throw error;
+      }
+
+      return toolsData.map(item => item.tool) as Tool[];
+    },
+    enabled: open, // Only fetch when dialog is open
+  });
 
   const openFile = async (filePath: string) => {
     if (!filePath) return;
@@ -48,10 +67,10 @@ export function ProjectToolsDialog({ isOpen, onClose, tools, projectName }: Proj
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Tools for {projectName}</DialogTitle>
+            <DialogTitle>Project Tools</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh]">
             <Table>
@@ -66,7 +85,7 @@ export function ProjectToolsDialog({ isOpen, onClose, tools, projectName }: Proj
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tools.map((tool) => (
+                {projectTools?.map((tool) => (
                   <TableRow key={tool.id}>
                     <TableCell className="font-medium">{tool.name}</TableCell>
                     <TableCell>{tool.location}</TableCell>
