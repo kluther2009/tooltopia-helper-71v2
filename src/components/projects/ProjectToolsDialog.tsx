@@ -20,7 +20,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
   const [selectedToolLocation, setSelectedToolLocation] = useState<string | null>(null);
 
-  const { data: projectTools } = useQuery({
+  const { data: projectTools, isLoading, error } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data: toolsData, error } = await supabase
@@ -73,61 +73,67 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
             <DialogTitle>Project Tools</DialogTitle>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tool Name</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Warranty</TableHead>
-                  <TableHead>Receipt</TableHead>
-                  <TableHead>Picture</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {projectTools?.map((tool) => (
-                  <TableRow key={tool.id}>
-                    <TableCell className="font-medium">{tool.name}</TableCell>
-                    <TableCell>{tool.location}</TableCell>
-                    <TableCell>{tool.status}</TableCell>
-                    <TableCell>
-                      {tool.warranty_file_path ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openFile(tool.warranty_file_path!)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      {tool.receipt_file_path ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openFile(tool.receipt_file_path!)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => openPhotoViewer(tool.location)}
-                      >
-                        <Image className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            {isLoading ? (
+              <div className="text-center py-4">Loading tools...</div>
+            ) : error ? (
+              <div className="text-center py-4 text-red-500">Error loading tools</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tool Name</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Warranty</TableHead>
+                    <TableHead>Receipt</TableHead>
+                    <TableHead>Picture</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(projectTools || []).map((tool) => (
+                    <TableRow key={tool.id}>
+                      <TableCell className="font-medium">{tool.name}</TableCell>
+                      <TableCell>{tool.location}</TableCell>
+                      <TableCell>{tool.status}</TableCell>
+                      <TableCell>
+                        {tool.warranty_file_path ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openFile(tool.warranty_file_path!)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {tool.receipt_file_path ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openFile(tool.receipt_file_path!)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => openPhotoViewer(tool.location)}
+                        >
+                          <Image className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </DialogContent>
       </Dialog>
