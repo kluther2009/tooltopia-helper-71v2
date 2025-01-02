@@ -76,7 +76,6 @@ export function ProjectToolsDialog({
         selectedAvailable.includes(tool.id)
       );
 
-      // Create an array of promises for all insertions
       const insertPromises = toolsToMove.map(tool => 
         supabase.from("project_tools").insert({
           project_id: projectId,
@@ -84,10 +83,8 @@ export function ProjectToolsDialog({
         })
       );
 
-      // Wait for all insertions to complete
       const results = await Promise.all(insertPromises);
       
-      // Check for any errors
       const errors = results.filter(result => result.error);
       if (errors.length > 0) {
         throw new Error(`Failed to add some tools: ${errors.map(e => e.error?.message).join(', ')}`);
@@ -114,7 +111,6 @@ export function ProjectToolsDialog({
 
   const moveToAvailable = async () => {
     try {
-      // Delete all selected tools at once
       const { error } = await supabase
         .from("project_tools")
         .delete()
