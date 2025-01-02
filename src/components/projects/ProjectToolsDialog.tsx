@@ -1,12 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Image } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { LocationPhotoViewer } from "../photos/LocationPhotoViewer";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tool } from "../tool/types/Tool";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -15,147 +14,187 @@ interface ProjectToolsDialogProps {
 }
 
 export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
-  const [selectedToolLocation, setSelectedToolLocation] = useState<string | null>(null);
+  const [availableTools, setAvailableTools] = useState<Tool[]>([]);
+  const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
+  const [selectedAvailable, setSelectedAvailable] = useState<string[]>([]);
+  const [selectedAssigned, setSelectedAssigned] = useState<string[]>([]);
 
-  const { data: projectTools, isLoading } = useQuery({
-    queryKey: ["project-tools", projectId],
+  // Fetch all tools and project tools
+  const { data: tools, isLoading } = useQuery({
+    queryKey: ["all-tools"],
     queryFn: async () => {
       const { data: toolsData, error } = await supabase
-        .from("project_tools")
-        .select(`
-          tool:tools (
-            id,
-            name,
-            location,
-            status,
-            warranty_file_path,
-            receipt_file_path
-          )
-        `)
-        .eq('project_id', projectId);
+        .from("tools")
+        .select("*")
+        .order("name");
 
-      if (error) {
-        console.error("Error fetching tools:", error);
-        throw error;
-      }
-
-      return toolsData?.map(item => item.tool) as Tool[];
+      if (error) throw error;
+      return toolsData as Tool[];
     },
     enabled: open,
   });
 
-  const openFile = async (filePath: string) => {
-    if (!filePath) return;
-    
-    const { data } = supabase.storage
-      .from('warranty-files')
-      .getPublicUrl(filePath);
-    
-    if (data.publicUrl) {
-      setSelectedFile(data.publicUrl);
-      setIsFileDialogOpen(true);
+  const { data: projectTools } = useQuery({
+    queryKey: ["project-tools", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_tools")
+        .select("tool_id")
+        .eq("project_id", projectId);
+
+      if (error) throw error;
+      return data.map(pt => pt.tool_id);
+    },
+    enabled: open,
+    onSuccess: (projectToolIds) => {
+      if (!tools) return;
+      
+      const assigned = tools.filter(tool => projectToolIds.includes(tool.id));
+      const available = tools.filter(tool => !projectToolIds.includes(tool.id));
+      
+      setAvailableTools(available);
+      setSelectedTools(assigned);
     }
+  });
+
+  const moveToSelected = async () => {
+    if (selectedAvailable.length === 0) return;
+
+    const toolsToMove = availableTools.filter(tool => selectedAvailable.includes(tool.id));
+    
+    // Insert new project tools
+    const { error } = await supabase
+      .from("project_tools")
+      .insert(
+        toolsToMove.map(tool => ({
+          project_id: projectId,
+          tool_id: tool.id
+        }))
+      );
+
+    if (error) {
+      console.error("Error moving tools:", error);
+      return;
+    }
+
+    setSelectedTools([...selectedTools, ...toolsToMove]);
+    setAvailableTools(availableTools.filter(tool => !selectedAvailable.includes(tool.id)));
+    setSelectedAvailable([]);
   };
 
-  const openPhotoViewer = (location: string) => {
-    setSelectedToolLocation(location);
-    setIsPhotoViewerOpen(true);
+  const moveToAvailable = async () => {
+    if (selectedAssigned.length === 0) return;
+
+    // Delete project tools
+    const { error } = await supabase
+      .from("project_tools")
+      .delete()
+      .eq("project_id", projectId)
+      .in("tool_id", selectedAssigned);
+
+    if (error) {
+      console.error("Error removing tools:", error);
+      return;
+    }
+
+    const toolsToMove = selectedTools.filter(tool => selectedAssigned.includes(tool.id));
+    setAvailableTools([...availableTools, ...toolsToMove]);
+    setSelectedTools(selectedTools.filter(tool => !selectedAssigned.includes(tool.id)));
+    setSelectedAssigned([]);
+  };
+
+  const handleAvailableSelect = (toolId: string) => {
+    setSelectedAvailable(prev => 
+      prev.includes(toolId) 
+        ? prev.filter(id => id !== toolId)
+        : [...prev, toolId]
+    );
+  };
+
+  const handleAssignedSelect = (toolId: string) => {
+    setSelectedAssigned(prev => 
+      prev.includes(toolId) 
+        ? prev.filter(id => id !== toolId)
+        : [...prev, toolId]
+    );
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Project Tools</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto max-h-[60vh]">
-            {isLoading ? (
-              <div className="text-center py-4">Loading tools...</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tool Name</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Warranty</TableHead>
-                    <TableHead>Receipt</TableHead>
-                    <TableHead>Picture</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(projectTools || []).map((tool) => (
-                    <TableRow key={tool.id}>
-                      <TableCell className="font-medium">{tool.name}</TableCell>
-                      <TableCell>{tool.location}</TableCell>
-                      <TableCell>{tool.status}</TableCell>
-                      <TableCell>
-                        {tool.warranty_file_path ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openFile(tool.warranty_file_path!)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {tool.receipt_file_path ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openFile(tool.receipt_file_path!)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => openPhotoViewer(tool.location)}
-                        >
-                          <Image className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Project Tools</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="text-center py-4">Loading tools...</div>
+        ) : (
+          <div className="grid grid-cols-[1fr,auto,1fr] gap-4">
+            {/* Available Tools */}
+            <div className="border rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Available Tools</h3>
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-2">
+                  {availableTools.map((tool) => (
+                    <div
+                      key={tool.id}
+                      className={`p-2 rounded cursor-pointer ${
+                        selectedAvailable.includes(tool.id)
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-accent"
+                      }`}
+                      onClick={() => handleAvailableSelect(tool.id)}
+                    >
+                      {tool.name}
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
-            )}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Arrow Buttons */}
+            <div className="flex flex-col justify-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={moveToSelected}
+                disabled={selectedAvailable.length === 0}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={moveToAvailable}
+                disabled={selectedAssigned.length === 0}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Selected Tools */}
+            <div className="border rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Project Tools</h3>
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-2">
+                  {selectedTools.map((tool) => (
+                    <div
+                      key={tool.id}
+                      className={`p-2 rounded cursor-pointer ${
+                        selectedAssigned.includes(tool.id)
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-accent"
+                      }`}
+                      onClick={() => handleAssignedSelect(tool.id)}
+                    >
+                      {tool.name}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          {selectedFile && (
-            <img
-              src={selectedFile}
-              alt="Document"
-              className="w-full h-auto"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <LocationPhotoViewer
-        location={selectedToolLocation}
-        isOpen={isPhotoViewerOpen}
-        onClose={() => {
-          setIsPhotoViewerOpen(false);
-          setSelectedToolLocation(null);
-        }}
-      />
-    </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
