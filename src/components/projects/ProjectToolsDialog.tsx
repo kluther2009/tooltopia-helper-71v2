@@ -29,19 +29,17 @@ export function ProjectToolsDialog({
   const [selectedAvailable, setSelectedAvailable] = useState<string[]>([]);
   const [selectedAssigned, setSelectedAssigned] = useState<string[]>([]);
 
-  // Fetch all tools
-  const { data: allTools, isLoading: isLoadingTools } = useQuery({
+  const { data: allTools } = useQuery({
     queryKey: ["tools"],
     queryFn: async () => {
       const { data, error } = await supabase.from("tools").select("*");
       if (error) throw error;
       return data as Tool[];
     },
-    staleTime: 0,
+    enabled: open
   });
 
-  // Fetch project tools
-  const { data: projectToolIds, isLoading: isLoadingProjectTools } = useQuery({
+  const { data: projectToolIds } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,21 +49,22 @@ export function ProjectToolsDialog({
       if (error) throw error;
       return data.map((pt) => pt.tool_id);
     },
-    enabled: open,
+    enabled: open && !!projectId
   });
 
   useEffect(() => {
-    if (!isLoadingTools && !isLoadingProjectTools && allTools && projectToolIds && open) {
+    if (allTools && projectToolIds && open) {
       const assigned = allTools.filter((tool) => projectToolIds.includes(tool.id));
       const available = allTools.filter((tool) => !projectToolIds.includes(tool.id));
       setSelectedTools(assigned);
       setAvailableTools(available);
     }
-  }, [allTools, projectToolIds, open, isLoadingTools, isLoadingProjectTools]);
+  }, [allTools, projectToolIds, open]);
 
   const handleClose = () => {
     setSelectedAvailable([]);
     setSelectedAssigned([]);
+    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
     onOpenChange(false);
   };
 
@@ -82,24 +81,13 @@ export function ProjectToolsDialog({
         })
       );
 
-      const results = await Promise.all(insertPromises);
+      await Promise.all(insertPromises);
       
-      const errors = results.filter(result => result.error);
-      if (errors.length > 0) {
-        throw new Error(`Failed to add some tools: ${errors.map(e => e.error?.message).join(', ')}`);
-      }
-
-      // Update local state first
       setSelectedTools(prev => [...prev, ...toolsToMove]);
       setAvailableTools(prev => 
         prev.filter((tool) => !selectedAvailable.includes(tool.id))
       );
       setSelectedAvailable([]);
-      
-      // Then invalidate the query
-      await queryClient.invalidateQueries({ 
-        queryKey: ["project-tools", projectId]
-      });
       
       toast.success("Tools added to project");
     } catch (error) {
@@ -122,17 +110,11 @@ export function ProjectToolsDialog({
         selectedAssigned.includes(tool.id)
       );
       
-      // Update local state first
       setAvailableTools(prev => [...prev, ...toolsToMove]);
       setSelectedTools(prev =>
         prev.filter((tool) => !selectedAssigned.includes(tool.id))
       );
       setSelectedAssigned([]);
-      
-      // Then invalidate the query
-      await queryClient.invalidateQueries({ 
-        queryKey: ["project-tools", projectId]
-      });
       
       toast.success("Tools removed from project");
     } catch (error) {
