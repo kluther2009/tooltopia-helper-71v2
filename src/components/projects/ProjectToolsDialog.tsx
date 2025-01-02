@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tool } from "../tool/types/Tool";
 import { ScrollArea } from "../ui/scroll-area";
@@ -50,7 +50,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   });
 
   // Update available and selected tools when data changes
-  useState(() => {
+  useEffect(() => {
     if (tools && projectTools) {
       const assigned = tools.filter(tool => projectTools.includes(tool.id));
       const available = tools.filter(tool => !projectTools.includes(tool.id));
