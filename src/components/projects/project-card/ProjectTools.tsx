@@ -14,6 +14,7 @@ export function ProjectTools({ projectId }: { projectId: string }) {
   const { data: projectTools } = useQuery({
     queryKey: ["project-tools-list", projectId],
     queryFn: async () => {
+      console.log('Fetching tools for project:', projectId);
       const { data, error } = await supabase
         .from("project_tools")
         .select(`
@@ -29,10 +30,12 @@ export function ProjectTools({ projectId }: { projectId: string }) {
         console.error("Error fetching tools:", error);
         throw error;
       }
+      console.log('Fetched project tools:', data);
       return (data || []) as ProjectTool[];
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   return (
