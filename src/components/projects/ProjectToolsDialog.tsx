@@ -30,7 +30,7 @@ export function ProjectToolsDialog({
   const [selectedAssigned, setSelectedAssigned] = useState<string[]>([]);
 
   // Fetch all tools
-  const { data: tools } = useQuery({
+  const { data: allTools, isLoading: isLoadingTools } = useQuery({
     queryKey: ["tools"],
     queryFn: async () => {
       const { data, error } = await supabase.from("tools").select("*");
@@ -41,7 +41,7 @@ export function ProjectToolsDialog({
   });
 
   // Fetch project tools
-  const { data: projectTools } = useQuery({
+  const { data: projectToolIds, isLoading: isLoadingProjectTools } = useQuery({
     queryKey: ["project-tools-list", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -52,27 +52,29 @@ export function ProjectToolsDialog({
       return data.map((pt) => pt.tool_id);
     },
     staleTime: 0,
-    refetchOnWindowFocus: true,
+    enabled: open, // Only fetch when dialog is open
   });
 
   // Update available and selected tools when data changes or dialog opens
   useEffect(() => {
-    if (tools && projectTools && open) {
-      const assigned = tools.filter((tool) => projectTools.includes(tool.id));
-      const available = tools.filter((tool) => !projectTools.includes(tool.id));
+    if (!isLoadingTools && !isLoadingProjectTools && allTools && projectToolIds && open) {
+      console.log('Updating tools lists with:', { allTools, projectToolIds });
+      
+      const assigned = allTools.filter((tool) => projectToolIds.includes(tool.id));
+      const available = allTools.filter((tool) => !projectToolIds.includes(tool.id));
+      
+      console.log('Setting tools:', { assigned, available });
+      
       setSelectedTools(assigned);
       setAvailableTools(available);
     }
-  }, [tools, projectTools, open]);
+  }, [allTools, projectToolIds, open, isLoadingTools, isLoadingProjectTools]);
 
   const handleClose = () => {
-    onOpenChange(false);
     // Reset selections
     setSelectedAvailable([]);
     setSelectedAssigned([]);
-    // Invalidate queries to refresh the data
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
-    queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
+    onOpenChange(false);
   };
 
   const moveToSelected = async () => {
@@ -96,8 +98,8 @@ export function ProjectToolsDialog({
       toast.success("Tools added to project");
       
       // Refresh the data
-      queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error) {
       console.error("Error moving tools:", error);
       toast.error("Failed to add tools to project");
@@ -125,8 +127,8 @@ export function ProjectToolsDialog({
       toast.success("Tools removed from project");
       
       // Refresh the data
-      queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error) {
       console.error("Error removing tools:", error);
       toast.error("Failed to remove tools from project");
