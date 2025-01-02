@@ -167,19 +167,20 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
         <DialogContent className="max-w-3xl">
           <DialogTitle>Tool Location</DialogTitle>
           {annotationImage && annotationData && (
-            <div className="relative w-full aspect-video">
+            <div 
+              className="relative overflow-hidden"
+              style={{
+                width: `${annotationData.coordinates.width}px`,
+                height: `${annotationData.coordinates.height}px`,
+              }}
+            >
               <img 
                 src={annotationImage} 
                 alt="Tool annotation"
-                className="w-full h-full object-contain"
-              />
-              <div 
-                className="absolute border-2 border-primary"
+                className="absolute"
                 style={{
-                  left: `${annotationData.coordinates.x}px`,
-                  top: `${annotationData.coordinates.y}px`,
-                  width: `${annotationData.coordinates.width}px`,
-                  height: `${annotationData.coordinates.height}px`,
+                  left: `-${annotationData.coordinates.x}px`,
+                  top: `-${annotationData.coordinates.y}px`,
                 }}
               />
             </div>
