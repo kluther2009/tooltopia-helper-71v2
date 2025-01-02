@@ -42,7 +42,7 @@ export function ProjectToolsDialog({
 
   // Fetch project tools
   const { data: projectToolIds, isLoading: isLoadingProjectTools } = useQuery({
-    queryKey: ["project-tools-list", projectId],
+    queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("project_tools")
@@ -64,16 +64,9 @@ export function ProjectToolsDialog({
     }
   }, [allTools, projectToolIds, open, isLoadingTools, isLoadingProjectTools]);
 
-  const handleClose = async () => {
-    // Reset selections
+  const handleClose = () => {
     setSelectedAvailable([]);
     setSelectedAssigned([]);
-    
-    // Only invalidate the specific project's tools list
-    await queryClient.invalidateQueries({ 
-      queryKey: ["project-tools-list", projectId]
-    });
-    
     onOpenChange(false);
   };
 
@@ -100,19 +93,19 @@ export function ProjectToolsDialog({
         throw new Error(`Failed to add some tools: ${errors.map(e => e.error?.message).join(', ')}`);
       }
 
-      // Update local state
-      setSelectedTools([...selectedTools, ...toolsToMove]);
-      setAvailableTools(
-        availableTools.filter((tool) => !selectedAvailable.includes(tool.id))
+      // Update local state first
+      setSelectedTools(prev => [...prev, ...toolsToMove]);
+      setAvailableTools(prev => 
+        prev.filter((tool) => !selectedAvailable.includes(tool.id))
       );
       setSelectedAvailable([]);
       
-      toast.success("Tools added to project");
-      
-      // Only invalidate the specific project's tools list
+      // Then invalidate the query
       await queryClient.invalidateQueries({ 
-        queryKey: ["project-tools-list", projectId]
+        queryKey: ["project-tools", projectId]
       });
+      
+      toast.success("Tools added to project");
     } catch (error) {
       console.error("Error moving tools:", error);
       toast.error("Failed to add tools to project");
@@ -134,19 +127,19 @@ export function ProjectToolsDialog({
         selectedAssigned.includes(tool.id)
       );
       
-      // Update local state
-      setAvailableTools([...availableTools, ...toolsToMove]);
-      setSelectedTools(
-        selectedTools.filter((tool) => !selectedAssigned.includes(tool.id))
+      // Update local state first
+      setAvailableTools(prev => [...prev, ...toolsToMove]);
+      setSelectedTools(prev =>
+        prev.filter((tool) => !selectedAssigned.includes(tool.id))
       );
       setSelectedAssigned([]);
       
-      toast.success("Tools removed from project");
-      
-      // Only invalidate the specific project's tools list
+      // Then invalidate the query
       await queryClient.invalidateQueries({ 
-        queryKey: ["project-tools-list", projectId]
+        queryKey: ["project-tools", projectId]
       });
+      
+      toast.success("Tools removed from project");
     } catch (error) {
       console.error("Error removing tools:", error);
       toast.error("Failed to remove tools from project");
