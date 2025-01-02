@@ -52,19 +52,13 @@ export function ProjectToolsDialog({
       return data.map((pt) => pt.tool_id);
     },
     staleTime: 0,
-    enabled: open, // Only fetch when dialog is open
+    enabled: open,
   });
 
-  // Update available and selected tools when data changes or dialog opens
   useEffect(() => {
     if (!isLoadingTools && !isLoadingProjectTools && allTools && projectToolIds && open) {
-      console.log('Updating tools lists with:', { allTools, projectToolIds });
-      
       const assigned = allTools.filter((tool) => projectToolIds.includes(tool.id));
       const available = allTools.filter((tool) => !projectToolIds.includes(tool.id));
-      
-      console.log('Setting tools:', { assigned, available });
-      
       setSelectedTools(assigned);
       setAvailableTools(available);
     }
@@ -75,10 +69,11 @@ export function ProjectToolsDialog({
     setSelectedAvailable([]);
     setSelectedAssigned([]);
     
-    // Invalidate queries before closing
+    // Invalidate all relevant queries before closing
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] }),
-      queryClient.invalidateQueries({ queryKey: ["projects"] })
+      queryClient.invalidateQueries({ queryKey: ["project-tools-list"] }),
+      queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      queryClient.invalidateQueries({ queryKey: ["tools"] })
     ]);
     
     onOpenChange(false);
@@ -105,8 +100,11 @@ export function ProjectToolsDialog({
       toast.success("Tools added to project");
       
       // Refresh the data
-      await queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-tools-list"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["tools"] })
+      ]);
     } catch (error) {
       console.error("Error moving tools:", error);
       toast.error("Failed to add tools to project");
@@ -134,8 +132,11 @@ export function ProjectToolsDialog({
       toast.success("Tools removed from project");
       
       // Refresh the data
-      await queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-tools-list"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["tools"] })
+      ]);
     } catch (error) {
       console.error("Error removing tools:", error);
       toast.error("Failed to remove tools from project");
