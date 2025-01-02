@@ -19,7 +19,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   const [selectedAvailable, setSelectedAvailable] = useState<string[]>([]);
   const [selectedAssigned, setSelectedAssigned] = useState<string[]>([]);
 
-  // Fetch all tools and project tools
+  // Fetch all tools
   const { data: tools, isLoading } = useQuery({
     queryKey: ["all-tools"],
     queryFn: async () => {
@@ -34,6 +34,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     enabled: open,
   });
 
+  // Fetch project tools
   const { data: projectTools } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
@@ -46,16 +47,18 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
       return data.map(pt => pt.tool_id);
     },
     enabled: open,
-    onSuccess: (projectToolIds) => {
-      if (!tools) return;
-      
-      const assigned = tools.filter(tool => projectToolIds.includes(tool.id));
-      const available = tools.filter(tool => !projectToolIds.includes(tool.id));
+  });
+
+  // Update available and selected tools when data changes
+  useState(() => {
+    if (tools && projectTools) {
+      const assigned = tools.filter(tool => projectTools.includes(tool.id));
+      const available = tools.filter(tool => !projectTools.includes(tool.id));
       
       setAvailableTools(available);
       setSelectedTools(assigned);
     }
-  });
+  }, [tools, projectTools]);
 
   const moveToSelected = async () => {
     if (selectedAvailable.length === 0) return;
