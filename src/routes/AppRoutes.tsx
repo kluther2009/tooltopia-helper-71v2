@@ -1,95 +1,30 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import AddTool from "@/pages/AddTool";
 import EditTool from "@/pages/EditTool";
 import Storage from "@/pages/Storage";
+import InitialInventory from "@/pages/InitialInventory";
+import Projects from "@/pages/Projects";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
 import ResetPassword from "@/pages/ResetPassword";
-import InitialInventory from "@/pages/InitialInventory";
-import Projects from "@/pages/Projects";
+import ToolList from "@/pages/ToolList";
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-    });
-  }, []);
-
-  if (isAuthenticated === null) {
-    return null; // Loading state
-  }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
-
-export function AppRoutes() {
+export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/add-tool" element={<AddTool />} />
+      <Route path="/edit-tool/:id" element={<EditTool />} />
+      <Route path="/storage" element={<Storage />} />
+      <Route path="/tool-list" element={<ToolList />} />
+      <Route path="/initial-inventory" element={<InitialInventory />} />
+      <Route path="/projects" element={<Projects />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Index />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/add-tool"
-        element={
-          <ProtectedRoute>
-            <AddTool />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/edit-tool/:id"
-        element={
-          <ProtectedRoute>
-            <EditTool />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/storage"
-        element={
-          <ProtectedRoute>
-            <Storage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/initial-inventory"
-        element={
-          <ProtectedRoute>
-            <InitialInventory />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/projects"
-        element={
-          <ProtectedRoute>
-            <Projects />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
     </Routes>
   );
 }
