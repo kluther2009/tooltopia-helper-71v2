@@ -1,38 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, FileText, Image } from "lucide-react";
+import { Table, TableBody } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { format } from "date-fns";
 import { toast } from "sonner";
 import { LocationPhotoViewer } from "../photos/LocationPhotoViewer";
-
-type Tool = {
-  id: string;
-  name: string;
-  location: string;
-  sub_location_a: string | null;
-  sub_location_b: string | null;
-  status: string;
-  purchase_date: string | null;
-  warranty_length: number | null;
-  warranty_file_path: string | null;
-  receipt_file_path: string | null;
-};
-
-type SortConfig = {
-  key: keyof Tool;
-  direction: 'asc' | 'desc';
-};
+import { Tool, SortConfig } from "./types/Tool";
+import { ToolTableHeader } from "./list/ToolTableHeader";
+import { ToolTableRow } from "./list/ToolTableRow";
 
 export function ToolListView() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
@@ -96,17 +71,6 @@ export function ToolListView() {
     setIsPhotoViewerOpen(true);
   };
 
-  const renderSortButton = (label: string, key: keyof Tool) => (
-    <Button
-      variant="ghost"
-      onClick={() => handleSort(key)}
-      className="h-8 text-xs font-medium"
-    >
-      {label}
-      <ArrowUpDown className="ml-2 h-4 w-4" />
-    </Button>
-  );
-
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">Loading tools...</div>;
   }
@@ -115,67 +79,15 @@ export function ToolListView() {
     <div className="container mx-auto p-6">
       <div className="rounded-md border">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{renderSortButton('Tool Name', 'name')}</TableHead>
-              <TableHead>{renderSortButton('Primary Location', 'location')}</TableHead>
-              <TableHead>{renderSortButton('Sub Location', 'sub_location_a')}</TableHead>
-              <TableHead>{renderSortButton('Specific Location', 'sub_location_b')}</TableHead>
-              <TableHead>{renderSortButton('Status', 'status')}</TableHead>
-              <TableHead>{renderSortButton('Purchase Date', 'purchase_date')}</TableHead>
-              <TableHead>{renderSortButton('Warranty Length', 'warranty_length')}</TableHead>
-              <TableHead>Warranty</TableHead>
-              <TableHead>Receipt</TableHead>
-              <TableHead>Picture</TableHead>
-            </TableRow>
-          </TableHeader>
+          <ToolTableHeader onSort={handleSort} />
           <TableBody>
             {sortedTools.map((tool) => (
-              <TableRow key={tool.id}>
-                <TableCell className="font-medium">{tool.name}</TableCell>
-                <TableCell>{tool.location}</TableCell>
-                <TableCell>{tool.sub_location_a || '-'}</TableCell>
-                <TableCell>{tool.sub_location_b || '-'}</TableCell>
-                <TableCell>{tool.status}</TableCell>
-                <TableCell>
-                  {tool.purchase_date ? format(new Date(tool.purchase_date), 'MM/dd/yyyy') : '-'}
-                </TableCell>
-                <TableCell>{tool.warranty_length ? `${tool.warranty_length} months` : '-'}</TableCell>
-                <TableCell>
-                  {tool.warranty_file_path ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openFile(tool.warranty_file_path!)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  ) : '-'}
-                </TableCell>
-                <TableCell>
-                  {tool.receipt_file_path ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openFile(tool.receipt_file_path!)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                  ) : '-'}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => openPhotoViewer(tool.location)}
-                  >
-                    <Image className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <ToolTableRow
+                key={tool.id}
+                tool={tool}
+                onFileOpen={openFile}
+                onPhotoView={openPhotoViewer}
+              />
             ))}
           </TableBody>
         </Table>
