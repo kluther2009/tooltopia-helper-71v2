@@ -1,16 +1,11 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Tool } from "@/hooks/useTools";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { ToolSelectionList } from "./project-tools/ToolSelectionList";
-import { TransferButtons } from "./project-tools/TransferButtons";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -18,154 +13,161 @@ interface ProjectToolsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ProjectToolsDialog({
-  projectId,
-  open,
-  onOpenChange,
-}: ProjectToolsDialogProps) {
+export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
   const queryClient = useQueryClient();
-  const [availableTools, setAvailableTools] = useState<Tool[]>([]);
-  const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
-  const [selectedAvailable, setSelectedAvailable] = useState<string[]>([]);
-  const [selectedAssigned, setSelectedAssigned] = useState<string[]>([]);
 
-  const { data: allTools } = useQuery({
+  // Fetch all tools
+  const { data: allTools = [] } = useQuery({
     queryKey: ["tools"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("tools").select("*");
+      const { data, error } = await supabase
+        .from("tools")
+        .select("*")
+        .order("name");
+      
       if (error) throw error;
-      return data as Tool[];
-    }
+      return data;
+    },
   });
 
-  const { data: projectToolIds } = useQuery({
+  // Fetch selected tools for this project
+  const { data: projectTools = [] } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("project_tools")
-        .select("tool_id")
-        .eq('project_id', projectId);
+        .select(`
+          id,
+          tool_id,
+          tool:tools (
+            id,
+            name
+          )
+        `)
+        .eq("project_id", projectId);
+      
       if (error) throw error;
-      return data.map((pt) => pt.tool_id);
-    }
+      return data;
+    },
+    enabled: open && !!projectId,
+    staleTime: 0,
   });
 
-  useEffect(() => {
-    if (allTools && projectToolIds && open) {
-      const assigned = allTools.filter((tool) => projectToolIds.includes(tool.id));
-      const available = allTools.filter((tool) => !projectToolIds.includes(tool.id));
-      setSelectedTools(assigned);
-      setAvailableTools(available);
-    }
-  }, [allTools, projectToolIds, open]);
+  // Get array of selected tool IDs
+  const selectedToolIds = projectTools.map(pt => pt.tool_id);
 
-  const handleClose = () => {
-    setSelectedAvailable([]);
-    setSelectedAssigned([]);
-    queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
-    onOpenChange(false);
-  };
+  // Filter tools into available and selected lists
+  const selectedTools = allTools.filter(tool => selectedToolIds.includes(tool.id));
+  const availableTools = allTools.filter(tool => !selectedToolIds.includes(tool.id));
 
-  const moveToSelected = async () => {
+  const handleToolSelect = async (toolId: string) => {
     try {
-      const toolsToMove = availableTools.filter((tool) =>
-        selectedAvailable.includes(tool.id)
-      );
+      const { data: existingTool, error: checkError } = await supabase
+        .from('project_tools')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('tool_id', toolId)
+        .maybeSingle();
 
-      const insertPromises = toolsToMove.map(tool => 
-        supabase.from("project_tools").insert({
-          project_id: projectId,
-          tool_id: tool.id,
-        })
-      );
+      if (checkError) throw checkError;
 
-      await Promise.all(insertPromises);
-      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
+      if (existingTool) {
+        // If tool exists, remove it
+        const { error: deleteError } = await supabase
+          .from('project_tools')
+          .delete()
+          .eq('project_id', projectId)
+          .eq('tool_id', toolId);
+
+        if (deleteError) throw deleteError;
+        toast.success('Tool removed from project');
+      } else {
+        // If tool doesn't exist, add it
+        const { error: insertError } = await supabase
+          .from('project_tools')
+          .insert({
+            project_id: projectId,
+            tool_id: toolId,
+          });
+
+        if (insertError) throw insertError;
+        toast.success('Tool added to project');
+      }
       
-      setSelectedTools(prev => [...prev, ...toolsToMove]);
-      setAvailableTools(prev => 
-        prev.filter((tool) => !selectedAvailable.includes(tool.id))
-      );
-      setSelectedAvailable([]);
-      
-      toast.success("Tools added to project");
+      // Invalidate both the dialog's tools query and the project card's tools query
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] })
+      ]);
     } catch (error) {
-      console.error("Error moving tools:", error);
-      toast.error("Failed to add tools to project");
+      console.error('Error managing project tool:', error);
+      toast.error('Failed to update project tools');
     }
   };
 
-  const moveToAvailable = async () => {
-    try {
-      const { error } = await supabase
-        .from("project_tools")
-        .delete()
-        .eq("project_id", projectId)
-        .in("tool_id", selectedAssigned);
-
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
-
-      const toolsToMove = selectedTools.filter((tool) =>
-        selectedAssigned.includes(tool.id)
-      );
-      
-      setAvailableTools(prev => [...prev, ...toolsToMove]);
-      setSelectedTools(prev =>
-        prev.filter((tool) => !selectedAssigned.includes(tool.id))
-      );
-      setSelectedAssigned([]);
-      
-      toast.success("Tools removed from project");
-    } catch (error) {
-      console.error("Error removing tools:", error);
-      toast.error("Failed to remove tools from project");
-    }
-  };
+  const ToolList = ({ tools, title }: { tools: any[], title: string }) => (
+    <Card className="flex-1 p-4">
+      <h3 className="font-medium mb-3 text-sm text-gray-700">{title}</h3>
+      <ScrollArea className="h-[300px] pr-4">
+        <div className="space-y-2">
+          {tools.map((tool) => (
+            <div
+              key={tool.id}
+              onClick={() => handleToolSelect(tool.id)}
+              className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer text-sm"
+            >
+              {tool.name}
+            </div>
+          ))}
+          {tools.length === 0 && (
+            <div className="text-center text-gray-500 py-4 text-sm">
+              No tools available
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </Card>
+  );
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Project Tools</DialogTitle>
+          <DialogTitle>Select Tools</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-[1fr,auto,1fr] gap-4">
-          <ToolSelectionList
-            title="Available Tools"
-            tools={availableTools}
-            selectedTools={selectedAvailable}
-            onToolSelect={(toolId) => {
-              if (selectedAvailable.includes(toolId)) {
-                setSelectedAvailable(
-                  selectedAvailable.filter((id) => id !== toolId)
-                );
-              } else {
-                setSelectedAvailable([...selectedAvailable, toolId]);
-              }
-            }}
-          />
+        <div className="flex items-stretch gap-4">
+          <ToolList tools={availableTools} title="Available Tools" />
+          
+          <div className="flex flex-col justify-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const selectedTool = availableTools[0];
+                if (selectedTool) {
+                  handleToolSelect(selectedTool.id);
+                }
+              }}
+              disabled={availableTools.length === 0}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                const selectedTool = selectedTools[0];
+                if (selectedTool) {
+                  handleToolSelect(selectedTool.id);
+                }
+              }}
+              disabled={selectedTools.length === 0}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </div>
 
-          <TransferButtons
-            onMoveToSelected={moveToSelected}
-            onMoveToAvailable={moveToAvailable}
-            disableRight={selectedAvailable.length === 0}
-            disableLeft={selectedAssigned.length === 0}
-          />
-
-          <ToolSelectionList
-            title="Selected Tools"
-            tools={selectedTools}
-            selectedTools={selectedAssigned}
-            onToolSelect={(toolId) => {
-              if (selectedAssigned.includes(toolId)) {
-                setSelectedAssigned(
-                  selectedAssigned.filter((id) => id !== toolId)
-                );
-              } else {
-                setSelectedAssigned([...selectedAssigned, toolId]);
-              }
-            }}
-          />
+          <ToolList tools={selectedTools} title="Selected Tools" />
         </div>
       </DialogContent>
     </Dialog>

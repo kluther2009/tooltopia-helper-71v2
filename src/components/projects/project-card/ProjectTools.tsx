@@ -12,7 +12,7 @@ interface ProjectTool {
 
 export function ProjectTools({ projectId }: { projectId: string }) {
   const { data: projectTools } = useQuery({
-    queryKey: ["project-tools", projectId],
+    queryKey: ["project-tools-list", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("project_tools")
@@ -31,11 +31,7 @@ export function ProjectTools({ projectId }: { projectId: string }) {
       }
       return (data || []) as ProjectTool[];
     },
-    enabled: !!projectId,
-    gcTime: 0,
     staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true
   });
 
   return (

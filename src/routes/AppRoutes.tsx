@@ -11,7 +11,6 @@ import SignUp from "@/pages/SignUp";
 import ResetPassword from "@/pages/ResetPassword";
 import InitialInventory from "@/pages/InitialInventory";
 import Projects from "@/pages/Projects";
-import ToolList from "@/pages/ToolList";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -64,14 +63,6 @@ export function AppRoutes() {
         element={
           <ProtectedRoute>
             <Storage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tool-list"
-        element={
-          <ProtectedRoute>
-            <ToolList />
           </ProtectedRoute>
         }
       />

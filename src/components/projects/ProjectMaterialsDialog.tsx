@@ -31,16 +31,15 @@ export function ProjectMaterialsDialog({
     handleDeleteMaterial,
   } = useMaterials(project.id);
 
-  const handleClose = () => {
+  const handleCancel = () => {
     onOpenChange(false);
     // Invalidate both projects and project-materials queries
     queryClient.invalidateQueries({ queryKey: ["projects"] });
     queryClient.invalidateQueries({ queryKey: ["project-materials", project.id] });
-    queryClient.invalidateQueries({ queryKey: ["project-tools-list", project.id] });
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Project Materials</DialogTitle>
@@ -50,7 +49,7 @@ export function ProjectMaterialsDialog({
             newMaterial={newMaterial}
             onMaterialChange={handleMaterialChange}
             onAddMaterial={handleAddMaterial}
-            onCancel={handleClose}
+            onCancel={handleCancel}
           />
           <MaterialList
             materials={materials}
