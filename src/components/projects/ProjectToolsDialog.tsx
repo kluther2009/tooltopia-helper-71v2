@@ -52,6 +52,7 @@ export function ProjectToolsDialog({
     },
   });
 
+  // Update available and selected tools when data changes
   useEffect(() => {
     if (tools && projectTools) {
       const assigned = tools.filter((tool) => projectTools.includes(tool.id));
@@ -66,7 +67,6 @@ export function ProjectToolsDialog({
     // Invalidate queries to refresh the data
     queryClient.invalidateQueries({ queryKey: ["projects"] });
     queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
-    queryClient.invalidateQueries({ queryKey: ["project-materials", projectId] });
     setSelectedAvailable([]);
     setSelectedAssigned([]);
   };
