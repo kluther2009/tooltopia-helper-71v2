@@ -35,8 +35,7 @@ export function ProjectToolsDialog({
       const { data, error } = await supabase.from("tools").select("*");
       if (error) throw error;
       return data as Tool[];
-    },
-    enabled: open
+    }
   });
 
   const { data: projectToolIds } = useQuery({
@@ -48,8 +47,7 @@ export function ProjectToolsDialog({
         .eq('project_id', projectId);
       if (error) throw error;
       return data.map((pt) => pt.tool_id);
-    },
-    enabled: open && !!projectId
+    }
   });
 
   useEffect(() => {
@@ -82,6 +80,7 @@ export function ProjectToolsDialog({
       );
 
       await Promise.all(insertPromises);
+      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
       
       setSelectedTools(prev => [...prev, ...toolsToMove]);
       setAvailableTools(prev => 
@@ -105,6 +104,7 @@ export function ProjectToolsDialog({
         .in("tool_id", selectedAssigned);
 
       if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] });
 
       const toolsToMove = selectedTools.filter((tool) =>
         selectedAssigned.includes(tool.id)
