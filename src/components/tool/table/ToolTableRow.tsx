@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 interface Tool {
   id: string;
@@ -30,7 +30,7 @@ interface Annotation {
   };
   photo: {
     file_path: string;
-  };
+  } | null;
 }
 
 interface ToolTableRowProps {
@@ -67,7 +67,7 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
         return;
       }
 
-      if (data) {
+      if (data && data.photo) {
         setHasAnnotation(true);
         setAnnotationData(data as Annotation);
       } else {
@@ -165,6 +165,7 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
 
       <Dialog open={isAnnotationDialogOpen} onOpenChange={setIsAnnotationDialogOpen}>
         <DialogContent className="max-w-3xl">
+          <DialogTitle>Tool Location</DialogTitle>
           {annotationImage && annotationData && (
             <div className="relative w-full aspect-video">
               <div 
