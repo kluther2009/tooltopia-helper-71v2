@@ -168,18 +168,20 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
           <DialogTitle>Tool Location</DialogTitle>
           {annotationImage && annotationData && (
             <div className="relative w-full aspect-video">
+              <img 
+                src={annotationImage} 
+                alt="Tool annotation"
+                className="w-full h-full object-contain"
+              />
               <div 
-                className="absolute inset-0"
+                className="absolute border-2 border-primary"
                 style={{
-                  clipPath: `inset(${annotationData.coordinates.y}px ${annotationData.coordinates.x}px ${annotationData.coordinates.height}px ${annotationData.coordinates.width}px)`
+                  left: `${annotationData.coordinates.x}px`,
+                  top: `${annotationData.coordinates.y}px`,
+                  width: `${annotationData.coordinates.width}px`,
+                  height: `${annotationData.coordinates.height}px`,
                 }}
-              >
-                <img 
-                  src={annotationImage} 
-                  alt="Tool annotation"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              />
             </div>
           )}
         </DialogContent>
