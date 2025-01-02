@@ -1,175 +1,138 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FileText, Image } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { LocationPhotoViewer } from "../photos/LocationPhotoViewer";
+import { useState } from "react";
 
-interface ProjectToolsDialogProps {
-  projectId: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface Tool {
+  id: string;
+  name: string;
+  location: string;
+  status: string;
+  warranty_file_path?: string | null;
+  receipt_file_path?: string | null;
 }
 
-export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
-  const queryClient = useQueryClient();
+interface ProjectToolsDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  tools: Tool[];
+  projectName: string;
+}
 
-  // Fetch all tools
-  const { data: allTools = [] } = useQuery({
-    queryKey: ["tools"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tools")
-        .select("*")
-        .order("name");
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+export function ProjectToolsDialog({ isOpen, onClose, tools, projectName }: ProjectToolsDialogProps) {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+  const [selectedToolLocation, setSelectedToolLocation] = useState<string | null>(null);
 
-  // Fetch selected tools for this project
-  const { data: projectTools = [] } = useQuery({
-    queryKey: ["project-tools", projectId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("project_tools")
-        .select(`
-          id,
-          tool_id,
-          tool:tools (
-            id,
-            name
-          )
-        `)
-        .eq("project_id", projectId);
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: open && !!projectId,
-    staleTime: 0,
-  });
-
-  // Get array of selected tool IDs
-  const selectedToolIds = projectTools.map(pt => pt.tool_id);
-
-  // Filter tools into available and selected lists
-  const selectedTools = allTools.filter(tool => selectedToolIds.includes(tool.id));
-  const availableTools = allTools.filter(tool => !selectedToolIds.includes(tool.id));
-
-  const handleToolSelect = async (toolId: string) => {
-    try {
-      const { data: existingTool, error: checkError } = await supabase
-        .from('project_tools')
-        .select('id')
-        .eq('project_id', projectId)
-        .eq('tool_id', toolId)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (existingTool) {
-        // If tool exists, remove it
-        const { error: deleteError } = await supabase
-          .from('project_tools')
-          .delete()
-          .eq('project_id', projectId)
-          .eq('tool_id', toolId);
-
-        if (deleteError) throw deleteError;
-        toast.success('Tool removed from project');
-      } else {
-        // If tool doesn't exist, add it
-        const { error: insertError } = await supabase
-          .from('project_tools')
-          .insert({
-            project_id: projectId,
-            tool_id: toolId,
-          });
-
-        if (insertError) throw insertError;
-        toast.success('Tool added to project');
-      }
-      
-      // Invalidate both the dialog's tools query and the project card's tools query
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] }),
-        queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] })
-      ]);
-    } catch (error) {
-      console.error('Error managing project tool:', error);
-      toast.error('Failed to update project tools');
+  const openFile = async (filePath: string) => {
+    if (!filePath) return;
+    
+    const { data } = supabase.storage
+      .from('warranty-files')
+      .getPublicUrl(filePath);
+    
+    if (data.publicUrl) {
+      setSelectedFile(data.publicUrl);
+      setIsFileDialogOpen(true);
     }
   };
 
-  const ToolList = ({ tools, title }: { tools: any[], title: string }) => (
-    <Card className="flex-1 p-4">
-      <h3 className="font-medium mb-3 text-sm text-gray-700">{title}</h3>
-      <ScrollArea className="h-[300px] pr-4">
-        <div className="space-y-2">
-          {tools.map((tool) => (
-            <div
-              key={tool.id}
-              onClick={() => handleToolSelect(tool.id)}
-              className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg cursor-pointer text-sm"
-            >
-              {tool.name}
-            </div>
-          ))}
-          {tools.length === 0 && (
-            <div className="text-center text-gray-500 py-4 text-sm">
-              No tools available
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-    </Card>
-  );
+  const openPhotoViewer = (location: string) => {
+    setSelectedToolLocation(location);
+    setIsPhotoViewerOpen(true);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle>Select Tools</DialogTitle>
-        </DialogHeader>
-        <div className="flex items-stretch gap-4">
-          <ToolList tools={availableTools} title="Available Tools" />
-          
-          <div className="flex flex-col justify-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                const selectedTool = availableTools[0];
-                if (selectedTool) {
-                  handleToolSelect(selectedTool.id);
-                }
-              }}
-              disabled={availableTools.length === 0}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                const selectedTool = selectedTools[0];
-                if (selectedTool) {
-                  handleToolSelect(selectedTool.id);
-                }
-              }}
-              disabled={selectedTools.length === 0}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Tools for {projectName}</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh]">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tool Name</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Warranty</TableHead>
+                  <TableHead>Receipt</TableHead>
+                  <TableHead>Picture</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tools.map((tool) => (
+                  <TableRow key={tool.id}>
+                    <TableCell className="font-medium">{tool.name}</TableCell>
+                    <TableCell>{tool.location}</TableCell>
+                    <TableCell>{tool.status}</TableCell>
+                    <TableCell>
+                      {tool.warranty_file_path ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openFile(tool.warranty_file_path!)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {tool.receipt_file_path ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openFile(tool.receipt_file_path!)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => openPhotoViewer(tool.location)}
+                      >
+                        <Image className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          <ToolList tools={selectedTools} title="Selected Tools" />
-        </div>
-      </DialogContent>
-    </Dialog>
+      <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          {selectedFile && (
+            <img
+              src={selectedFile}
+              alt="Document"
+              className="w-full h-auto"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <LocationPhotoViewer
+        location={selectedToolLocation}
+        isOpen={isPhotoViewerOpen}
+        onClose={() => {
+          setIsPhotoViewerOpen(false);
+          setSelectedToolLocation(null);
+        }}
+      />
+    </>
   );
 }
