@@ -49,26 +49,38 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
   }, [tool.id]);
 
   const checkForAnnotations = async () => {
-    const { data, error } = await supabase
-      .from('tool_annotations')
-      .select(`
-        id,
-        coordinates,
-        photo:location_photos (
-          file_path
-        )
-      `)
-      .eq('tool_id', tool.id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('tool_annotations')
+        .select(`
+          id,
+          coordinates,
+          photo:location_photos (
+            file_path
+          )
+        `)
+        .eq('tool_id', tool.id)
+        .maybeSingle();
 
-    if (data && !error) {
-      setHasAnnotation(true);
-      setAnnotationData(data as Annotation);
+      if (error) {
+        console.error('Error fetching annotations:', error);
+        return;
+      }
+
+      if (data) {
+        setHasAnnotation(true);
+        setAnnotationData(data as Annotation);
+      } else {
+        setHasAnnotation(false);
+        setAnnotationData(null);
+      }
+    } catch (error) {
+      console.error('Error in checkForAnnotations:', error);
     }
   };
 
   const handleAnnotationClick = async () => {
-    if (!annotationData) return;
+    if (!annotationData?.photo?.file_path) return;
 
     const { data } = supabase.storage
       .from('location-photos')
@@ -156,7 +168,7 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
           {annotationImage && annotationData && (
             <div className="relative w-full aspect-video">
               <div 
-                className="absolute inset-0 bg-black/50"
+                className="absolute inset-0"
                 style={{
                   clipPath: `inset(${annotationData.coordinates.y}px ${annotationData.coordinates.x}px ${annotationData.coordinates.height}px ${annotationData.coordinates.width}px)`
                 }}
