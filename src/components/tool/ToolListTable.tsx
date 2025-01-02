@@ -106,87 +106,71 @@ export function ToolListTable() {
     };
 
     return (
-      <Badge className={`${statusColors[status as keyof typeof statusColors]} text-white`}>
+      <Badge 
+        variant="secondary" 
+        className={`${statusColors[status as keyof typeof statusColors]} text-white font-medium`}
+      >
         {status}
       </Badge>
     );
   };
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-card rounded-lg shadow-md border border-border">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('name')}
-              >
-                Tool Name {renderSortIcon('name')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('location')}
-              >
-                Primary Location {renderSortIcon('location')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('sub_location_a')}
-              >
-                Sub Location {renderSortIcon('sub_location_a')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('sub_location_b')}
-              >
-                Specific Location {renderSortIcon('sub_location_b')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('status')}
-              >
-                Status {renderSortIcon('status')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('purchase_date')}
-              >
-                Purchase Date {renderSortIcon('purchase_date')}
-              </TableHead>
-              <TableHead 
-                className="cursor-pointer hover:bg-gray-50"
-                onClick={() => handleSort('warranty_length')}
-              >
-                Warranty Length {renderSortIcon('warranty_length')}
-              </TableHead>
-              <TableHead>Warranty</TableHead>
-              <TableHead>Receipt</TableHead>
-              <TableHead>Picture</TableHead>
+            <TableRow className="hover:bg-card/50">
+              {[
+                { key: 'name', label: 'Tool Name' },
+                { key: 'location', label: 'Primary Location' },
+                { key: 'sub_location_a', label: 'Sub Location' },
+                { key: 'sub_location_b', label: 'Specific Location' },
+                { key: 'status', label: 'Status' },
+                { key: 'purchase_date', label: 'Purchase Date' },
+                { key: 'warranty_length', label: 'Warranty Length' }
+              ].map(({ key, label }) => (
+                <TableHead 
+                  key={key}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors text-card-foreground font-semibold"
+                  onClick={() => handleSort(key as keyof Tool)}
+                >
+                  {label} {renderSortIcon(key as keyof Tool)}
+                </TableHead>
+              ))}
+              <TableHead className="text-card-foreground font-semibold">Warranty</TableHead>
+              <TableHead className="text-card-foreground font-semibold">Receipt</TableHead>
+              <TableHead className="text-card-foreground font-semibold">Picture</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedTools.map((tool) => (
-              <TableRow key={tool.id}>
-                <TableCell className="font-medium">{tool.name}</TableCell>
-                <TableCell>{tool.location}</TableCell>
-                <TableCell>{tool.sub_location_a || '-'}</TableCell>
-                <TableCell>{tool.sub_location_b || '-'}</TableCell>
+              <TableRow 
+                key={tool.id}
+                className="hover:bg-muted/50 transition-colors"
+              >
+                <TableCell className="font-medium text-card-foreground">{tool.name}</TableCell>
+                <TableCell className="text-card-foreground">{tool.location}</TableCell>
+                <TableCell className="text-card-foreground">{tool.sub_location_a || '-'}</TableCell>
+                <TableCell className="text-card-foreground">{tool.sub_location_b || '-'}</TableCell>
                 <TableCell>{renderStatus(tool.status)}</TableCell>
-                <TableCell>
+                <TableCell className="text-card-foreground">
                   {tool.purchase_date 
                     ? format(new Date(tool.purchase_date), 'MM/dd/yyyy')
                     : '-'}
                 </TableCell>
-                <TableCell>{tool.warranty_length ? `${tool.warranty_length} months` : '-'}</TableCell>
+                <TableCell className="text-card-foreground">
+                  {tool.warranty_length ? `${tool.warranty_length} months` : '-'}
+                </TableCell>
                 <TableCell>
                   {tool.warranty_file_path && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => openFile(tool.warranty_file_path!)}
+                      className="hover:bg-muted"
                     >
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-4 w-4 text-primary" />
                     </Button>
                   )}
                 </TableCell>
@@ -196,8 +180,9 @@ export function ToolListTable() {
                       variant="ghost"
                       size="sm"
                       onClick={() => openFile(tool.receipt_file_path!)}
+                      className="hover:bg-muted"
                     >
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-4 w-4 text-primary" />
                     </Button>
                   )}
                 </TableCell>
@@ -206,8 +191,9 @@ export function ToolListTable() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {/* TODO: Implement photo viewer */}}
+                    className="hover:bg-muted"
                   >
-                    <Image className="h-4 w-4" />
+                    <Image className="h-4 w-4 text-primary" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -217,7 +203,7 @@ export function ToolListTable() {
       </div>
 
       <Dialog open={isFileDialogOpen} onOpenChange={setIsFileDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl bg-card">
           {selectedFile && (
             <img 
               src={selectedFile} 
