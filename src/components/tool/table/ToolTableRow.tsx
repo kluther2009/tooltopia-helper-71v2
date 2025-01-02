@@ -3,6 +3,9 @@ import { FileText, Image } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface Tool {
   id: string;
@@ -17,12 +20,66 @@ interface Tool {
   receipt_file_path: string | null;
 }
 
+interface Annotation {
+  id: string;
+  coordinates: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  photo: {
+    file_path: string;
+  };
+}
+
 interface ToolTableRowProps {
   tool: Tool;
   onFileClick: (filePath: string) => void;
 }
 
 export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
+  const [hasAnnotation, setHasAnnotation] = useState(false);
+  const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
+  const [annotationData, setAnnotationData] = useState<Annotation | null>(null);
+  const [annotationImage, setAnnotationImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkForAnnotations();
+  }, [tool.id]);
+
+  const checkForAnnotations = async () => {
+    const { data, error } = await supabase
+      .from('tool_annotations')
+      .select(`
+        id,
+        coordinates,
+        photo:location_photos (
+          file_path
+        )
+      `)
+      .eq('tool_id', tool.id)
+      .single();
+
+    if (data && !error) {
+      setHasAnnotation(true);
+      setAnnotationData(data as Annotation);
+    }
+  };
+
+  const handleAnnotationClick = async () => {
+    if (!annotationData) return;
+
+    const { data } = supabase.storage
+      .from('location-photos')
+      .getPublicUrl(annotationData.photo.file_path);
+
+    if (data.publicUrl) {
+      setAnnotationImage(data.publicUrl);
+      setIsAnnotationDialogOpen(true);
+    }
+  };
+
   const renderStatus = (status: string) => {
     const statusColors = {
       'available': 'bg-green-500',
@@ -41,54 +98,79 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
   };
 
   return (
-    <TableRow className="hover:bg-muted/50 transition-colors">
-      <TableCell className="font-medium text-card-foreground">{tool.name}</TableCell>
-      <TableCell className="text-card-foreground">{tool.location}</TableCell>
-      <TableCell className="text-card-foreground">{tool.sub_location_a || '-'}</TableCell>
-      <TableCell className="text-card-foreground">{tool.sub_location_b || '-'}</TableCell>
-      <TableCell>{renderStatus(tool.status)}</TableCell>
-      <TableCell className="text-card-foreground">
-        {tool.purchase_date 
-          ? format(new Date(tool.purchase_date), 'MM/dd/yyyy')
-          : '-'}
-      </TableCell>
-      <TableCell className="text-card-foreground">
-        {tool.warranty_length ? `${tool.warranty_length} months` : '-'}
-      </TableCell>
-      <TableCell>
-        {tool.warranty_file_path && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onFileClick(tool.warranty_file_path!)}
-            className="hover:bg-muted"
-          >
-            <FileText className="h-4 w-4 text-primary" />
-          </Button>
-        )}
-      </TableCell>
-      <TableCell>
-        {tool.receipt_file_path && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onFileClick(tool.receipt_file_path!)}
-            className="hover:bg-muted"
-          >
-            <FileText className="h-4 w-4 text-primary" />
-          </Button>
-        )}
-      </TableCell>
-      <TableCell>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {/* TODO: Implement photo viewer */}}
-          className="hover:bg-muted"
-        >
-          <Image className="h-4 w-4 text-primary" />
-        </Button>
-      </TableCell>
-    </TableRow>
+    <>
+      <TableRow className="hover:bg-muted/50 transition-colors">
+        <TableCell className="font-medium text-card-foreground">{tool.name}</TableCell>
+        <TableCell className="text-card-foreground">{tool.location}</TableCell>
+        <TableCell className="text-card-foreground">{tool.sub_location_a || '-'}</TableCell>
+        <TableCell className="text-card-foreground">{tool.sub_location_b || '-'}</TableCell>
+        <TableCell>{renderStatus(tool.status)}</TableCell>
+        <TableCell className="text-card-foreground">
+          {tool.purchase_date 
+            ? format(new Date(tool.purchase_date), 'MM/dd/yyyy')
+            : '-'}
+        </TableCell>
+        <TableCell className="text-card-foreground">
+          {tool.warranty_length ? `${tool.warranty_length} months` : '-'}
+        </TableCell>
+        <TableCell>
+          {tool.warranty_file_path && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onFileClick(tool.warranty_file_path!)}
+              className="hover:bg-muted"
+            >
+              <FileText className="h-4 w-4 text-primary" />
+            </Button>
+          )}
+        </TableCell>
+        <TableCell>
+          {tool.receipt_file_path && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onFileClick(tool.receipt_file_path!)}
+              className="hover:bg-muted"
+            >
+              <FileText className="h-4 w-4 text-primary" />
+            </Button>
+          )}
+        </TableCell>
+        <TableCell>
+          {hasAnnotation && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAnnotationClick}
+              className="hover:bg-muted"
+            >
+              <Image className="h-4 w-4 text-primary" />
+            </Button>
+          )}
+        </TableCell>
+      </TableRow>
+
+      <Dialog open={isAnnotationDialogOpen} onOpenChange={setIsAnnotationDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          {annotationImage && annotationData && (
+            <div className="relative w-full aspect-video">
+              <div 
+                className="absolute inset-0 bg-black/50"
+                style={{
+                  clipPath: `inset(${annotationData.coordinates.y}px ${annotationData.coordinates.x}px ${annotationData.coordinates.height}px ${annotationData.coordinates.width}px)`
+                }}
+              >
+                <img 
+                  src={annotationImage} 
+                  alt="Tool annotation"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
