@@ -20,7 +20,7 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
   const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
   const [selectedToolLocation, setSelectedToolLocation] = useState<string | null>(null);
 
-  const { data: projectTools, isLoading, error } = useQuery({
+  const { data: projectTools, isLoading } = useQuery({
     queryKey: ["project-tools", projectId],
     queryFn: async () => {
       const { data: toolsData, error } = await supabase
@@ -42,9 +42,9 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         throw error;
       }
 
-      return toolsData.map(item => item.tool) as Tool[];
+      return toolsData?.map(item => item.tool) as Tool[];
     },
-    enabled: open, // Only fetch when dialog is open
+    enabled: open,
   });
 
   const openFile = async (filePath: string) => {
@@ -75,8 +75,6 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           <div className="overflow-y-auto max-h-[60vh]">
             {isLoading ? (
               <div className="text-center py-4">Loading tools...</div>
-            ) : error ? (
-              <div className="text-center py-4 text-red-500">Error loading tools</div>
             ) : (
               <Table>
                 <TableHeader>
