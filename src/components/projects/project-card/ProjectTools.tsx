@@ -32,7 +32,7 @@ export function ProjectTools({ projectId }: { projectId: string }) {
       return (data || []) as ProjectTool[];
     },
     enabled: !!projectId,
-    cacheTime: 0,
+    gcTime: 0,
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true
