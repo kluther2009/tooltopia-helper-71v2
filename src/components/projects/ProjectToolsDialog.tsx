@@ -51,7 +51,6 @@ export function ProjectToolsDialog({
       if (error) throw error;
       return data.map((pt) => pt.tool_id);
     },
-    staleTime: 0,
     enabled: open,
   });
 
