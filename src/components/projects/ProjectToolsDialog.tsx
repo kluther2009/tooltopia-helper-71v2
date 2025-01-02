@@ -70,10 +70,17 @@ export function ProjectToolsDialog({
     }
   }, [allTools, projectToolIds, open, isLoadingTools, isLoadingProjectTools]);
 
-  const handleClose = () => {
+  const handleClose = async () => {
     // Reset selections
     setSelectedAvailable([]);
     setSelectedAssigned([]);
+    
+    // Invalidate queries before closing
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] }),
+      queryClient.invalidateQueries({ queryKey: ["projects"] })
+    ]);
+    
     onOpenChange(false);
   };
 
