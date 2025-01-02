@@ -47,7 +47,7 @@ export function ProjectToolsDialog({
       const { data, error } = await supabase
         .from("project_tools")
         .select("tool_id")
-        .eq("project_id", projectId);
+        .eq('project_id', projectId);
       if (error) throw error;
       return data.map((pt) => pt.tool_id);
     },
@@ -69,12 +69,10 @@ export function ProjectToolsDialog({
     setSelectedAvailable([]);
     setSelectedAssigned([]);
     
-    // Invalidate all relevant queries before closing
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["project-tools-list"] }),
-      queryClient.invalidateQueries({ queryKey: ["projects"] }),
-      queryClient.invalidateQueries({ queryKey: ["tools"] })
-    ]);
+    // Only invalidate the specific project's tools list
+    await queryClient.invalidateQueries({ 
+      queryKey: ["project-tools-list", projectId]
+    });
     
     onOpenChange(false);
   };
@@ -85,26 +83,36 @@ export function ProjectToolsDialog({
         selectedAvailable.includes(tool.id)
       );
 
-      for (const tool of toolsToMove) {
-        await supabase.from("project_tools").insert({
+      // Create an array of promises for all insertions
+      const insertPromises = toolsToMove.map(tool => 
+        supabase.from("project_tools").insert({
           project_id: projectId,
           tool_id: tool.id,
-        });
+        })
+      );
+
+      // Wait for all insertions to complete
+      const results = await Promise.all(insertPromises);
+      
+      // Check for any errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        throw new Error(`Failed to add some tools: ${errors.map(e => e.error?.message).join(', ')}`);
       }
 
+      // Update local state
       setSelectedTools([...selectedTools, ...toolsToMove]);
       setAvailableTools(
         availableTools.filter((tool) => !selectedAvailable.includes(tool.id))
       );
       setSelectedAvailable([]);
+      
       toast.success("Tools added to project");
       
-      // Refresh the data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["project-tools-list"] }),
-        queryClient.invalidateQueries({ queryKey: ["projects"] }),
-        queryClient.invalidateQueries({ queryKey: ["tools"] })
-      ]);
+      // Only invalidate the specific project's tools list
+      await queryClient.invalidateQueries({ 
+        queryKey: ["project-tools-list", projectId]
+      });
     } catch (error) {
       console.error("Error moving tools:", error);
       toast.error("Failed to add tools to project");
@@ -113,30 +121,32 @@ export function ProjectToolsDialog({
 
   const moveToAvailable = async () => {
     try {
-      for (const toolId of selectedAssigned) {
-        await supabase
-          .from("project_tools")
-          .delete()
-          .eq("project_id", projectId)
-          .eq("tool_id", toolId);
-      }
+      // Delete all selected tools at once
+      const { error } = await supabase
+        .from("project_tools")
+        .delete()
+        .eq("project_id", projectId)
+        .in("tool_id", selectedAssigned);
+
+      if (error) throw error;
 
       const toolsToMove = selectedTools.filter((tool) =>
         selectedAssigned.includes(tool.id)
       );
+      
+      // Update local state
       setAvailableTools([...availableTools, ...toolsToMove]);
       setSelectedTools(
         selectedTools.filter((tool) => !selectedAssigned.includes(tool.id))
       );
       setSelectedAssigned([]);
+      
       toast.success("Tools removed from project");
       
-      // Refresh the data
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["project-tools-list"] }),
-        queryClient.invalidateQueries({ queryKey: ["projects"] }),
-        queryClient.invalidateQueries({ queryKey: ["tools"] })
-      ]);
+      // Only invalidate the specific project's tools list
+      await queryClient.invalidateQueries({ 
+        queryKey: ["project-tools-list", projectId]
+      });
     } catch (error) {
       console.error("Error removing tools:", error);
       toast.error("Failed to remove tools from project");
