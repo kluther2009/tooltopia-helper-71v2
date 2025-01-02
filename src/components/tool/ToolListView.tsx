@@ -14,6 +14,7 @@ import { ArrowUpDown, FileText, Image } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { LocationPhotoViewer } from "../photos/LocationPhotoViewer";
 
 type Tool = {
   id: string;
@@ -37,6 +38,8 @@ export function ToolListView() {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+  const [selectedToolLocation, setSelectedToolLocation] = useState<string | null>(null);
 
   const { data: tools = [], isLoading } = useQuery({
     queryKey: ['tools'],
@@ -44,7 +47,7 @@ export function ToolListView() {
       const { data, error } = await supabase
         .from('tools')
         .select('*');
-
+      
       if (error) {
         toast.error("Failed to fetch tools");
         throw error;
@@ -86,6 +89,11 @@ export function ToolListView() {
       setSelectedFile(data.publicUrl);
       setIsDialogOpen(true);
     }
+  };
+
+  const openPhotoViewer = (location: string) => {
+    setSelectedToolLocation(location);
+    setIsPhotoViewerOpen(true);
   };
 
   const renderSortButton = (label: string, key: keyof Tool) => (
@@ -162,10 +170,7 @@ export function ToolListView() {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => {
-                      // TODO: Implement photo viewer for tool annotations
-                      toast.info("Photo viewer coming soon!");
-                    }}
+                    onClick={() => openPhotoViewer(tool.location)}
                   >
                     <Image className="h-4 w-4" />
                   </Button>
@@ -187,6 +192,15 @@ export function ToolListView() {
           )}
         </DialogContent>
       </Dialog>
+
+      <LocationPhotoViewer
+        location={selectedToolLocation}
+        isOpen={isPhotoViewerOpen}
+        onClose={() => {
+          setIsPhotoViewerOpen(false);
+          setSelectedToolLocation(null);
+        }}
+      />
     </div>
   );
 }
