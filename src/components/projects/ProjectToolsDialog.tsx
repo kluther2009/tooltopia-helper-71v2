@@ -37,6 +37,7 @@ export function ProjectToolsDialog({
       if (error) throw error;
       return data as Tool[];
     },
+    staleTime: 0,
   });
 
   // Fetch project tools
@@ -50,25 +51,28 @@ export function ProjectToolsDialog({
       if (error) throw error;
       return data.map((pt) => pt.tool_id);
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
-  // Update available and selected tools when data changes
+  // Update available and selected tools when data changes or dialog opens
   useEffect(() => {
-    if (tools && projectTools) {
+    if (tools && projectTools && open) {
       const assigned = tools.filter((tool) => projectTools.includes(tool.id));
       const available = tools.filter((tool) => !projectTools.includes(tool.id));
       setSelectedTools(assigned);
       setAvailableTools(available);
     }
-  }, [tools, projectTools]);
+  }, [tools, projectTools, open]);
 
   const handleClose = () => {
     onOpenChange(false);
+    // Reset selections
+    setSelectedAvailable([]);
+    setSelectedAssigned([]);
     // Invalidate queries to refresh the data
     queryClient.invalidateQueries({ queryKey: ["projects"] });
     queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
-    setSelectedAvailable([]);
-    setSelectedAssigned([]);
   };
 
   const moveToSelected = async () => {
@@ -93,6 +97,7 @@ export function ProjectToolsDialog({
       
       // Refresh the data
       queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error) {
       console.error("Error moving tools:", error);
       toast.error("Failed to add tools to project");
@@ -121,6 +126,7 @@ export function ProjectToolsDialog({
       
       // Refresh the data
       queryClient.invalidateQueries({ queryKey: ["project-tools-list", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error) {
       console.error("Error removing tools:", error);
       toast.error("Failed to remove tools from project");
