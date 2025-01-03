@@ -43,6 +43,8 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
   const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
   const [annotationData, setAnnotationData] = useState<Annotation | null>(null);
   const [annotationImage, setAnnotationImage] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => {
     checkForAnnotations();
@@ -50,6 +52,7 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
 
   const checkForAnnotations = async () => {
     try {
+      console.log('Fetching annotations for tool:', tool.id);
       const { data, error } = await supabase
         .from('tool_annotations')
         .select(`
@@ -68,9 +71,11 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
       }
 
       if (data && data.photo) {
+        console.log('Found annotation:', data);
         setHasAnnotation(true);
         setAnnotationData(data as Annotation);
       } else {
+        console.log('No annotation found');
         setHasAnnotation(false);
         setAnnotationData(null);
       }
@@ -80,15 +85,30 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
   };
 
   const handleAnnotationClick = async () => {
-    if (!annotationData?.photo?.file_path) return;
+    if (!annotationData?.photo?.file_path) {
+      console.log('No photo file path available');
+      return;
+    }
 
-    const { data } = supabase.storage
-      .from('location-photos')
-      .getPublicUrl(annotationData.photo.file_path);
+    setIsImageLoading(true);
+    setImageError(null);
 
-    if (data.publicUrl) {
-      setAnnotationImage(data.publicUrl);
-      setIsAnnotationDialogOpen(true);
+    try {
+      console.log('Getting public URL for:', annotationData.photo.file_path);
+      const { data } = supabase.storage
+        .from('location-photos')
+        .getPublicUrl(annotationData.photo.file_path);
+
+      if (data.publicUrl) {
+        console.log('Public URL obtained:', data.publicUrl);
+        setAnnotationImage(data.publicUrl);
+        setIsAnnotationDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error getting image URL:', error);
+      setImageError('Failed to load image');
+    } finally {
+      setIsImageLoading(false);
     }
   };
 
@@ -166,9 +186,15 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
       <Dialog open={isAnnotationDialogOpen} onOpenChange={setIsAnnotationDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogTitle>Tool Location</DialogTitle>
-          {annotationImage && annotationData && (
+          {isImageLoading && (
+            <div className="text-center py-4">Loading image...</div>
+          )}
+          {imageError && (
+            <div className="text-center text-red-500 py-4">{imageError}</div>
+          )}
+          {annotationImage && annotationData && !isImageLoading && (
             <div 
-              className="relative overflow-hidden"
+              className="relative overflow-hidden border border-gray-200 rounded-lg"
               style={{
                 width: `${annotationData.coordinates.width}px`,
                 height: `${annotationData.coordinates.height}px`,
@@ -177,10 +203,14 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
               <img 
                 src={annotationImage} 
                 alt="Tool annotation"
-                className="absolute"
+                className="absolute max-w-none"
                 style={{
                   left: `-${annotationData.coordinates.x}px`,
                   top: `-${annotationData.coordinates.y}px`,
+                }}
+                onError={(e) => {
+                  console.error('Image failed to load:', e);
+                  setImageError('Failed to load image');
                 }}
               />
             </div>
