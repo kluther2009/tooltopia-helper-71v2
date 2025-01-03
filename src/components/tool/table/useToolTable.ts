@@ -70,13 +70,18 @@ export function useToolTable() {
   });
 
   const openFile = async (filePath: string) => {
-    const { data } = supabase.storage
-      .from('warranty-files')
-      .getPublicUrl(filePath);
-    
-    if (data.publicUrl) {
-      setSelectedFile(data.publicUrl);
-      setIsFileDialogOpen(true);
+    try {
+      const { data } = await supabase.storage
+        .from('warranty-files')
+        .getPublicUrl(filePath);
+      
+      if (data.publicUrl) {
+        console.log('Opening file:', data.publicUrl);
+        setSelectedFile(data.publicUrl);
+        setIsFileDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error getting file URL:', error);
     }
   };
 

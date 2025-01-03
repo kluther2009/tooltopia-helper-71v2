@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface FilePreviewDialogProps {
   isOpen: boolean;
@@ -7,16 +7,32 @@ interface FilePreviewDialogProps {
 }
 
 export function FilePreviewDialog({ isOpen, onOpenChange, filePath }: FilePreviewDialogProps) {
+  if (!filePath) return null;
+
+  const fileExtension = filePath.split('.').pop()?.toLowerCase();
+  const isPDF = fileExtension === 'pdf';
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl bg-card">
-        {filePath && (
-          <img 
-            src={filePath} 
-            alt="Document Preview" 
-            className="w-full h-auto"
-          />
-        )}
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Document Preview</DialogTitle>
+        </DialogHeader>
+        <div className="w-full max-h-[80vh] overflow-auto">
+          {isPDF ? (
+            <iframe
+              src={filePath}
+              className="w-full h-[80vh]"
+              title="Document Preview"
+            />
+          ) : (
+            <img 
+              src={filePath} 
+              alt="Document Preview" 
+              className="w-full h-auto"
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
