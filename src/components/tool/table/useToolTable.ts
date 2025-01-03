@@ -69,9 +69,17 @@ export function useToolTable() {
 
   const openFile = async (filePath: string) => {
     try {
-      const { data } = await supabase.storage
+      // Remove any leading slashes from the file path
+      const cleanFilePath = filePath.replace(/^\/+/, '');
+      
+      const { data, error } = supabase.storage
         .from('warranty-files')
-        .getPublicUrl(filePath);
+        .getPublicUrl(cleanFilePath);
+      
+      if (error) {
+        console.error('Error getting file URL:', error);
+        return;
+      }
       
       if (data.publicUrl) {
         console.log('Opening file:', data.publicUrl);
