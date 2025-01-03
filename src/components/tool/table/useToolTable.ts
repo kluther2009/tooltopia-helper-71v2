@@ -22,8 +22,6 @@ interface SortConfig {
 export function useToolTable() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'asc' });
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchTools();
@@ -77,8 +75,7 @@ export function useToolTable() {
       
       if (data.publicUrl) {
         console.log('Opening file:', data.publicUrl);
-        setSelectedFile(data.publicUrl);
-        setIsFileDialogOpen(true);
+        window.open(data.publicUrl, '_blank');
       }
     } catch (error) {
       console.error('Error getting file URL:', error);
@@ -88,9 +85,6 @@ export function useToolTable() {
   return {
     tools: sortedTools,
     sortConfig,
-    selectedFile,
-    isFileDialogOpen,
-    setIsFileDialogOpen,
     handleSort,
     openFile
   };

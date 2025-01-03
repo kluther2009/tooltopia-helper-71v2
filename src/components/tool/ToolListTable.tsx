@@ -1,16 +1,12 @@
 import { Table, TableBody } from "@/components/ui/table";
 import { ToolTableHeader } from "./table/TableHeader";
 import { ToolTableRow } from "./table/ToolTableRow";
-import { FilePreviewDialog } from "./table/FilePreviewDialog";
 import { useToolTable } from "./table/useToolTable";
 
 export function ToolListTable() {
   const {
     tools,
     sortConfig,
-    selectedFile,
-    isFileDialogOpen,
-    setIsFileDialogOpen,
     handleSort,
     openFile
   } = useToolTable();
@@ -34,12 +30,6 @@ export function ToolListTable() {
           </TableBody>
         </Table>
       </div>
-
-      <FilePreviewDialog
-        isOpen={isFileDialogOpen}
-        onOpenChange={setIsFileDialogOpen}
-        filePath={selectedFile}
-      />
     </div>
   );
 }
