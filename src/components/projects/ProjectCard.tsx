@@ -5,18 +5,21 @@ import { DeleteProjectDialog } from "./DeleteProjectDialog";
 import { EditProjectDialog } from "./EditProjectDialog";
 import { ProjectToolsDialog } from "./ProjectToolsDialog";
 import { ProjectMaterialsDialog } from "./ProjectMaterialsDialog";
+import { ProjectTaskDialog } from "./tasks/ProjectTaskDialog";
 import { ProjectHeader } from "./project-card/ProjectHeader";
 import { ProjectTools } from "./project-card/ProjectTools";
 import { ProjectMaterials } from "./project-card/ProjectMaterials";
+import { ProjectTasksList } from "./tasks/ProjectTasksList";
 import { ProjectHelper } from "./ProjectHelper";
 import { Button } from "../ui/button";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, ListPlus } from "lucide-react";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isToolsDialogOpen, setIsToolsDialogOpen] = useState(false);
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [showProjectHelper, setShowProjectHelper] = useState(false);
 
   return (
@@ -33,6 +36,22 @@ export function ProjectCard({ project }: { project: Project }) {
         <div className="grid grid-cols-2 gap-4 pt-2">
           <ProjectMaterials projectId={project.id} />
           <ProjectTools projectId={project.id} />
+        </div>
+
+        <div className="border-t border-slate-700 pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-slate-300">Tasks</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsTaskDialogOpen(true)}
+              className="text-slate-300 hover:text-white hover:bg-slate-700"
+            >
+              <ListPlus className="h-4 w-4 mr-2" />
+              Add Task
+            </Button>
+          </div>
+          <ProjectTasksList projectId={project.id} />
         </div>
 
         {project.notes && (
@@ -79,6 +98,11 @@ export function ProjectCard({ project }: { project: Project }) {
         project={project}
         open={isMaterialsDialogOpen}
         onOpenChange={setIsMaterialsDialogOpen}
+      />
+      <ProjectTaskDialog
+        project={project}
+        open={isTaskDialogOpen}
+        onOpenChange={setIsTaskDialogOpen}
       />
     </Card>
   );
