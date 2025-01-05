@@ -22,42 +22,15 @@ serve(async (req) => {
 
   try {
     console.log('Parsing request body...')
-    const { message, userId, projectId } = await req.json()
-    console.log('Received request:', { message, userId, projectId })
-
-    if (!message || !userId || !projectId) {
-      console.error('Missing required parameters:', { message, userId, projectId })
-      throw new Error('Missing required parameters')
-    }
+    const { message } = await req.json()
+    console.log('Received message:', message)
 
     if (!ANTHROPIC_API_KEY) {
       console.error('Missing ANTHROPIC_API_KEY environment variable')
       throw new Error('Missing ANTHROPIC_API_KEY environment variable')
     }
 
-    // Fetch only project name and notes
-    const { data: project, error: projectError } = await supabase
-      .from('projects')
-      .select('name, notes')
-      .eq('id', projectId)
-      .single()
-
-    if (projectError) {
-      console.error('Error fetching project:', projectError)
-      throw projectError
-    }
-
-    const systemPrompt = `You are ProjectHelper, an AI specialized in helping users manage their DIY projects. You have access to:
-
-Project Details:
-- Name: ${project.name}
-- Notes: ${project.notes || 'No notes'}
-
-Focus on:
-1. Project status and next steps
-2. Best practices for the specific project type
-3. Safety guidelines and tips
-4. General project management advice`
+    const systemPrompt = `You are ProjectHelper, an AI specialized in helping users manage their DIY projects.`
 
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -72,7 +45,7 @@ Focus on:
         max_tokens: 1024,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
+          { role: 'user', content: "hello" }
         ],
       }),
     })
