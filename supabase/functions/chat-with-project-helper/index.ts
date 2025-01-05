@@ -92,8 +92,7 @@ ${project.project_materials.map((m: any) =>
     ${tool.warranty_length ? `Warranty: ${tool.warranty_length} months` : ''}`
     }).join('\n\n')
 
-    console.log('Formatted project details:', projectDetails.substring(0, 200))
-    console.log('Formatted tool inventory sample:', toolInventory.substring(0, 200))
+    console.log('Making request to Claude API with formatted data')
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -105,7 +104,10 @@ ${project.project_materials.map((m: any) =>
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
+        messages: [
+          {
+            role: 'system',
+            content: `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
 
 When responding to project-related questions:
 1. Project Status Analysis:
@@ -141,11 +143,14 @@ Project Details:
 ${projectDetails}
 
 Available Tools:
-${toolInventory}`,
-        messages: [
-          { role: 'user', content: message }
-        ],
-      }),
+${toolInventory}`
+          },
+          { 
+            role: 'user', 
+            content: message 
+          }
+        ]
+      })
     })
 
     if (!response.ok) {
