@@ -13,48 +13,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const systemPrompt = `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
-
-When responding to project-related questions:
-1. Project Status Analysis:
-- Review current project status and timeline
-- Suggest next steps based on project phase
-- Highlight any potential delays or issues
-
-2. Resource Management:
-- Check if required tools are available
-- Suggest tool alternatives if needed
-- Track material usage and costs
-- Provide cost optimization suggestions
-
-3. Timeline Management:
-- Compare current progress with target date
-- Suggest timeline adjustments if needed
-- Highlight critical path activities
-
-4. Safety and Best Practices:
-- Provide relevant safety guidelines
-- Suggest proper tool usage techniques
-- Recommend protective equipment
-
-Always:
-- Be specific about tool and material recommendations
-- Include safety considerations
-- Consider project timeline and budget
-- Reference specific project details
-- Provide actionable advice
-
-Here is the current project and tool information:
-Project Details:
-{projectDetails}
-
-Available Tools:
-{toolInventory}
-
-Materials List:
-{materialsList}
-`
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -63,6 +21,10 @@ serve(async (req) => {
   try {
     const { message, userId, projectId } = await req.json()
     console.log('Received request:', { message, userId, projectId })
+
+    if (!message || !userId || !projectId) {
+      throw new Error('Missing required parameters')
+    }
 
     // Fetch project details
     const { data: project, error: projectError } = await supabase
@@ -128,45 +90,93 @@ ${project.project_materials.map((m: any) =>
     console.log('Formatted project details:', projectDetails.substring(0, 200))
     console.log('Formatted tool inventory sample:', toolInventory.substring(0, 200))
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1024,
-        system: systemPrompt
-          .replace('{projectDetails}', projectDetails)
-          .replace('{toolInventory}', toolInventory)
-          .replace('{materialsList}', project.project_materials.map((m: any) => 
-            `${m.name}: ${m.quantity} units at $${m.cost} each`
-          ).join('\n')),
-        messages: [
-          { role: 'user', content: message }
-        ],
-      }),
-    })
+    const systemPrompt = `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Claude API error:', response.status, errorText)
-      throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
+When responding to project-related questions:
+1. Project Status Analysis:
+- Review current project status and timeline
+- Suggest next steps based on project phase
+- Highlight any potential delays or issues
+
+2. Resource Management:
+- Check if required tools are available
+- Suggest tool alternatives if needed
+- Track material usage and costs
+- Provide cost optimization suggestions
+
+3. Timeline Management:
+- Compare current progress with target date
+- Suggest timeline adjustments if needed
+- Highlight critical path activities
+
+4. Safety and Best Practices:
+- Provide relevant safety guidelines
+- Suggest proper tool usage techniques
+- Recommend protective equipment
+
+Always:
+- Be specific about tool and material recommendations
+- Include safety considerations
+- Consider project timeline and budget
+- Reference specific project details
+- Provide actionable advice
+
+Here is the current project and tool information:
+Project Details:
+${projectDetails}
+
+Available Tools:
+${toolInventory}
+
+Materials List:
+${project.project_materials.map((m: any) => 
+  `${m.name}: ${m.quantity} units at $${m.cost} each`
+).join('\n')}`
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY!,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [
+            { role: 'user', content: message }
+          ],
+        }),
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Claude API error:', response.status, errorText)
+        throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    } catch (error) {
+      console.error('Error calling Claude API:', error)
+      throw error
     }
-
-    const data = await response.json()
-    console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
   } catch (error) {
     console.error('Error in project-helper function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'An unknown error occurred',
+        details: error
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
 })
