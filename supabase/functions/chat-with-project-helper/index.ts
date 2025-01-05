@@ -35,23 +35,10 @@ serve(async (req) => {
       throw new Error('Missing ANTHROPIC_API_KEY environment variable')
     }
 
-    // Fetch project data
+    // Fetch only project name and notes
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select(`
-        name,
-        status,
-        notes,
-        project_tools (
-          tool:tools (
-            name,
-            status
-          )
-        ),
-        project_materials (
-          name
-        )
-      `)
+      .select('name, notes')
       .eq('id', projectId)
       .single()
 
@@ -60,39 +47,17 @@ serve(async (req) => {
       throw projectError
     }
 
-    // Fetch user's tools - only names and status
-    const { data: tools, error: toolsError } = await supabase
-      .from('tools')
-      .select('name, status')
-      .eq('user_id', userId)
-
-    if (toolsError) {
-      console.error('Error fetching tools:', toolsError)
-      throw toolsError
-    }
-
     const systemPrompt = `You are ProjectHelper, an AI specialized in helping users manage their DIY projects. You have access to:
 
 Project Details:
 - Name: ${project.name}
-- Status: ${project.status}
 - Notes: ${project.notes || 'No notes'}
-
-Assigned Tools:
-${project.project_tools.map((pt: any) => `- ${pt.tool.name} (${pt.tool.status})`).join('\n')}
-
-Materials:
-${project.project_materials.map((m: any) => `- ${m.name}`).join('\n')}
-
-Available Tools:
-${tools.map((tool: any) => `- ${tool.name} (${tool.status})`).join('\n')}
 
 Focus on:
 1. Project status and next steps
-2. Tool and material recommendations
-3. Best practices for the specific project type
-4. Safety guidelines and tips
-5. General project management advice`
+2. Best practices for the specific project type
+3. Safety guidelines and tips
+4. General project management advice`
 
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
