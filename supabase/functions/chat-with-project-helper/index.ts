@@ -40,6 +40,11 @@ serve(async (req) => {
       throw new Error('Missing required parameters')
     }
 
+    if (!ANTHROPIC_API_KEY) {
+      console.error('Missing ANTHROPIC_API_KEY environment variable')
+      throw new Error('Missing ANTHROPIC_API_KEY environment variable')
+    }
+
     console.log('Fetching project and tools data...')
     const [project, tools] = await Promise.all([
       fetchProjectData(supabase, projectId),
@@ -98,10 +103,22 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Error in project-helper function:', error)
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause
+    })
+    
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
-        details: error
+        details: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          cause: error.cause
+        }
       }),
       {
         status: 500,
