@@ -60,11 +60,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
+        system: systemPrompt, // Changed: Now using top-level system parameter
         messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
           {
             role: 'user',
             content: message
