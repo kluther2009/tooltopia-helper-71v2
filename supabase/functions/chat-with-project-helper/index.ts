@@ -21,17 +21,14 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Parsing request body...')
-    const requestBody = await req.text()
-    console.log('Raw request body:', requestBody)
+    console.log('Request method:', req.method)
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()))
     
-    if (!requestBody) {
-      throw new Error('Empty request body')
-    }
+    const requestBody = await req.json()
+    console.log('Parsed request body:', requestBody)
 
-    const { message, userId, projectId } = JSON.parse(requestBody)
-    console.log('Parsed request:', { message, userId, projectId })
-
+    const { message, userId, projectId } = requestBody
+    
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
       throw new Error('Missing required parameters')
