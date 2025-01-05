@@ -13,49 +13,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const systemPrompt = `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
-
-When responding to project-related questions:
-1. Project Status Analysis:
-- Review current project status and timeline
-- Suggest next steps based on project phase
-- Highlight any potential delays or issues
-
-2. Resource Management:
-- Check if required tools are available
-- Suggest tool alternatives if needed
-- Track material usage and costs
-- Provide cost optimization suggestions
-
-3. Timeline Management:
-- Compare current progress with target date
-- Suggest timeline adjustments if needed
-- Highlight critical path activities
-
-4. Safety and Best Practices:
-- Provide relevant safety guidelines
-- Suggest proper tool usage techniques
-- Recommend protective equipment
-
-Always:
-- Be specific about tool and material recommendations
-- Include safety considerations
-- Consider project timeline and budget
-- Reference specific project details
-- Provide actionable advice
-
-Here is the current project and tool information:
-Project Details:
-{projectDetails}
-
-Available Tools:
-{toolInventory}
-
-Materials List:
-{materialsList}
-`
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -63,6 +22,10 @@ serve(async (req) => {
   try {
     const { message, userId, projectId } = await req.json()
     console.log('Received request:', { message, userId, projectId })
+
+    if (!message || !userId || !projectId) {
+      throw new Error('Missing required parameters')
+    }
 
     // Fetch project details
     const { data: project, error: projectError } = await supabase
@@ -75,11 +38,15 @@ serve(async (req) => {
         project_materials (*)
       `)
       .eq('id', projectId)
-      .single()
+      .maybeSingle()
 
     if (projectError) {
       console.error('Error fetching project:', projectError)
       throw projectError
+    }
+
+    if (!project) {
+      throw new Error('Project not found')
     }
 
     // Fetch all user's tools
@@ -138,12 +105,43 @@ ${project.project_materials.map((m: any) =>
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: systemPrompt
-          .replace('{projectDetails}', projectDetails)
-          .replace('{toolInventory}', toolInventory)
-          .replace('{materialsList}', project.project_materials.map((m: any) => 
-            `${m.name}: ${m.quantity} units at $${m.cost} each`
-          ).join('\n')),
+        system: `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
+
+When responding to project-related questions:
+1. Project Status Analysis:
+- Review current project status and timeline
+- Suggest next steps based on project phase
+- Highlight any potential delays or issues
+
+2. Resource Management:
+- Check if required tools are available
+- Suggest tool alternatives if needed
+- Track material usage and costs
+- Provide cost optimization suggestions
+
+3. Timeline Management:
+- Compare current progress with target date
+- Suggest timeline adjustments if needed
+- Highlight critical path activities
+
+4. Safety and Best Practices:
+- Provide relevant safety guidelines
+- Suggest proper tool usage techniques
+- Recommend protective equipment
+
+Always:
+- Be specific about tool and material recommendations
+- Include safety considerations
+- Consider project timeline and budget
+- Reference specific project details
+- Provide actionable advice
+
+Here is the current project and tool information:
+Project Details:
+${projectDetails}
+
+Available Tools:
+${toolInventory}`,
         messages: [
           { role: 'user', content: message }
         ],
@@ -164,7 +162,11 @@ ${project.project_materials.map((m: any) =>
     })
   } catch (error) {
     console.error('Error in project-helper function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(
+      JSON.stringify({ 
+        error: error.message,
+        details: error
+      }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
