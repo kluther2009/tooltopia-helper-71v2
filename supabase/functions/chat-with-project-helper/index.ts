@@ -31,16 +31,33 @@ serve(async (req) => {
       throw new Error('Missing required parameters')
     }
 
+    console.log('Fetching project and tools data...')
     const [project, tools] = await Promise.all([
       fetchProjectData(supabase, projectId),
       fetchUserTools(supabase, userId)
     ])
+    
+    console.log('Raw project data:', JSON.stringify(project, null, 2))
+    console.log('Raw tools data:', JSON.stringify(tools, null, 2))
 
     const projectDetails = formatProjectDetails(project)
     const toolInventory = formatToolInventory(tools)
     const systemPrompt = getSystemPrompt(projectDetails, toolInventory)
 
-    console.log('Making request to Claude API with system prompt:', systemPrompt.substring(0, 100) + '...')
+    console.log('Formatted project details:', projectDetails)
+    console.log('Formatted tool inventory:', toolInventory)
+    console.log('System prompt:', systemPrompt)
+
+    const requestBody = {
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 1024,
+      messages: [
+        { role: 'assistant', content: systemPrompt },
+        { role: 'user', content: message }
+      ],
+    }
+    
+    console.log('Claude API request body:', JSON.stringify(requestBody, null, 2))
     
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -49,14 +66,7 @@ serve(async (req) => {
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1024,
-        messages: [
-          { role: 'assistant', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {
