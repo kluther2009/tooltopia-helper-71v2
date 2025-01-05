@@ -62,17 +62,7 @@ serve(async (req) => {
     console.log('Formatted tool inventory:', toolInventory)
     console.log('System prompt:', systemPrompt)
 
-    const requestBody = {
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 1024,
-      messages: [
-        { role: 'assistant', content: systemPrompt },
-        { role: 'user', content: message }
-      ],
-    }
-    
-    console.log('Claude API request body:', JSON.stringify(requestBody, null, 2))
-    
+    console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -80,21 +70,30 @@ serve(async (req) => {
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1024,
+        messages: [
+          { role: 'assistant', content: systemPrompt },
+          { role: 'user', content: message }
+        ],
+      }),
     })
 
+    console.log('Anthropic API response status:', response.status)
+    
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Claude API error:', response.status, errorText)
-      throw new Error(`Claude API error: ${response.status} ${errorText}`)
+      console.error('Anthropic API error:', response.status, errorText)
+      throw new Error(`Anthropic API error: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
-    console.log('Claude API response:', JSON.stringify(data).substring(0, 200) + '...')
+    console.log('Anthropic API response:', JSON.stringify(data).substring(0, 200) + '...')
 
     if (!data?.content?.[0]?.text) {
-      console.error('Invalid Claude response format:', data)
-      throw new Error('Invalid response format from Claude API')
+      console.error('Invalid Anthropic response format:', data)
+      throw new Error('Invalid response format from Anthropic API')
     }
 
     return new Response(
