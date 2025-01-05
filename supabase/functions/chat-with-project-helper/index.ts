@@ -40,12 +40,13 @@ serve(async (req) => {
     const toolInventory = formatToolInventory(tools)
     const systemPrompt = getSystemPrompt(projectDetails, toolInventory)
 
-    console.log('Making request to Claude API')
+    console.log('Making request to Claude API with system prompt:', systemPrompt.substring(0, 100) + '...')
+    
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY!,
+        'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -65,7 +66,7 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-    console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
+    console.log('Claude API response:', JSON.stringify(data).substring(0, 200) + '...')
 
     if (!data?.content?.[0]?.text) {
       console.error('Invalid Claude response format:', data)
