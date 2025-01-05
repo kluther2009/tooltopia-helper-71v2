@@ -39,11 +39,18 @@ serve(async (req) => {
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .select(`
-        *,
+        name,
+        status,
+        notes,
         project_tools (
-          tool:tools (*)
+          tool:tools (
+            name,
+            status
+          )
         ),
-        project_materials (*)
+        project_materials (
+          name
+        )
       `)
       .eq('id', projectId)
       .single()
@@ -53,10 +60,10 @@ serve(async (req) => {
       throw projectError
     }
 
-    // Fetch user's tools
+    // Fetch user's tools - only names and status
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
-      .select('*')
+      .select('name, status')
       .eq('user_id', userId)
 
     if (toolsError) {
@@ -69,27 +76,23 @@ serve(async (req) => {
 Project Details:
 - Name: ${project.name}
 - Status: ${project.status}
-- Target Date: ${project.target_date || 'Not set'}
 - Notes: ${project.notes || 'No notes'}
-- Total Cost: $${project.total_cost || '0.00'}
 
 Assigned Tools:
 ${project.project_tools.map((pt: any) => `- ${pt.tool.name} (${pt.tool.status})`).join('\n')}
 
 Materials:
-${project.project_materials
-  .map((m: any) => `- ${m.name}: ${m.quantity} units at $${m.cost} each`)
-  .join('\n')}
+${project.project_materials.map((m: any) => `- ${m.name}`).join('\n')}
 
 Available Tools:
 ${tools.map((tool: any) => `- ${tool.name} (${tool.status})`).join('\n')}
 
 Focus on:
-1. Project timeline and status updates
+1. Project status and next steps
 2. Tool and material recommendations
-3. Cost optimization
-4. Safety guidelines
-5. Best practices for the specific project type`
+3. Best practices for the specific project type
+4. Safety guidelines and tips
+5. General project management advice`
 
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
