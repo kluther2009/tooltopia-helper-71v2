@@ -35,12 +35,12 @@ export function useProjectHelper(projectId: string) {
 
       console.log('Received response from Project Helper:', data)
 
-      if (!data?.content?.[0]?.text) {
+      if (!data?.content) {
         console.error('Invalid response format:', data)
         throw new Error('Invalid response format from AI')
       }
 
-      return data.content[0].text
+      return data.content
     } catch (error) {
       console.error('Error calling Project Helper:', error)
       toast.error("Failed to get AI response, please try again")

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useProjectAssistant } from "@/hooks/useProjectAssistant"
+import { useProjectHelper } from "@/hooks/useProjectHelper"
 import { Loader2, Mic, MicOff } from "lucide-react"
 import { toast } from "sonner"
 
@@ -13,7 +13,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
   const [message, setMessage] = useState("")
   const [response, setResponse] = useState("")
   const [isListening, setIsListening] = useState(false)
-  const { sendMessage, isLoading } = useProjectAssistant(projectId)
+  const { sendMessage, isLoading } = useProjectHelper(projectId)
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

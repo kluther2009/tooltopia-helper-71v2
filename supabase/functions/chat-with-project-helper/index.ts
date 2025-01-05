@@ -1,19 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { ProjectHelperRequest } from './types.ts'
-import { 
-  corsHeaders, 
-  fetchProjectData, 
-  fetchUserTools, 
-  formatProjectDetails,
-  formatToolInventory,
-  getSystemPrompt
-} from './utils.ts'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -26,13 +22,7 @@ serve(async (req) => {
 
   try {
     console.log('Parsing request body...')
-    const rawBody = await req.text()
-    console.log('Raw request body:', rawBody)
-    
-    const parsedBody = JSON.parse(rawBody)
-    console.log('Parsed body:', parsedBody)
-    
-    const { message, userId, projectId } = parsedBody as ProjectHelperRequest
+    const { message, userId, projectId } = await req.json()
     console.log('Received request:', { message, userId, projectId })
 
     if (!message || !userId || !projectId) {
@@ -45,22 +35,61 @@ serve(async (req) => {
       throw new Error('Missing ANTHROPIC_API_KEY environment variable')
     }
 
-    console.log('Fetching project and tools data...')
-    const [project, tools] = await Promise.all([
-      fetchProjectData(supabase, projectId),
-      fetchUserTools(supabase, userId)
-    ])
-    
-    console.log('Raw project data:', JSON.stringify(project, null, 2))
-    console.log('Raw tools data:', JSON.stringify(tools, null, 2))
+    // Fetch project data
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        project_tools (
+          tool:tools (*)
+        ),
+        project_materials (*)
+      `)
+      .eq('id', projectId)
+      .single()
 
-    const projectDetails = formatProjectDetails(project)
-    const toolInventory = formatToolInventory(tools)
-    const systemPrompt = getSystemPrompt(projectDetails, toolInventory)
+    if (projectError) {
+      console.error('Error fetching project:', projectError)
+      throw projectError
+    }
 
-    console.log('Formatted project details:', projectDetails)
-    console.log('Formatted tool inventory:', toolInventory)
-    console.log('System prompt:', systemPrompt)
+    // Fetch user's tools
+    const { data: tools, error: toolsError } = await supabase
+      .from('tools')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (toolsError) {
+      console.error('Error fetching tools:', toolsError)
+      throw toolsError
+    }
+
+    const systemPrompt = `You are ProjectHelper, an AI specialized in helping users manage their DIY projects. You have access to:
+
+Project Details:
+- Name: ${project.name}
+- Status: ${project.status}
+- Target Date: ${project.target_date || 'Not set'}
+- Notes: ${project.notes || 'No notes'}
+- Total Cost: $${project.total_cost || '0.00'}
+
+Assigned Tools:
+${project.project_tools.map((pt: any) => `- ${pt.tool.name} (${pt.tool.status})`).join('\n')}
+
+Materials:
+${project.project_materials
+  .map((m: any) => `- ${m.name}: ${m.quantity} units at $${m.cost} each`)
+  .join('\n')}
+
+Available Tools:
+${tools.map((tool: any) => `- ${tool.name} (${tool.status})`).join('\n')}
+
+Focus on:
+1. Project timeline and status updates
+2. Tool and material recommendations
+3. Cost optimization
+4. Safety guidelines
+5. Best practices for the specific project type`
 
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -74,7 +103,7 @@ serve(async (req) => {
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         messages: [
-          { role: 'assistant', content: systemPrompt },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
       }),
@@ -89,35 +118,18 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-    console.log('Anthropic API response:', JSON.stringify(data).substring(0, 200) + '...')
-
-    if (!data?.content?.[0]?.text) {
-      console.error('Invalid Anthropic response format:', data)
-      throw new Error('Invalid response format from Anthropic API')
-    }
+    console.log('Anthropic API response:', data)
 
     return new Response(
-      JSON.stringify({ content: [{ text: data.content[0].text }] }),
+      JSON.stringify({ content: data.content[0].text }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Error in project-helper function:', error)
-    console.error('Error details:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-      cause: error.cause
-    })
-    
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Internal server error',
-        details: {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-          cause: error.cause
-        }
+        details: error
       }),
       {
         status: 500,
