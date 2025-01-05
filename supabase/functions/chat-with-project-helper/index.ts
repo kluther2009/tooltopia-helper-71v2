@@ -18,11 +18,14 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
 serve(async (req) => {
+  console.log('Starting Project Helper function...')
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    console.log('Parsing request body...')
     const { message, userId, projectId } = await req.json() as ProjectHelperRequest
     console.log('Received request:', { message, userId, projectId })
 
