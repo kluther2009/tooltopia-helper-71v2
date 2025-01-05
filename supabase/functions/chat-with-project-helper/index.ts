@@ -14,15 +14,27 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { message, userId, projectId } = await req.json()
-    console.log('Received request:', { message, userId, projectId })
+    // Parse request body
+    let body
+    try {
+      body = await req.json()
+      console.log('Received request body:', body)
+    } catch (error) {
+      console.error('Error parsing request body:', error)
+      throw new Error('Invalid request body')
+    }
 
+    const { message, userId, projectId } = body
+
+    // Validate required parameters
     if (!message || !userId || !projectId) {
+      console.error('Missing required parameters:', { message, userId, projectId })
       throw new Error('Missing required parameters')
     }
 
@@ -44,7 +56,7 @@ serve(async (req) => {
       throw projectError
     }
 
-    // Fetch all user's tools
+    // Fetch user's tools
     const { data: tools, error: toolsError } = await supabase
       .from('tools')
       .select('*')
@@ -86,9 +98,6 @@ ${project.project_materials.map((m: any) =>
     ${tool.purchase_date ? `Purchase Date: ${tool.purchase_date}` : ''}
     ${tool.warranty_length ? `Warranty: ${tool.warranty_length} months` : ''}`
     }).join('\n\n')
-
-    console.log('Formatted project details:', projectDetails.substring(0, 200))
-    console.log('Formatted tool inventory sample:', toolInventory.substring(0, 200))
 
     const systemPrompt = `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
 
@@ -133,6 +142,8 @@ ${project.project_materials.map((m: any) =>
   `${m.name}: ${m.quantity} units at $${m.cost} each`
 ).join('\n')}`
 
+    console.log('Making request to Anthropic API')
+    
     try {
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -153,18 +164,18 @@ ${project.project_materials.map((m: any) =>
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('Claude API error:', response.status, errorText)
-        throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
+        console.error('Anthropic API error:', response.status, errorText)
+        throw new Error(`Anthropic API request failed: ${response.status}\nResponse: ${errorText}`)
       }
 
       const data = await response.json()
-      console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
+      console.log('Anthropic API response:', data)
 
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     } catch (error) {
-      console.error('Error calling Claude API:', error)
+      console.error('Error calling Anthropic API:', error)
       throw error
     }
   } catch (error) {
