@@ -22,8 +22,13 @@ serve(async (req) => {
 
   try {
     console.log('Parsing request body...')
-    const { message } = await req.json()
-    console.log('Received message:', message)
+    const { message, userId, projectId } = await req.json()
+    console.log('Received request:', { message, userId, projectId })
+
+    if (!message || !userId || !projectId) {
+      console.error('Missing required parameters:', { message, userId, projectId })
+      throw new Error('Missing required parameters')
+    }
 
     if (!ANTHROPIC_API_KEY) {
       console.error('Missing ANTHROPIC_API_KEY environment variable')
