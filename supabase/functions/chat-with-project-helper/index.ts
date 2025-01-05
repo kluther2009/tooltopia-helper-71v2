@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { fetchProjectData, fetchUserTools, formatProjectDetails, formatToolInventory, getSystemPrompt } from './utils.ts'
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
@@ -39,6 +40,15 @@ serve(async (req) => {
       throw new Error('Missing ANTHROPIC_API_KEY environment variable')
     }
 
+    // Fetch project and tool data
+    const projectData = await fetchProjectData(supabase, projectId)
+    const userTools = await fetchUserTools(supabase, userId)
+
+    // Format the data for the system prompt
+    const projectDetails = formatProjectDetails(projectData)
+    const toolInventory = formatToolInventory(userTools)
+    const systemPrompt = getSystemPrompt(projectDetails, toolInventory)
+
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -51,6 +61,10 @@ serve(async (req) => {
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
           {
             role: 'user',
             content: message
