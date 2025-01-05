@@ -22,8 +22,15 @@ serve(async (req) => {
 
   try {
     console.log('Parsing request body...')
-    const { message, userId, projectId } = await req.json()
-    console.log('Received request:', { message, userId, projectId })
+    const requestBody = await req.text()
+    console.log('Raw request body:', requestBody)
+    
+    if (!requestBody) {
+      throw new Error('Empty request body')
+    }
+
+    const { message, userId, projectId } = JSON.parse(requestBody)
+    console.log('Parsed request:', { message, userId, projectId })
 
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
@@ -34,8 +41,6 @@ serve(async (req) => {
       console.error('Missing ANTHROPIC_API_KEY environment variable')
       throw new Error('Missing ANTHROPIC_API_KEY environment variable')
     }
-
-    const systemPrompt = `You are ProjectHelper, an AI specialized in helping users manage their DIY projects.`
 
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -49,8 +54,10 @@ serve(async (req) => {
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: "hello" }
+          {
+            role: 'user',
+            content: message
+          }
         ],
       }),
     })
