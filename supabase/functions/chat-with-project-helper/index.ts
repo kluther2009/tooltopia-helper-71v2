@@ -26,7 +26,13 @@ serve(async (req) => {
 
   try {
     console.log('Parsing request body...')
-    const { message, userId, projectId } = await req.json() as ProjectHelperRequest
+    const rawBody = await req.text()
+    console.log('Raw request body:', rawBody)
+    
+    const parsedBody = JSON.parse(rawBody)
+    console.log('Parsed body:', parsedBody)
+    
+    const { message, userId, projectId } = parsedBody as ProjectHelperRequest
     console.log('Received request:', { message, userId, projectId })
 
     if (!message || !userId || !projectId) {
