@@ -14,17 +14,37 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { message, userId, projectId } = await req.json()
-    console.log('Received request:', { message, userId, projectId })
+    let body
+    try {
+      body = await req.json()
+      console.log('Received request body:', body)
+    } catch (error) {
+      console.error('Failed to parse request body:', error)
+      return new Response(
+        JSON.stringify({ error: 'Invalid request format' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const { message, userId, projectId } = body
 
     if (!message || !userId || !projectId) {
-      throw new Error('Missing required parameters')
+      console.error('Missing required parameters:', { message, userId, projectId })
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     // Fetch project details
@@ -92,8 +112,6 @@ ${project.project_materials.map((m: any) =>
     ${tool.warranty_length ? `Warranty: ${tool.warranty_length} months` : ''}`
     }).join('\n\n')
 
-    console.log('Making request to Claude API with formatted data')
-
     const systemPrompt = `You are ProjectHelper, an AI assistant specialized in helping users manage and optimize their DIY projects. You have access to their tools inventory and project details.
 
 When responding to project-related questions:
@@ -126,56 +144,66 @@ Always:
 - Provide actionable advice
 
 Here is the current project and tool information:
+
 Project Details:
 ${projectDetails}
 
 Available Tools:
 ${toolInventory}`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1024,
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          { 
-            role: 'user', 
-            content: message 
-          }
-        ]
+    console.log('Making request to Claude API')
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY!,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 1024,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ]
+        })
       })
-    })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Claude API error:', response.status, errorText)
-      throw new Error(`API request failed: ${response.status}\nResponse: ${errorText}`)
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Claude API error:', response.status, errorText)
+        throw new Error(`Claude API error: ${response.status} ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
+
+      if (!data?.content?.[0]?.text) {
+        console.error('Invalid Claude response format:', data)
+        throw new Error('Invalid response format from Claude API')
+      }
+
+      return new Response(
+        JSON.stringify({ content: [{ text: data.content[0].text }] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    } catch (error) {
+      console.error('Error calling Claude API:', error)
+      throw error
     }
-
-    const data = await response.json()
-    console.log('Claude API response:', JSON.stringify(data).substring(0, 200))
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
   } catch (error) {
     console.error('Error in project-helper function:', error)
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || 'Internal server error',
         details: error
-      }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
 })
