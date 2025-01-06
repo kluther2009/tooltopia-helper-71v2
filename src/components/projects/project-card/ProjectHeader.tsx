@@ -3,6 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Calendar, DollarSign, Pencil, Trash2, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { Project } from "@/types/projects";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProjectHeaderProps {
   project: Project;
@@ -51,38 +57,71 @@ export function ProjectHeader({
         </div>
       </div>
       <div className="flex gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-slate-300 hover:text-white hover:bg-slate-700"
-          onClick={onMaterialsClick}
-        >
-          <DollarSign className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-slate-300 hover:text-white hover:bg-slate-700"
-          onClick={onToolsClick}
-        >
-          <Wrench className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-slate-300 hover:text-white hover:bg-slate-700"
-          onClick={onEditClick}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-slate-300 hover:text-white hover:bg-slate-700"
-          onClick={onDeleteClick}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={onMaterialsClick}
+              >
+                <DollarSign className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Manage Materials</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={onToolsClick}
+              >
+                <Wrench className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Manage Tools</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={onEditClick}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit Project</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={onDeleteClick}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete Project</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   );
