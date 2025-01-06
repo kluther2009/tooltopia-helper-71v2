@@ -1,8 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { CheckCircle2, Circle, Clock } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { UpdateTaskDialog } from "./UpdateTaskDialog";
 
 interface ProjectTask {
   id: string;
@@ -15,6 +19,9 @@ interface ProjectTask {
 }
 
 export function ProjectTasksList({ projectId }: { projectId: string }) {
+  const [taskToEdit, setTaskToEdit] = useState<ProjectTask | null>(null);
+  const queryClient = useQueryClient();
+
   const { data: tasks } = useQuery({
     queryKey: ["project-tasks", projectId],
     queryFn: async () => {
@@ -28,6 +35,21 @@ export function ProjectTasksList({ projectId }: { projectId: string }) {
       return data as ProjectTask[];
     },
   });
+
+  const handleDeleteTask = async (taskId: string) => {
+    const { error } = await supabase
+      .from("project_tasks")
+      .delete()
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Failed to delete task");
+      return;
+    }
+
+    toast.success("Task deleted successfully");
+    queryClient.invalidateQueries({ queryKey: ["project-tasks", projectId] });
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -49,51 +71,80 @@ export function ProjectTasksList({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="space-y-3">
-      {tasks.map((task) => (
-        <div
-          key={task.id}
-          className="bg-slate-700 p-3 rounded-lg space-y-2"
-        >
-          <div className="flex items-center gap-2">
-            {getStatusIcon(task.status)}
-            <span className="font-medium text-slate-200">{task.title}</span>
-          </div>
-          
-          {task.description && (
-            <p className="text-sm text-slate-300">{task.description}</p>
-          )}
-          
-          {task.due_date && (
-            <div className="text-sm text-slate-400">
-              Due: {format(new Date(task.due_date), "MMM d, yyyy")}
+    <>
+      <div className="space-y-3">
+        {tasks.map((task) => (
+          <div
+            key={task.id}
+            className="bg-slate-700 p-3 rounded-lg space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {getStatusIcon(task.status)}
+                <span className="font-medium text-slate-200">{task.title}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTaskToEdit(task)}
+                  className="h-8 w-8 text-slate-300 hover:text-white hover:bg-slate-600"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteTask(task.id)}
+                  className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-slate-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          )}
+            
+            {task.description && (
+              <p className="text-sm text-slate-300">{task.description}</p>
+            )}
+            
+            {task.due_date && (
+              <div className="text-sm text-slate-400">
+                Due: {format(new Date(task.due_date), "MMM d, yyyy")}
+              </div>
+            )}
 
-          {(task.materials_used?.length > 0 || task.tools_used?.length > 0) && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {task.materials_used?.map((material, index) => (
-                <Badge
-                  key={`${material}-${index}`}
-                  variant="secondary"
-                  className="bg-slate-600"
-                >
-                  {material}
-                </Badge>
-              ))}
-              {task.tools_used?.map((tool, index) => (
-                <Badge
-                  key={`${tool}-${index}`}
-                  variant="secondary"
-                  className="bg-slate-600"
-                >
-                  {tool}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
+            {(task.materials_used?.length > 0 || task.tools_used?.length > 0) && (
+              <div className="flex flex-wrap gap-2 pt-2">
+                {task.materials_used?.map((material, index) => (
+                  <Badge
+                    key={`${material}-${index}`}
+                    variant="secondary"
+                    className="bg-slate-600"
+                  >
+                    {material}
+                  </Badge>
+                ))}
+                {task.tools_used?.map((tool, index) => (
+                  <Badge
+                    key={`${tool}-${index}`}
+                    variant="secondary"
+                    className="bg-slate-600"
+                  >
+                    {tool}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <UpdateTaskDialog
+        task={taskToEdit}
+        open={!!taskToEdit}
+        onOpenChange={(open) => !open && setTaskToEdit(null)}
+        projectId={projectId}
+      />
+    </>
   );
 }
