@@ -25,7 +25,7 @@ serve(async (req) => {
     const requestBody = await req.json()
     console.log('Request body:', requestBody)
 
-    const { message, userId, projectId } = requestBody
+    const { message, userId, projectId, tasks } = requestBody
     
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
@@ -50,7 +50,8 @@ serve(async (req) => {
     // Format the data for the system prompt
     const projectDetails = formatProjectDetails(projectData)
     const toolInventory = formatToolInventory(userTools)
-    const systemPrompt = getSystemPrompt(projectDetails, toolInventory)
+    const taskDetails = tasks ? formatTaskDetails(tasks) : 'No tasks available'
+    const systemPrompt = getSystemPrompt(projectDetails, toolInventory, taskDetails)
 
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -107,3 +108,14 @@ serve(async (req) => {
     )
   }
 })
+
+function formatTaskDetails(tasks: any[]): string {
+  return `Project Tasks:
+${tasks.map(task => `
+- ${task.title} (${task.status})
+  Description: ${task.description || 'No description'}
+  Due Date: ${task.due_date || 'No due date'}
+  Materials Used: ${task.materials_used?.join(', ') || 'None'}
+  Tools Used: ${task.tools_used?.join(', ') || 'None'}
+`).join('\n')}`.trim()
+}

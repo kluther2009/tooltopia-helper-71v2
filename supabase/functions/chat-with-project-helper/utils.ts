@@ -73,16 +73,20 @@ export function formatToolInventory(tools: Tool[]): string {
     .join('\n\n')
 }
 
-export function getSystemPrompt(projectDetails: string, toolInventory: string): string {
+export function getSystemPrompt(projectDetails: string, toolInventory: string, taskDetails: string): string {
   return `You are a practical DIY project assistant. Focus on hands-on advice about:
 - Best tools and techniques for specific tasks
 - Safe and effective use of available materials
 - Cost-saving suggestions and material alternatives
 - Common mistakes to avoid
+- Task management and sequencing recommendations
 Avoid project management speak. Give direct, actionable advice.
 
 Project:
 ${projectDetails}
+
+Tasks:
+${taskDetails}
 
 Tools:
 ${toolInventory}`

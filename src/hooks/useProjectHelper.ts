@@ -15,13 +15,31 @@ export function useProjectHelper(projectId: string) {
         return null
       }
 
-      console.log('Sending message to Project Helper:', { message, userId: user.id, projectId })
+      // Fetch project tasks
+      const { data: tasks, error: tasksError } = await supabase
+        .from('project_tasks')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+
+      if (tasksError) {
+        console.error('Error fetching tasks:', tasksError)
+        throw tasksError
+      }
+
+      console.log('Sending message to Project Helper:', { 
+        message, 
+        userId: user.id, 
+        projectId,
+        tasks 
+      })
 
       const { data, error } = await supabase.functions.invoke('chat-with-project-helper', {
         body: { 
           message,
           userId: user.id,
-          projectId
+          projectId,
+          tasks
         }
       })
 
