@@ -3,15 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProjectCard } from "./ProjectCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Project } from "@/types/projects";
+import { ProjectFilter, ProjectSort } from "@/pages/Projects";
 
-export function ProjectsList() {
+interface ProjectsListProps {
+  statusFilter: ProjectFilter;
+  sortOrder: ProjectSort;
+}
+
+export function ProjectsList({ statusFilter, sortOrder }: ProjectsListProps) {
   const { data: projects, isLoading } = useQuery<Project[]>({
-    queryKey: ["projects"],
+    queryKey: ["projects", statusFilter, sortOrder],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*");
+
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      query = query.order("created_at", { 
+        ascending: sortOrder === "oldest" 
+      });
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
@@ -20,8 +35,6 @@ export function ProjectsList() {
         status: project.status as "planned" | "ongoing" | "completed"
       }));
     },
-    staleTime: 0, // This ensures the data is always refetched when the query is invalidated
-    refetchOnWindowFocus: true, // This ensures the data is refetched when the window regains focus
   });
 
   if (isLoading) {
@@ -35,9 +48,13 @@ export function ProjectsList() {
   }
 
   if (!projects?.length) {
+    const filterMessage = statusFilter !== "all" 
+      ? `No ${statusFilter} projects found.`
+      : "No projects yet. Create your first project to get started!";
+
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No projects yet. Create your first project to get started!
+        {filterMessage}
       </div>
     );
   }
