@@ -83,13 +83,30 @@ serve(async (req) => {
       const errorText = await response.text()
       console.error('Anthropic API error:', response.status, errorText)
       return new Response(
-        JSON.stringify({ error: `AI service error: ${response.status}` }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: `AI service error: ${response.status}`,
+          details: errorText
+        }),
+        { 
+          status: 502, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
     const data = await response.json()
     console.log('Anthropic API response:', data)
+
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      console.error('Invalid response format from Anthropic:', data)
+      return new Response(
+        JSON.stringify({ error: 'Invalid response format from AI service' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     return new Response(
       JSON.stringify({ content: data.content[0].text }),
