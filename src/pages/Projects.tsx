@@ -35,19 +35,19 @@ export default function Projects() {
                   Filter & Sort
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Status Filter</DropdownMenuLabel>
+              <DropdownMenuContent className="w-56 bg-primary border-primary">
+                <DropdownMenuLabel className="text-primary-foreground">Status Filter</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={statusFilter} onValueChange={(value) => setStatusFilter(value as ProjectFilter)}>
-                  <DropdownMenuRadioItem value="all">All Projects</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="planned">Planned</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="ongoing">Ongoing</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="completed">Completed</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="all" className="text-primary-foreground focus:bg-orange-600 focus:text-white">All Projects</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="planned" className="text-primary-foreground focus:bg-orange-600 focus:text-white">Planned</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="ongoing" className="text-primary-foreground focus:bg-orange-600 focus:text-white">Ongoing</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="completed" className="text-primary-foreground focus:bg-orange-600 focus:text-white">Completed</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Sort Order</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-orange-600" />
+                <DropdownMenuLabel className="text-primary-foreground">Sort Order</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={sortOrder} onValueChange={(value) => setSortOrder(value as ProjectSort)}>
-                  <DropdownMenuRadioItem value="newest">Newest First</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="oldest">Oldest First</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="newest" className="text-primary-foreground focus:bg-orange-600 focus:text-white">Newest First</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="oldest" className="text-primary-foreground focus:bg-orange-600 focus:text-white">Oldest First</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
