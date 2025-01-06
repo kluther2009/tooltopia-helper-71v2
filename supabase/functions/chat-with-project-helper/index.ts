@@ -34,16 +34,28 @@ serve(async (req) => {
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Missing required parameters',
+          details: { message, userId, projectId }
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
     if (!ANTHROPIC_API_KEY) {
       console.error('Missing ANTHROPIC_API_KEY environment variable')
       return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Server configuration error',
+          details: 'Missing API key'
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       )
     }
 
@@ -84,8 +96,11 @@ serve(async (req) => {
       console.error('Anthropic API error:', response.status, errorText)
       return new Response(
         JSON.stringify({ 
-          error: `AI service error: ${response.status}`,
-          details: errorText
+          error: 'AI service error',
+          details: {
+            status: response.status,
+            message: errorText
+          }
         }),
         { 
           status: 502, 
@@ -100,7 +115,10 @@ serve(async (req) => {
     if (!data.content || !data.content[0] || !data.content[0].text) {
       console.error('Invalid response format from Anthropic:', data)
       return new Response(
-        JSON.stringify({ error: 'Invalid response format from AI service' }),
+        JSON.stringify({ 
+          error: 'Invalid response format from AI service',
+          details: data
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
