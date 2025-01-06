@@ -7,6 +7,12 @@ import { CheckCircle2, Circle, Clock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { UpdateTaskDialog } from "./UpdateTaskDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ProjectTask {
   id: string;
@@ -84,22 +90,39 @@ export function ProjectTasksList({ projectId }: { projectId: string }) {
                 <span className="font-medium text-slate-200">{task.title}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setTaskToEdit(task)}
-                  className="h-8 w-8 text-slate-300 hover:text-white hover:bg-slate-600"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteTask(task.id)}
-                  className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-slate-600"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setTaskToEdit(task)}
+                        className="h-8 w-8 text-slate-300 hover:text-white hover:bg-slate-600"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Edit Task</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-slate-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Delete Task</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
             
