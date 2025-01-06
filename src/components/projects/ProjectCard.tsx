@@ -38,6 +38,15 @@ export function ProjectCard({ project }: { project: Project }) {
           <ProjectTools projectId={project.id} />
         </div>
 
+        {project.notes && (
+          <div className="border-t border-slate-700 pt-4">
+            <h3 className="text-sm font-medium text-slate-300 mb-2">Project Notes:</h3>
+            <div className="text-sm text-slate-300">
+              {project.notes}
+            </div>
+          </div>
+        )}
+
         <div className="border-t border-slate-700 pt-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-slate-300">Tasks</h3>
@@ -53,12 +62,6 @@ export function ProjectCard({ project }: { project: Project }) {
           </div>
           <ProjectTasksList projectId={project.id} />
         </div>
-
-        {project.notes && (
-          <div className="text-sm text-slate-300">
-            <span className="font-medium">Note:</span> {project.notes}
-          </div>
-        )}
 
         <div className="flex justify-end">
           <Button
