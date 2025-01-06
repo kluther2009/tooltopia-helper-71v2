@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -44,7 +44,7 @@ interface UpdateTaskDialogProps {
 }
 
 export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: UpdateTaskDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const queryClient = useQueryClient();
 
   const form = useForm({
@@ -59,7 +59,7 @@ export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: Update
   });
 
   // Update form values when task changes
-  useEffect(() => {
+  React.useEffect(() => {
     if (task) {
       form.reset({
         title: task.title,
