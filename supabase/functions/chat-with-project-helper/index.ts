@@ -17,6 +17,7 @@ const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 serve(async (req) => {
   console.log('Starting Project Helper function...')
   
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -32,12 +33,18 @@ serve(async (req) => {
     
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
-      throw new Error('Missing required parameters')
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     if (!ANTHROPIC_API_KEY) {
       console.error('Missing ANTHROPIC_API_KEY environment variable')
-      throw new Error('Missing ANTHROPIC_API_KEY environment variable')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Fetch project and tool data
@@ -60,7 +67,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: systemPrompt, // Changed: Now using top-level system parameter
+        system: systemPrompt,
         messages: [
           {
             role: 'user',
@@ -75,7 +82,10 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Anthropic API error:', response.status, errorText)
-      throw new Error(`Anthropic API error: ${response.status} ${errorText}`)
+      return new Response(
+        JSON.stringify({ error: `AI service error: ${response.status}` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const data = await response.json()

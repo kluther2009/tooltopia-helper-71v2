@@ -22,6 +22,9 @@ export function useProjectHelper(projectId: string) {
           message,
           userId: user.id,
           projectId
+        },
+        headers: {
+          'Content-Type': 'application/json'
         }
       })
 
@@ -38,9 +41,9 @@ export function useProjectHelper(projectId: string) {
       }
 
       return data.content
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling Project Helper:', error)
-      toast.error("Failed to get AI response, please try again")
+      toast.error(error.message || "Failed to get AI response, please try again")
       return null
     } finally {
       setIsLoading(false)
