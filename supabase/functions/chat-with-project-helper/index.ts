@@ -17,45 +17,29 @@ const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 serve(async (req) => {
   console.log('Starting Project Helper function...')
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    console.log('Request method:', req.method)
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()))
-    
     const requestBody = await req.json()
-    console.log('Parsed request body:', requestBody)
+    console.log('Request body:', requestBody)
 
     const { message, userId, projectId } = requestBody
     
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
       return new Response(
-        JSON.stringify({ 
-          error: 'Missing required parameters',
-          details: { message, userId, projectId }
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (!ANTHROPIC_API_KEY) {
       console.error('Missing ANTHROPIC_API_KEY environment variable')
       return new Response(
-        JSON.stringify({ 
-          error: 'Server configuration error',
-          details: 'Missing API key'
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -95,17 +79,8 @@ serve(async (req) => {
       const errorText = await response.text()
       console.error('Anthropic API error:', response.status, errorText)
       return new Response(
-        JSON.stringify({ 
-          error: 'AI service error',
-          details: {
-            status: response.status,
-            message: errorText
-          }
-        }),
-        { 
-          status: 502, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'AI service error' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -115,14 +90,8 @@ serve(async (req) => {
     if (!data.content || !data.content[0] || !data.content[0].text) {
       console.error('Invalid response format from Anthropic:', data)
       return new Response(
-        JSON.stringify({ 
-          error: 'Invalid response format from AI service',
-          details: data
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ error: 'Invalid response format from AI service' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -133,14 +102,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in project-helper function:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        details: error
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: error.message || 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

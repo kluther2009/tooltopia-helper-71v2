@@ -22,9 +22,6 @@ export function useProjectHelper(projectId: string) {
           message,
           userId: user.id,
           projectId
-        },
-        headers: {
-          'Content-Type': 'application/json'
         }
       })
 
