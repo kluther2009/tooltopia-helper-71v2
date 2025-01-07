@@ -1,95 +1,111 @@
-import { Annotation } from "./types";
+import { Annotation } from "./types"
 
-export function setupCanvas(
+export const setupCanvas = (
   canvas: HTMLCanvasElement,
-  width: number,
-  height: number
-): CanvasRenderingContext2D | null {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  canvas.style.width = `${width}px`;
-  canvas.style.height = `${height}px`;
-  ctx.scale(dpr, dpr);
-
-  return ctx;
+  containerWidth: number,
+  containerHeight: number
+) => {
+  const dpr = window.devicePixelRatio || 1
+  canvas.width = containerWidth * dpr
+  canvas.height = containerHeight * dpr
+  canvas.style.width = `${containerWidth}px`
+  canvas.style.height = `${containerHeight}px`
+  
+  const ctx = canvas.getContext('2d')
+  if (ctx) {
+    ctx.scale(dpr, dpr)
+  }
+  return ctx
 }
 
-export function drawImageOnCanvas(
+export const drawImageOnCanvas = (
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
   canvas: HTMLCanvasElement
-) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+) => {
+  const containerWidth = canvas.width / (window.devicePixelRatio || 1)
+  const containerHeight = canvas.height / (window.devicePixelRatio || 1)
 
-  const canvasAspect = canvas.clientWidth / canvas.clientHeight;
-  const imageAspect = image.width / image.height;
-  
-  let drawWidth = canvas.clientWidth;
-  let drawHeight = canvas.clientHeight;
-  let x = 0;
-  let y = 0;
-  
-  if (canvasAspect > imageAspect) {
-    drawWidth = drawHeight * imageAspect;
-    x = (canvas.clientWidth - drawWidth) / 2;
-  } else {
-    drawHeight = drawWidth / imageAspect;
-    y = (canvas.clientHeight - drawHeight) / 2;
-  }
+  const scale = Math.min(
+    containerWidth / image.width,
+    containerHeight / image.height
+  )
 
-  ctx.drawImage(image, x, y, drawWidth, drawHeight);
+  const scaledWidth = image.width * scale
+  const scaledHeight = image.height * scale
+  const x = (containerWidth - scaledWidth) / 2
+  const y = (containerHeight - scaledHeight) / 2
+
+  ctx.clearRect(0, 0, containerWidth, containerHeight)
+  ctx.drawImage(image, x, y, scaledWidth, scaledHeight)
 
   return {
-    scale: drawWidth / image.width,
+    scale,
     x,
     y,
-    scaledWidth: drawWidth,
-    scaledHeight: drawHeight
-  };
-}
-
-export function drawAnnotation(
-  ctx: CanvasRenderingContext2D,
-  annotation: Annotation,
-  metrics: { scale: number; x: number; y: number },
-  isHighlighted: boolean = false
-) {
-  const { coordinates, tool } = annotation;
-  
-  // Scale coordinates to canvas size
-  const scaledX = coordinates.x * metrics.scale + metrics.x;
-  const scaledY = coordinates.y * metrics.scale + metrics.y;
-  const scaledWidth = coordinates.width * metrics.scale;
-  const scaledHeight = coordinates.height * metrics.scale;
-
-  // Draw rectangle
-  ctx.beginPath();
-  ctx.strokeStyle = isHighlighted ? '#00ff00' : '#ff0000';
-  ctx.lineWidth = isHighlighted ? 3 : 2;
-  ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
-
-  // Draw tool name
-  if (tool?.name) {
-    ctx.font = isHighlighted ? 'bold 16px Arial' : '14px Arial';
-    ctx.fillStyle = isHighlighted ? '#00ff00' : '#ff0000';
-    ctx.fillText(tool.name, scaledX, scaledY - 5);
+    scaledWidth,
+    scaledHeight
   }
 }
 
-export function drawRectangle(
+export const drawRectangle = (
   ctx: CanvasRenderingContext2D,
-  start: { x: number; y: number },
-  end: { x: number; y: number }
-) {
-  const width = end.x - start.x;
-  const height = end.y - start.y;
+  startPos: { x: number; y: number },
+  currentPos: { x: number; y: number }
+) => {
+  const x = Math.min(startPos.x, currentPos.x)
+  const y = Math.min(startPos.y, currentPos.y)
+  const width = Math.abs(currentPos.x - startPos.x)
+  const height = Math.abs(currentPos.y - startPos.y)
+  
+  ctx.strokeStyle = '#00ff00'
+  ctx.lineWidth = 2
+  ctx.strokeRect(x, y, width, height)
+}
 
-  ctx.beginPath();
-  ctx.strokeStyle = '#00ff00';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(start.x, start.y, width, height);
+export const drawAnnotation = (
+  ctx: CanvasRenderingContext2D,
+  annotation: Annotation,
+  imageMetrics: { scale: number; x: number; y: number }
+) => {
+  if (!annotation.coordinates || !annotation.tool?.name) {
+    console.log('Missing coordinates or tool name for annotation:', annotation)
+    return
+  }
+
+  const { coordinates, tool } = annotation
+  
+  // Convert stored coordinates back to canvas space
+  const x = coordinates.x * imageMetrics.scale + imageMetrics.x
+  const y = coordinates.y * imageMetrics.scale + imageMetrics.y
+  const width = coordinates.width * imageMetrics.scale
+  const height = coordinates.height * imageMetrics.scale
+
+  // Draw rectangle
+  ctx.strokeStyle = '#00ff00'
+  ctx.lineWidth = 2
+  ctx.strokeRect(x, y, width, height)
+
+  // Draw tool name with background
+  ctx.font = '14px Arial'
+  const textMetrics = ctx.measureText(tool.name)
+  const padding = 4
+  const textHeight = 16
+  
+  // Draw background rectangle for text
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+  ctx.fillRect(
+    x,
+    y - textHeight - padding * 2,
+    textMetrics.width + padding * 2,
+    textHeight + padding * 2
+  )
+
+  // Draw text
+  ctx.fillStyle = '#ffffff'
+  ctx.fillText(
+    tool.name,
+    x + padding,
+    y - padding
+  )
 }
