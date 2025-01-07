@@ -138,7 +138,14 @@ export function ToolCard({
                 </TooltipTrigger>
                 <TooltipContent>Edit Tool</TooltipContent>
               </Tooltip>
-              <DeleteToolDialog id={id} name={typeof name === 'string' ? name : 'this tool'} />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <DeleteToolDialog id={id} name={typeof name === 'string' ? name : 'this tool'} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Delete Tool</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
