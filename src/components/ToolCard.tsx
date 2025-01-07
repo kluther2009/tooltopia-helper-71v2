@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "./ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface ToolCardProps {
   id: string;
@@ -73,7 +74,7 @@ export function ToolCard({
   };
 
   return (
-    <>
+    <TooltipProvider>
       <Card 
         className="p-2 sm:p-3 bg-white border-2 border-black hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing"
       >
@@ -85,48 +86,58 @@ export function ToolCard({
             </div>
             <div className="flex items-center gap-1 shrink-0">
               {hasDocuments && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsDocumentDialogOpen(true);
-                  }}
-                  className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
-                >
-                  <FileText 
-                    className="h-3 w-3 sm:h-4 sm:w-4" 
-                    style={{ 
-                      color: '#64748b',
-                      fill: 'none',
-                      strokeWidth: 2.5
-                    }} 
-                  />
-                  {documentCount > 1 && (
-                    <Badge 
-                      className="absolute -top-1 -right-1 h-3 w-3 p-0 flex items-center justify-center text-[10px] bg-blue-500"
-                      variant="secondary"
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDocumentDialogOpen(true);
+                      }}
+                      className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
                     >
-                      {documentCount}
-                    </Badge>
-                  )}
-                </Button>
+                      <FileText 
+                        className="h-3 w-3 sm:h-4 sm:w-4" 
+                        style={{ 
+                          color: '#64748b',
+                          fill: 'none',
+                          strokeWidth: 2.5
+                        }} 
+                      />
+                      {documentCount > 1 && (
+                        <Badge 
+                          className="absolute -top-1 -right-1 h-3 w-3 p-0 flex items-center justify-center text-[10px] bg-blue-500"
+                          variant="secondary"
+                        >
+                          {documentCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View Documents</TooltipContent>
+                </Tooltip>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(`/edit-tool/${id}`)}
-                className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
-              >
-                <Pencil 
-                  className="h-3 w-3 sm:h-4 sm:w-4" 
-                  style={{ 
-                    color: '#64748b',
-                    fill: 'none',
-                    strokeWidth: 2.5
-                  }} 
-                />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(`/edit-tool/${id}`)}
+                    className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+                  >
+                    <Pencil 
+                      className="h-3 w-3 sm:h-4 sm:w-4" 
+                      style={{ 
+                        color: '#64748b',
+                        fill: 'none',
+                        strokeWidth: 2.5
+                      }} 
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Tool</TooltipContent>
+              </Tooltip>
               <DeleteToolDialog id={id} name={typeof name === 'string' ? name : 'this tool'} />
             </div>
           </div>
@@ -177,6 +188,6 @@ export function ToolCard({
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 }
