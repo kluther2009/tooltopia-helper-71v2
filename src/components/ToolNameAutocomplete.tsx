@@ -1,15 +1,15 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useLocation } from "react-router-dom";
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { supabase } from "@/integrations/supabase/client"
 
 interface ToolNameAutocompleteProps {
-  value: string;
-  onValueChange: (value: string) => void;
-  inputRef?: React.RefObject<HTMLInputElement>;
-  onExistingToolSelect?: (toolId: string) => void;
+  value: string
+  onValueChange: (value: string) => void
+  inputRef?: React.RefObject<HTMLInputElement>
+  onExistingToolSelect?: (toolId: string) => void
 }
 
 export function ToolNameAutocomplete({ 
@@ -18,94 +18,75 @@ export function ToolNameAutocomplete({
   inputRef,
   onExistingToolSelect 
 }: ToolNameAutocompleteProps) {
-  const [existingTool, setExistingTool] = useState(null);
-  const location = useLocation();
-  const annotationData = location.state?.annotationData;
+  const [existingTool, setExistingTool] = useState<{ id: string, location: string, sub_location_a?: string, sub_location_b?: string } | null>(null)
+  const [isChecking, setIsChecking] = useState(false)
 
   useEffect(() => {
     const checkExistingTool = async () => {
-      if (!value) {
-        setExistingTool(null);
-        return;
+      if (!value.trim()) {
+        setExistingTool(null)
+        return
       }
 
-      const { data } = await supabase
-        .from('tools')
-        .select('*')
-        .ilike('name', value)
-        .single();
+      setIsChecking(true)
+      try {
+        const { data, error } = await supabase
+          .from('tools')
+          .select('id, location, sub_location_a, sub_location_b')
+          .ilike('name', value.trim())
+          .maybeSingle()
 
-      setExistingTool(data);
-    };
-
-    checkExistingTool();
-  }, [value]);
-
-  const handleUpdateExisting = async () => {
-    try {
-      // Update tool location
-      const { error: toolError } = await supabase
-        .from('tools')
-        .update({
-          location: annotationData.location,
-          sub_location: annotationData.subLocation
-        })
-        .eq('id', existingTool.id);
-
-      if (toolError) throw toolError;
-
-      // Delete old annotation
-      await supabase
-        .from('annotations')
-        .delete()
-        .eq('tool_id', existingTool.id);
-
-      // Create new annotation
-      const { error: annotationError } = await supabase
-        .from('annotations')
-        .insert([
-          {
-            tool_id: existingTool.id,
-            photo_id: annotationData.photoId,
-            coordinates: annotationData.coordinates
-          }
-        ]);
-
-      if (annotationError) throw annotationError;
-
-      window.location.href = '/tools';
-    } catch (error) {
-      console.error('Update error:', error);
+        if (error) throw error
+        setExistingTool(data)
+      } catch (error) {
+        console.error('Error checking tool existence:', error)
+      } finally {
+        setIsChecking(false)
+      }
     }
-  };
+
+    // Debounce the check to avoid too many requests
+    const timeoutId = setTimeout(checkExistingTool, 500)
+    return () => clearTimeout(timeoutId)
+  }, [value])
+
+  const formatLocation = (tool: typeof existingTool) => {
+    if (!tool) return ''
+    let location = tool.location
+    if (tool.sub_location_a) location += ` > ${tool.sub_location_a}`
+    if (tool.sub_location_b) location += ` > ${tool.sub_location_b}`
+    return location
+  }
 
   return (
     <div className="space-y-2">
       <Label htmlFor="toolName">Tool Name</Label>
       <Input
         id="toolName"
-        ref={inputRef}
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
-        placeholder="Enter tool name"
+        placeholder="Enter tool name..."
         className="bg-background text-foreground"
         required
+        ref={inputRef}
       />
-      {existingTool && annotationData && (
-        <div className="mt-2">
-          <div className="text-yellow-500 mb-2">
-            This tool already exists at {existingTool.location} > {existingTool.sub_location}. 
-            You can update the existing tool or enter a different name.
-          </div>
-          <Button 
-            type="button"
-            className="w-full bg-orange-500 hover:bg-orange-600"
-            onClick={handleUpdateExisting}
+      
+      {existingTool && (
+        <div className="space-y-2">
+          <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
+            <AlertDescription>
+              This tool already exists at {formatLocation(existingTool)}. You can update the existing tool or enter a different name.
+            </AlertDescription>
+          </Alert>
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={() => onExistingToolSelect?.(existingTool.id)}
           >
             Update Existing Tool
           </Button>
         </div>
       )}
     </div>
-  );
+  )
 }

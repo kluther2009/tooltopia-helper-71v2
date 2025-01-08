@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { WarrantyFields } from "./form/WarrantyFields"
+import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
-import { useFormContext } from "react-hook-form"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 
 interface EditToolFormProps {
@@ -14,16 +16,15 @@ interface EditToolFormProps {
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
-  const { register } = useFormContext(); // Get form methods from context
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="name">Tool Name</Label>
+        <Label htmlFor="toolName">Tool Name</Label>
         <Input
-          {...register("name")}
-          value={state.name}
-          onChange={(e) => onStateChange({ name: e.target.value })}
+          id="toolName"
+          value={state.toolName}
+          onChange={(e) => onStateChange({ toolName: e.target.value })}
           placeholder="Enter tool name"
           className="bg-background text-foreground"
           required
@@ -31,11 +32,11 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">Primary Location</Label>
+        <Label htmlFor="primaryLocation">Primary Location</Label>
         <Input
-          {...register("location")}
-          value={state.location}
-          onChange={(e) => onStateChange({ location: e.target.value })}
+          id="primaryLocation"
+          value={state.primaryLocation}
+          onChange={(e) => onStateChange({ primaryLocation: e.target.value })}
           placeholder="e.g., Workshop"
           className="bg-background text-foreground"
           required
@@ -43,22 +44,22 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="sub_location">Sub Location (Optional)</Label>
+        <Label htmlFor="subLocation">Sub Location (Optional)</Label>
         <Input
-          {...register("sub_location")}
-          value={state.sub_location}
-          onChange={(e) => onStateChange({ sub_location: e.target.value })}
+          id="subLocation"
+          value={state.subLocation}
+          onChange={(e) => onStateChange({ subLocation: e.target.value })}
           placeholder="e.g., Cabinet A"
           className="bg-background text-foreground"
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specific_location">Specific Location (Optional)</Label>
+        <Label htmlFor="specificLocation">Specific Location (Optional)</Label>
         <Input
-          {...register("specific_location")}
-          value={state.specific_location}
-          onChange={(e) => onStateChange({ specific_location: e.target.value })}
+          id="specificLocation"
+          value={state.specificLocation}
+          onChange={(e) => onStateChange({ specificLocation: e.target.value })}
           placeholder="e.g., Top Shelf"
           className="bg-background text-foreground"
         />
@@ -81,11 +82,38 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         </Select>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-additional-info"
+          checked={state.showAdditionalInfo}
+          onCheckedChange={(checked) => onStateChange({ showAdditionalInfo: checked })}
+        />
+        <Label htmlFor="show-additional-info">Update purchase and warranty information</Label>
+      </div>
+
+      {state.showAdditionalInfo && (
+        <>
+          <WarrantyFields
+            purchaseDate={state.purchaseDate}
+            warrantyLength={state.warrantyLength}
+            purchaseCost={state.purchaseCost}
+            onPurchaseDateChange={(value) => onStateChange({ purchaseDate: value })}
+            onWarrantyLengthChange={(value) => onStateChange({ warrantyLength: value })}
+            onPurchaseCostChange={(value) => onStateChange({ purchaseCost: value })}
+          />
+
+          <FileUploadFields
+            onWarrantyFileChange={(file) => onStateChange({ warrantyFile: file })}
+            onReceiptFileChange={(file) => onStateChange({ receiptFile: file })}
+          />
+        </>
+      )}
+
       <div className="flex gap-4">
         <Button type="submit" className="flex-1">
           Update Tool
         </Button>
-        <Button type="button" variant="outline" onClick={() => navigate('/tools')} className="flex-1">
+        <Button type="button" variant="outline" onClick={() => navigate('/')} className="flex-1">
           Cancel
         </Button>
       </div>
