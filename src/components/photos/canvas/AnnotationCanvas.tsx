@@ -16,7 +16,6 @@ export function AnnotationCanvas({
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const [hoveredToolId, setHoveredToolId] = useState<string | null>(null);
   const [imageMetrics, setImageMetrics] = useState<{
     scale: number;
     x: number;
@@ -40,8 +39,7 @@ export function AnnotationCanvas({
         onRectangleDrawn(coords);
       }
     },
-    imageMetrics,
-    hoveredToolId
+    imageMetrics
   });
 
   // Load image and initialize canvas
@@ -55,13 +53,13 @@ export function AnnotationCanvas({
     };
   }, [imageUrl]);
 
-  // Redraw canvas when annotations change or tool is hovered
+  // Redraw canvas when annotations change
   useEffect(() => {
-    console.log('Existing annotations changed or tool hovered:', existingAnnotations);
+    console.log('Existing annotations changed:', existingAnnotations);
     if (imageRef.current && existingAnnotations) {
       drawCanvas();
     }
-  }, [existingAnnotations, hoveredToolId]);
+  }, [existingAnnotations]);
 
   // Handle window resize
   useEffect(() => {
@@ -74,51 +72,6 @@ export function AnnotationCanvas({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const isPointInAnnotation = (x: number, y: number, annotation: Annotation) => {
-    if (!imageMetrics) return false;
-    
-    const scaledX = (x - imageMetrics.x) / imageMetrics.scale;
-    const scaledY = (y - imageMetrics.y) / imageMetrics.scale;
-    
-    return (
-      scaledX >= annotation.coordinates.x &&
-      scaledX <= annotation.coordinates.x + annotation.coordinates.width &&
-      scaledY >= annotation.coordinates.y &&
-      scaledY <= annotation.coordinates.y + annotation.coordinates.height
-    );
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !existingAnnotations) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    let foundTool = false;
-    for (const annotation of existingAnnotations) {
-      if (isPointInAnnotation(x, y, annotation)) {
-        setHoveredToolId(annotation.tool_id);
-        foundTool = true;
-        break;
-      }
-    }
-
-    if (!foundTool) {
-      setHoveredToolId(null);
-    }
-
-    const moveResult = handleMove(e);
-    if (moveResult) {
-      drawCanvas();
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        drawRectangle(ctx, moveResult.startPos, moveResult.currentPos);
-      }
-    }
-  };
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -135,8 +88,7 @@ export function AnnotationCanvas({
       console.log('Drawing annotations:', existingAnnotations);
       existingAnnotations.forEach(annotation => {
         if (annotation.tool?.name) {
-          const isHighlighted = hoveredToolId === annotation.tool_id;
-          drawAnnotation(ctx, annotation, metrics, isHighlighted);
+          drawAnnotation(ctx, annotation, metrics);
         }
       });
     }
@@ -147,12 +99,18 @@ export function AnnotationCanvas({
       ref={canvasRef}
       className={`w-full h-full ${isReadOnly ? '' : 'cursor-crosshair'} touch-none`}
       onMouseDown={handleStart}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleEnd}
-      onMouseLeave={() => {
-        setHoveredToolId(null);
-        setIsDrawing(false);
+      onMouseMove={(e) => {
+        const moveResult = handleMove(e);
+        if (moveResult) {
+          drawCanvas();
+          const ctx = canvasRef.current?.getContext('2d');
+          if (ctx) {
+            drawRectangle(ctx, moveResult.startPos, moveResult.currentPos);
+          }
+        }
       }}
+      onMouseUp={handleEnd}
+      onMouseLeave={() => setIsDrawing(false)}
       onTouchStart={handleStart}
       onTouchMove={(e) => {
         e.preventDefault();
