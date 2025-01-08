@@ -43,20 +43,20 @@ export function ToolSelectionDialog({
         return
       }
 
-      // Check if an annotation already exists for this tool
+      // First, check if this tool already has an annotation
       const { data: existingAnnotation } = await supabase
         .from('tool_annotations')
         .select('id')
         .eq('tool_id', toolId)
-        .eq('photo_id', photoId)
-        .maybeSingle()
+        .single()
 
+      // Format coordinates for consistency
       const formattedCoordinates = {
         x: Number(coordinates.x),
         y: Number(coordinates.y),
         width: Number(coordinates.width),
         height: Number(coordinates.height)
-      }
+      };
 
       if (existingAnnotation) {
         // Update existing annotation with new coordinates
@@ -64,16 +64,17 @@ export function ToolSelectionDialog({
           .from('tool_annotations')
           .update({
             coordinates: formattedCoordinates,
-            user_id: user.id
+            photo_id: photoId
           })
           .eq('id', existingAnnotation.id)
 
         if (updateError) {
-          console.error('Error updating annotation:', updateError)
-          toast.error('Failed to update tool annotation')
-          return
+          console.error('Error updating annotation:', updateError);
+          toast.error('Failed to update tool location');
+          return;
         }
-        console.log('Successfully updated annotation location')
+
+        toast.success('Tool location updated');
       } else {
         // Create new annotation
         const { error: insertError } = await supabase
@@ -86,28 +87,28 @@ export function ToolSelectionDialog({
           })
 
         if (insertError) {
-          console.error('Error creating annotation:', insertError)
-          toast.error('Failed to create tool annotation')
-          return
+          console.error('Error creating annotation:', insertError);
+          toast.error('Failed to create tool annotation');
+          return;
         }
-        console.log('Successfully created new annotation')
+
+        toast.success('Tool annotation saved');
       }
 
       // Clear the pending annotation data
-      localStorage.removeItem('pendingAnnotation')
-
-      toast.success('Tool annotation saved')
-      onToolSelect(toolId)
-      onClose()
+      localStorage.removeItem('pendingAnnotation');
+      
+      onToolSelect(toolId);
+      onClose();
     } catch (error) {
-      console.error('Error in handleToolSelect:', error)
-      toast.error('Failed to save tool annotation')
+      console.error('Error in handleToolSelect:', error);
+      toast.error('Failed to save tool annotation');
     }
   }
 
   const handleCreateTool = async (toolId: string) => {
-    console.log('Tool created, proceeding to create annotation with toolId:', toolId)
-    await handleToolSelect(toolId)
+    console.log('Tool created, proceeding to create annotation with toolId:', toolId);
+    await handleToolSelect(toolId);
   }
 
   return (
