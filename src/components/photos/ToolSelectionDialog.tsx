@@ -44,18 +44,19 @@ export function ToolSelectionDialog({
       }
 
       // First, check if this tool already has an annotation for this specific photo
-      const { data: existingAnnotation, error: queryError } = await supabase
+      const { data: existingAnnotations, error: queryError } = await supabase
         .from('tool_annotations')
-        .select('id')
+        .select('*')
         .eq('tool_id', toolId)
         .eq('photo_id', photoId)
-        .maybeSingle()
 
       if (queryError) {
-        console.error('Error checking existing annotation:', queryError);
-        toast.error('Failed to check existing annotation');
+        console.error('Error checking existing annotations:', queryError);
+        toast.error('Failed to check existing annotations');
         return;
       }
+
+      console.log('Existing annotations:', existingAnnotations);
 
       // Format coordinates for consistency
       const formattedCoordinates = {
@@ -67,9 +68,10 @@ export function ToolSelectionDialog({
 
       console.log('Formatted coordinates:', formattedCoordinates);
 
-      if (existingAnnotation) {
+      if (existingAnnotations && existingAnnotations.length > 0) {
+        const existingAnnotation = existingAnnotations[0];
         console.log('Found existing annotation:', existingAnnotation.id);
-        // Update existing annotation with new coordinates
+        
         const { error: updateError } = await supabase
           .from('tool_annotations')
           .update({
@@ -88,7 +90,7 @@ export function ToolSelectionDialog({
         toast.success('Tool location updated');
       } else {
         console.log('No existing annotation found, creating new one');
-        // Create new annotation
+        
         const { error: insertError } = await supabase
           .from('tool_annotations')
           .insert({
