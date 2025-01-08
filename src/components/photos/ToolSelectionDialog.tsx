@@ -48,7 +48,7 @@ export function ToolSelectionDialog({
         .from('tool_annotations')
         .select('id')
         .eq('tool_id', toolId)
-        .single()
+        .maybeSingle()
 
       // Format coordinates for consistency
       const formattedCoordinates = {
