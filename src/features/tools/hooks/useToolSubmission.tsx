@@ -10,7 +10,7 @@ export const useToolSubmission = (onSuccess?: () => void) => {
     mutationFn: async ({ tool, annotationData }) => {
       const updatedTool = await updateTool(tool);
       
-      if (annotationData) {
+      if (annotationData?.coordinates && annotationData?.photoId) {
         await updateAnnotation({
           toolId: tool.id,
           photoId: annotationData.photoId,
@@ -21,6 +21,7 @@ export const useToolSubmission = (onSuccess?: () => void) => {
       return updatedTool;
     },
     onSuccess: () => {
+      // Invalidate both tools and annotations queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ['tools'] });
       queryClient.invalidateQueries({ queryKey: ['annotations'] });
       onSuccess?.();
@@ -31,7 +32,7 @@ export const useToolSubmission = (onSuccess?: () => void) => {
     mutationFn: async ({ tool, annotationData }) => {
       const newTool = await createTool(tool);
       
-      if (annotationData) {
+      if (annotationData?.coordinates && annotationData?.photoId) {
         await createAnnotation({
           toolId: newTool.id,
           photoId: annotationData.photoId,

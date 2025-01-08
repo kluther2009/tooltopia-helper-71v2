@@ -18,15 +18,22 @@ export const createAnnotation = async ({ toolId, photoId, coordinates }) => {
 };
 
 export const updateAnnotation = async ({ toolId, photoId, coordinates }) => {
+  // First delete existing annotation for this tool
+  await supabase
+    .from('annotations')
+    .delete()
+    .match({ tool_id: toolId });
+
+  // Then create new annotation with updated coordinates
   const { data, error } = await supabase
     .from('annotations')
-    .update({
-      coordinates
-    })
-    .match({
-      tool_id: toolId,
-      photo_id: photoId
-    })
+    .insert([
+      {
+        tool_id: toolId,
+        photo_id: photoId,
+        coordinates
+      }
+    ])
     .select()
     .single();
 
