@@ -43,13 +43,19 @@ export function ToolSelectionDialog({
         return
       }
 
-      // First, check if this tool already has an annotation
-      const { data: existingAnnotation } = await supabase
+      // First, check if this tool already has an annotation for this specific photo
+      const { data: existingAnnotation, error: queryError } = await supabase
         .from('tool_annotations')
         .select('id')
         .eq('tool_id', toolId)
-        .eq('photo_id', photoId)  // Add this line to check for specific photo
+        .eq('photo_id', photoId)
         .maybeSingle()
+
+      if (queryError) {
+        console.error('Error checking existing annotation:', queryError);
+        toast.error('Failed to check existing annotation');
+        return;
+      }
 
       // Format coordinates for consistency
       const formattedCoordinates = {
@@ -59,8 +65,10 @@ export function ToolSelectionDialog({
         height: Number(coordinates.height)
       };
 
+      console.log('Formatted coordinates:', formattedCoordinates);
+
       if (existingAnnotation) {
-        console.log('Updating existing annotation:', existingAnnotation.id);
+        console.log('Found existing annotation:', existingAnnotation.id);
         // Update existing annotation with new coordinates
         const { error: updateError } = await supabase
           .from('tool_annotations')
@@ -76,9 +84,10 @@ export function ToolSelectionDialog({
           return;
         }
 
+        console.log('Successfully updated annotation');
         toast.success('Tool location updated');
       } else {
-        console.log('Creating new annotation');
+        console.log('No existing annotation found, creating new one');
         // Create new annotation
         const { error: insertError } = await supabase
           .from('tool_annotations')
@@ -95,6 +104,7 @@ export function ToolSelectionDialog({
           return;
         }
 
+        console.log('Successfully created new annotation');
         toast.success('Tool annotation saved');
       }
 
