@@ -48,6 +48,7 @@ export function ToolSelectionDialog({
         .from('tool_annotations')
         .select('id')
         .eq('tool_id', toolId)
+        .eq('photo_id', photoId)  // Add this line to check for specific photo
         .maybeSingle()
 
       // Format coordinates for consistency
@@ -59,12 +60,13 @@ export function ToolSelectionDialog({
       };
 
       if (existingAnnotation) {
+        console.log('Updating existing annotation:', existingAnnotation.id);
         // Update existing annotation with new coordinates
         const { error: updateError } = await supabase
           .from('tool_annotations')
           .update({
             coordinates: formattedCoordinates,
-            photo_id: photoId
+            updated_at: new Date().toISOString()
           })
           .eq('id', existingAnnotation.id)
 
@@ -76,6 +78,7 @@ export function ToolSelectionDialog({
 
         toast.success('Tool location updated');
       } else {
+        console.log('Creating new annotation');
         // Create new annotation
         const { error: insertError } = await supabase
           .from('tool_annotations')
