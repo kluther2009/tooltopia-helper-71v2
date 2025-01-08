@@ -2,10 +2,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { WarrantyFields } from "./form/WarrantyFields"
-import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
+import { useFormContext } from "react-hook-form"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 
 interface EditToolFormProps {
@@ -16,18 +14,14 @@ interface EditToolFormProps {
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission
-    onSubmit(e);
-  };
+  const { register } = useFormContext(); // Get form methods from context
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="name">Tool Name</Label>
         <Input
-          id="name"
+          {...register("name")}
           value={state.name}
           onChange={(e) => onStateChange({ name: e.target.value })}
           placeholder="Enter tool name"
@@ -39,7 +33,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       <div className="space-y-2">
         <Label htmlFor="location">Primary Location</Label>
         <Input
-          id="location"
+          {...register("location")}
           value={state.location}
           onChange={(e) => onStateChange({ location: e.target.value })}
           placeholder="e.g., Workshop"
@@ -51,7 +45,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       <div className="space-y-2">
         <Label htmlFor="sub_location">Sub Location (Optional)</Label>
         <Input
-          id="sub_location"
+          {...register("sub_location")}
           value={state.sub_location}
           onChange={(e) => onStateChange({ sub_location: e.target.value })}
           placeholder="e.g., Cabinet A"
@@ -62,7 +56,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       <div className="space-y-2">
         <Label htmlFor="specific_location">Specific Location (Optional)</Label>
         <Input
-          id="specific_location"
+          {...register("specific_location")}
           value={state.specific_location}
           onChange={(e) => onStateChange({ specific_location: e.target.value })}
           placeholder="e.g., Top Shelf"
