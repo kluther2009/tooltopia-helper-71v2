@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToolSubmission } from '../hooks/useToolSubmission';
 import { useToolForm } from '../hooks/useToolForm';
@@ -16,16 +16,19 @@ export const AddToolForm = () => {
 
   const handleSubmit = async (values: Tool, existingTool?: Tool) => {
     if (existingTool) {
-      await updateTool({ 
-        tool: { ...values, id: existingTool.id },
-        annotationData: annotationData
+      navigate(`/edit-tool/${existingTool.id}`, {
+        state: { annotationData }
       });
-    } else {
-      await createTool({ 
-        tool: values,
-        annotationData: annotationData
-      });
+      return;
     }
+    
+    await createTool({
+      tool: values,
+      annotationData: annotationData ? {
+        photoId: annotationData.photoId,
+        coordinates: annotationData.coordinates
+      } : undefined
+    });
   };
 
   const form = useToolForm({
