@@ -1,12 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Layout } from "@/components/Layout"
-import { useParams } from "react-router-dom"
+import { useParams, useLocation } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
+import { FormProvider, useForm } from "react-hook-form"
 
 export default function EditTool() {
   const { id } = useParams();
+  const location = useLocation();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
+
+  // Create form methods
+  const formMethods = useForm({
+    defaultValues: state
+  });
 
   if (isLoading) {
     return (
@@ -18,7 +25,7 @@ export default function EditTool() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     await updateTool();
   };
@@ -31,11 +38,13 @@ export default function EditTool() {
             <CardTitle className="text-2xl font-bold">Edit Tool</CardTitle>
           </CardHeader>
           <CardContent>
-            <EditToolForm
-              state={state}
-              onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
-              onSubmit={handleSubmit}
-            />
+            <FormProvider {...formMethods}>
+              <EditToolForm
+                state={state}
+                onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
+                onSubmit={handleSubmit}
+              />
+            </FormProvider>
           </CardContent>
         </Card>
       </div>
