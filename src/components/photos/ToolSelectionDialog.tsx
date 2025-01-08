@@ -43,51 +43,71 @@ export function ToolSelectionDialog({
         return
       }
 
-      console.log('Creating annotation with user:', user.id);
+      // Check if an annotation already exists for this tool
+      const { data: existingAnnotation } = await supabase
+        .from('tool_annotations')
+        .select('id')
+        .eq('tool_id', toolId)
+        .eq('photo_id', photoId)
+        .maybeSingle()
 
-      // Store coordinates as a stringified JSON object
       const formattedCoordinates = {
         x: Number(coordinates.x),
         y: Number(coordinates.y),
         width: Number(coordinates.width),
         height: Number(coordinates.height)
-      };
-
-      console.log('Formatted coordinates:', formattedCoordinates);
-
-      const { data, error } = await supabase
-        .from('tool_annotations')
-        .insert({
-          photo_id: photoId,
-          tool_id: toolId,
-          coordinates: formattedCoordinates,
-          user_id: user.id
-        })
-        .select()
-
-      if (error) {
-        console.error('Supabase error:', error);
-        toast.error(`Failed to save annotation: ${error.message}`);
-        throw error;
       }
 
-      console.log('Successfully created annotation:', data);
-      
-      // Clear the pending annotation data since we've successfully created the annotation
-      localStorage.removeItem('pendingAnnotation');
+      if (existingAnnotation) {
+        // Update existing annotation with new coordinates
+        const { error: updateError } = await supabase
+          .from('tool_annotations')
+          .update({
+            coordinates: formattedCoordinates,
+            user_id: user.id
+          })
+          .eq('id', existingAnnotation.id)
 
-      toast.success('Tool annotation saved');
-      onToolSelect(toolId);
-      onClose();
+        if (updateError) {
+          console.error('Error updating annotation:', updateError)
+          toast.error('Failed to update tool annotation')
+          return
+        }
+        console.log('Successfully updated annotation location')
+      } else {
+        // Create new annotation
+        const { error: insertError } = await supabase
+          .from('tool_annotations')
+          .insert({
+            photo_id: photoId,
+            tool_id: toolId,
+            coordinates: formattedCoordinates,
+            user_id: user.id
+          })
+
+        if (insertError) {
+          console.error('Error creating annotation:', insertError)
+          toast.error('Failed to create tool annotation')
+          return
+        }
+        console.log('Successfully created new annotation')
+      }
+
+      // Clear the pending annotation data
+      localStorage.removeItem('pendingAnnotation')
+
+      toast.success('Tool annotation saved')
+      onToolSelect(toolId)
+      onClose()
     } catch (error) {
-      console.error('Error in handleToolSelect:', error);
-      toast.error('Failed to save tool annotation');
+      console.error('Error in handleToolSelect:', error)
+      toast.error('Failed to save tool annotation')
     }
   }
 
   const handleCreateTool = async (toolId: string) => {
-    console.log('Tool created, proceeding to create annotation with toolId:', toolId);
-    await handleToolSelect(toolId);
+    console.log('Tool created, proceeding to create annotation with toolId:', toolId)
+    await handleToolSelect(toolId)
   }
 
   return (
