@@ -7,10 +7,9 @@ export const useToolSubmission = (onSuccess?: () => void) => {
   const queryClient = useQueryClient();
 
   const updateToolMutation = useMutation({
-    mutationFn: async ({ tool, annotationData }: { tool: Tool; annotationData?: any }) => {
+    mutationFn: async ({ tool, annotationData }) => {
       const updatedTool = await updateTool(tool);
       
-      // If we have annotation data, update the annotation as well
       if (annotationData) {
         await updateAnnotation({
           toolId: tool.id,
@@ -29,10 +28,9 @@ export const useToolSubmission = (onSuccess?: () => void) => {
   });
 
   const createToolMutation = useMutation({
-    mutationFn: async ({ tool, annotationData }: { tool: Tool; annotationData?: any }) => {
+    mutationFn: async ({ tool, annotationData }) => {
       const newTool = await createTool(tool);
       
-      // If we have annotation data, create the annotation
       if (annotationData) {
         await createAnnotation({
           toolId: newTool.id,
