@@ -8,16 +8,18 @@ import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 import { useEffect, useState } from "react"
+import { useFormContext } from "react-hook-form"
 
 interface EditToolFormProps {
   state: ToolEditorState;
   onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>;
+  onSubmit: (values: any, annotationData?: any) => Promise<void>;
 }
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
   const [annotationData, setAnnotationData] = useState<any>(null);
+  const { register } = useFormContext(); // Get form methods from context
 
   useEffect(() => {
     const storedAnnotation = localStorage.getItem('pendingAnnotation');
@@ -33,10 +35,9 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // This is crucial to prevent the default form submission
+    e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
-    await onSubmit(e, annotationData);
   };
 
   return (
@@ -44,6 +45,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       <div className="space-y-2">
         <Label htmlFor="toolName">Tool Name</Label>
         <Input
+          {...register('toolName')}
           id="toolName"
           value={state.toolName}
           onChange={(e) => onStateChange({ toolName: e.target.value })}
@@ -56,6 +58,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       <div className="space-y-2">
         <Label htmlFor="primaryLocation">Primary Location</Label>
         <Input
+          {...register('primaryLocation')}
           id="primaryLocation"
           value={state.primaryLocation}
           onChange={(e) => onStateChange({ primaryLocation: e.target.value })}
@@ -68,21 +71,11 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       <div className="space-y-2">
         <Label htmlFor="subLocation">Sub Location (Optional)</Label>
         <Input
+          {...register('subLocation')}
           id="subLocation"
           value={state.subLocation}
           onChange={(e) => onStateChange({ subLocation: e.target.value })}
           placeholder="e.g., Cabinet A"
-          className="bg-background text-foreground"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="specificLocation">Specific Location (Optional)</Label>
-        <Input
-          id="specificLocation"
-          value={state.specificLocation}
-          onChange={(e) => onStateChange({ specificLocation: e.target.value })}
-          placeholder="e.g., Top Shelf"
           className="bg-background text-foreground"
         />
       </div>
@@ -103,33 +96,6 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
           </SelectContent>
         </Select>
       </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="show-additional-info"
-          checked={state.showAdditionalInfo}
-          onCheckedChange={(checked) => onStateChange({ showAdditionalInfo: checked })}
-        />
-        <Label htmlFor="show-additional-info">Update purchase and warranty information</Label>
-      </div>
-
-      {state.showAdditionalInfo && (
-        <>
-          <WarrantyFields
-            purchaseDate={state.purchaseDate}
-            warrantyLength={state.warrantyLength}
-            purchaseCost={state.purchaseCost}
-            onPurchaseDateChange={(value) => onStateChange({ purchaseDate: value })}
-            onWarrantyLengthChange={(value) => onStateChange({ warrantyLength: value })}
-            onPurchaseCostChange={(value) => onStateChange({ purchaseCost: value })}
-          />
-
-          <FileUploadFields
-            onWarrantyFileChange={(file) => onStateChange({ warrantyFile: file })}
-            onReceiptFileChange={(file) => onStateChange({ receiptFile: file })}
-          />
-        </>
-      )}
 
       <div className="flex gap-4">
         <Button type="submit" className="flex-1">
