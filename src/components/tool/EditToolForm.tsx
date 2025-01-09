@@ -7,21 +7,36 @@ import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
 interface EditToolFormProps {
   state: ToolEditorState;
   onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>;
 }
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
+  const [annotationData, setAnnotationData] = useState<any>(null);
+
+  useEffect(() => {
+    const storedAnnotation = localStorage.getItem('pendingAnnotation');
+    if (storedAnnotation) {
+      try {
+        const parsed = JSON.parse(storedAnnotation);
+        console.log('[EditToolForm] Loaded annotation data:', parsed);
+        setAnnotationData(parsed);
+      } catch (error) {
+        console.error('[EditToolForm] Error parsing annotation data:', error);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // This is crucial to prevent the default form submission
     console.log('[EditToolForm] Starting form submission');
-    onSubmit(e);
+    console.log('[EditToolForm] Submitting with annotation data:', annotationData);
+    await onSubmit(e, annotationData);
   };
 
   return (
@@ -113,14 +128,14 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
             onWarrantyFileChange={(file) => onStateChange({ warrantyFile: file })}
             onReceiptFileChange={(file) => onStateChange({ receiptFile: file })}
           />
-        />
+        </>
       )}
 
       <div className="flex gap-4">
         <Button type="submit" className="flex-1">
           Update Tool
         </Button>
-        <Button type="button" variant="outline" onClick={() => navigate('/tools')} className="flex-1">
+        <Button type="button" variant="outline" onClick={() => navigate('/')} className="flex-1">
           Cancel
         </Button>
       </div>

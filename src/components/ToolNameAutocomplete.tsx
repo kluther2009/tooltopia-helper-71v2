@@ -4,21 +4,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
-import { useNavigate } from 'react-router-dom'
 
 interface ToolNameAutocompleteProps {
   value: string
   onValueChange: (value: string) => void
   inputRef?: React.RefObject<HTMLInputElement>
+  onExistingToolSelect?: (toolId: string) => void
 }
 
 export function ToolNameAutocomplete({ 
   value, 
   onValueChange, 
-  inputRef
+  inputRef,
+  onExistingToolSelect 
 }: ToolNameAutocompleteProps) {
-  const navigate = useNavigate();
-  const [existingTool, setExistingTool] = useState<{ id: string, name: string, location: string, sub_location_a?: string, sub_location_b?: string } | null>(null)
+  const [existingTool, setExistingTool] = useState<{ id: string, location: string, sub_location_a?: string, sub_location_b?: string } | null>(null)
   const [isChecking, setIsChecking] = useState(false)
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function ToolNameAutocomplete({
       try {
         const { data, error } = await supabase
           .from('tools')
-          .select('id, name, location, sub_location_a, sub_location_b')
+          .select('id, location, sub_location_a, sub_location_b')
           .ilike('name', value.trim())
           .maybeSingle()
 
@@ -45,6 +45,7 @@ export function ToolNameAutocomplete({
       }
     }
 
+    // Debounce the check to avoid too many requests
     const timeoutId = setTimeout(checkExistingTool, 500)
     return () => clearTimeout(timeoutId)
   }, [value])
@@ -56,20 +57,6 @@ export function ToolNameAutocomplete({
     if (tool.sub_location_b) location += ` > ${tool.sub_location_b}`
     return location
   }
-
-  const handleUpdateExisting = () => {
-    if (!existingTool) return;
-
-    const annotationData = localStorage.getItem('pendingAnnotation');
-    
-    // Navigate to edit tool with both existing tool data and annotation data
-    navigate(`/edit-tool/${existingTool.id}`, {
-      state: {
-        tool: existingTool,
-        annotationData: annotationData ? JSON.parse(annotationData) : null
-      }
-    });
-  };
 
   return (
     <div className="space-y-2">
@@ -88,13 +75,13 @@ export function ToolNameAutocomplete({
         <div className="space-y-2">
           <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
             <AlertDescription>
-              This tool already exists at {formatLocation(existingTool)}. You can update its location or enter a different name.
+              This tool already exists at {formatLocation(existingTool)}. You can update the existing tool or enter a different name.
             </AlertDescription>
           </Alert>
           <Button
             variant="default"
             className="w-full"
-            onClick={handleUpdateExisting}
+            onClick={() => onExistingToolSelect?.(existingTool.id)}
           >
             Update Existing Tool
           </Button>
