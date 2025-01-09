@@ -12,7 +12,7 @@ import { useEffect, useState } from "react"
 interface EditToolFormProps {
   state: ToolEditorState;
   onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent, annotationData?: any) => void;
+  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>;
 }
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
@@ -32,8 +32,8 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
     }
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // This is crucial to prevent the default form submission
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
     await onSubmit(e, annotationData);
