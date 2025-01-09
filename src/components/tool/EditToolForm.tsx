@@ -20,7 +20,8 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
-    console.log('[EditToolForm] Pending annotation data:', localStorage.getItem('pendingAnnotation'));
+    const pendingAnnotation = localStorage.getItem('pendingAnnotation');
+    console.log('[EditToolForm] Pending annotation data:', pendingAnnotation);
     onSubmit(e);
   };
 
