@@ -4,21 +4,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import { useNavigate } from 'react-router-dom'
 
 interface ToolNameAutocompleteProps {
   value: string
   onValueChange: (value: string) => void
   inputRef?: React.RefObject<HTMLInputElement>
-  onExistingToolSelect?: (toolId: string) => void
 }
 
 export function ToolNameAutocomplete({ 
   value, 
   onValueChange, 
-  inputRef,
-  onExistingToolSelect 
+  inputRef
 }: ToolNameAutocompleteProps) {
-  const [existingTool, setExistingTool] = useState<{ id: string, location: string, sub_location_a?: string, sub_location_b?: string } | null>(null)
+  const navigate = useNavigate();
+  const [existingTool, setExistingTool] = useState(null)
   const [isChecking, setIsChecking] = useState(false)
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function ToolNameAutocomplete({
       try {
         const { data, error } = await supabase
           .from('tools')
-          .select('id, location, sub_location_a, sub_location_b')
+          .select('*')  // Get all tool details
           .ilike('name', value.trim())
           .maybeSingle()
 
@@ -50,13 +50,36 @@ export function ToolNameAutocomplete({
     return () => clearTimeout(timeoutId)
   }, [value])
 
-  const formatLocation = (tool: typeof existingTool) => {
+  const formatLocation = (tool: any) => {
     if (!tool) return ''
     let location = tool.location
     if (tool.sub_location_a) location += ` > ${tool.sub_location_a}`
     if (tool.sub_location_b) location += ` > ${tool.sub_location_b}`
     return location
   }
+
+  const handleUpdateExisting = () => {
+    if (!existingTool) return;
+
+    // Get stored annotation data
+    const storedAnnotation = localStorage.getItem('pendingAnnotation');
+    let annotationData = null;
+    try {
+      if (storedAnnotation) {
+        annotationData = JSON.parse(storedAnnotation);
+      }
+    } catch (error) {
+      console.error('Error parsing annotation data:', error);
+    }
+
+    // Navigate with both tool and annotation data
+    navigate(`/edit-tool/${existingTool.id}`, {
+      state: {
+        tool: existingTool,
+        annotationData
+      }
+    });
+  };
 
   return (
     <div className="space-y-2">
@@ -75,13 +98,13 @@ export function ToolNameAutocomplete({
         <div className="space-y-2">
           <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
             <AlertDescription>
-              This tool already exists at {formatLocation(existingTool)}. You can update the existing tool or enter a different name.
+              This tool already exists at {formatLocation(existingTool)}. You can update its location or enter a different name.
             </AlertDescription>
           </Alert>
           <Button
             variant="default"
             className="w-full"
-            onClick={() => onExistingToolSelect?.(existingTool.id)}
+            onClick={handleUpdateExisting}
           >
             Update Existing Tool
           </Button>
