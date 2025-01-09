@@ -30,7 +30,7 @@ export function ToolSelectionDialog({
 
   const handleToolSelect = async (toolId: string) => {
     try {
-      console.log('Starting annotation save process with data:', {
+      console.log('[ToolSelectionDialog] Starting annotation save process with data:', {
         photoId,
         toolId,
         coordinates
@@ -38,7 +38,7 @@ export function ToolSelectionDialog({
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        console.error('No authenticated user found');
+        console.error('[ToolSelectionDialog] No authenticated user found');
         toast.error('You must be logged in to create annotations')
         return
       }
@@ -51,12 +51,12 @@ export function ToolSelectionDialog({
         .eq('photo_id', photoId)
 
       if (queryError) {
-        console.error('Error checking existing annotations:', queryError);
+        console.error('[ToolSelectionDialog] Error checking existing annotations:', queryError);
         toast.error('Failed to check existing annotations');
         return;
       }
 
-      console.log('Existing annotations:', existingAnnotations);
+      console.log('[ToolSelectionDialog] Existing annotations:', existingAnnotations);
 
       // Format coordinates for consistency
       const formattedCoordinates = {
@@ -66,11 +66,11 @@ export function ToolSelectionDialog({
         height: Number(coordinates.height)
       };
 
-      console.log('Formatted coordinates:', formattedCoordinates);
+      console.log('[ToolSelectionDialog] Formatted coordinates:', formattedCoordinates);
 
       if (existingAnnotations && existingAnnotations.length > 0) {
         const existingAnnotation = existingAnnotations[0];
-        console.log('Found existing annotation:', existingAnnotation.id);
+        console.log('[ToolSelectionDialog] Found existing annotation:', existingAnnotation.id);
         
         const { error: updateError } = await supabase
           .from('tool_annotations')
@@ -81,15 +81,15 @@ export function ToolSelectionDialog({
           .eq('id', existingAnnotation.id)
 
         if (updateError) {
-          console.error('Error updating annotation:', updateError);
+          console.error('[ToolSelectionDialog] Error updating annotation:', updateError);
           toast.error('Failed to update tool location');
           return;
         }
 
-        console.log('Successfully updated annotation');
+        console.log('[ToolSelectionDialog] Successfully updated annotation');
         toast.success('Tool location updated');
       } else {
-        console.log('No existing annotation found, creating new one');
+        console.log('[ToolSelectionDialog] No existing annotation found, creating new one');
         
         const { error: insertError } = await supabase
           .from('tool_annotations')
@@ -101,28 +101,29 @@ export function ToolSelectionDialog({
           })
 
         if (insertError) {
-          console.error('Error creating annotation:', insertError);
+          console.error('[ToolSelectionDialog] Error creating annotation:', insertError);
           toast.error('Failed to create tool annotation');
           return;
         }
 
-        console.log('Successfully created new annotation');
+        console.log('[ToolSelectionDialog] Successfully created new annotation');
         toast.success('Tool annotation saved');
       }
 
       // Clear the pending annotation data
+      console.log('[ToolSelectionDialog] Clearing pendingAnnotation from localStorage');
       localStorage.removeItem('pendingAnnotation');
       
       onToolSelect(toolId);
       onClose();
     } catch (error) {
-      console.error('Error in handleToolSelect:', error);
+      console.error('[ToolSelectionDialog] Error in handleToolSelect:', error);
       toast.error('Failed to save tool annotation');
     }
   }
 
   const handleCreateTool = async (toolId: string) => {
-    console.log('Tool created, proceeding to create annotation with toolId:', toolId);
+    console.log('[ToolSelectionDialog] Tool created, proceeding to create annotation with toolId:', toolId);
     await handleToolSelect(toolId);
   }
 

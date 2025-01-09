@@ -17,8 +17,15 @@ interface EditToolFormProps {
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('[EditToolForm] Starting form submission');
+    console.log('[EditToolForm] Pending annotation data:', localStorage.getItem('pendingAnnotation'));
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="toolName">Tool Name</Label>
         <Input

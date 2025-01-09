@@ -79,7 +79,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       height: Number(coordinates.height)
     }
 
-    console.log('Saving annotation data:', {
+    console.log('[PhotoAnnotationViewer] Starting annotation process with data:', {
       photoId: photo.id,
       coordinates: formattedCoordinates,
       location: photo.location,
@@ -95,6 +95,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       timestamp: Date.now()
     }
     
+    console.log('[PhotoAnnotationViewer] Saving to localStorage:', annotationData)
     localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
     
     // Close the dialog before navigating
