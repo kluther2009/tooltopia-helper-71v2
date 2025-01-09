@@ -2,33 +2,107 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Layout } from "@/components/Layout"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
-import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { state, setState, isLoading, updateTool } = useToolEditor(id);
+  const [isLoading, setIsLoading] = useState(true);
+  const [state, setState] = useState({
+    toolName: '',
+    primaryLocation: '',
+    subLocation: '',
+    specificLocation: '',
+    status: 'available',
+    showAdditionalInfo: false
+  });
 
-  // Get tool and annotation data from navigation state
-  const { tool: existingTool, annotationData } = location.state || {};
-
-  // Set initial state from navigation
+  // Load tool data
   useEffect(() => {
-    if (existingTool) {
-      setState({
-        toolName: existingTool.name,
-        primaryLocation: annotationData?.location || existingTool.location,
-        subLocation: annotationData?.subLocation || existingTool.sub_location_a,
-        specificLocation: existingTool.sub_location_b,
-        status: existingTool.status || 'available',
-        showAdditionalInfo: false
-      });
+    const loadTool = async () => {
+      try {
+        const { data: tool, error } = await supabase
+          .from('tools')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+
+        // Get annotation data if it exists
+        const annotationData = location.state?.annotationData;
+
+        setState({
+          toolName: tool.name,
+          primaryLocation: annotationData?.location || tool.location,
+          subLocation: annotationData?.subLocation || tool.sub_location_a,
+          specificLocation: tool.sub_location_b,
+          status: tool.status || 'available',
+          showAdditionalInfo: false
+        });
+      } catch (error) {
+        console.error('Error loading tool:', error);
+        toast.error('Failed to load tool details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) loadTool();
+  }, [id, location.state]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const annotationData = location.state?.annotationData;
+
+    try {
+      // Update tool first
+      const { error: toolError } = await supabase
+        .from('tools')
+        .update({
+          name: state.toolName,
+          location: state.primaryLocation,
+          sub_location_a: state.subLocation,
+          sub_location_b: state.specificLocation,
+          status: state.status
+        })
+        .eq('id', id);
+
+      if (toolError) throw toolError;
+
+      // If we have annotation data, handle that
+      if (annotationData) {
+        // Remove old annotation
+        await supabase
+          .from('tool_annotations')
+          .delete()
+          .eq('tool_id', id);
+
+        // Create new annotation
+        const { error: annotationError } = await supabase
+          .from('tool_annotations')
+          .insert({
+            photo_id: annotationData.photoId,
+            tool_id: id,
+            coordinates: annotationData.coordinates,
+            user_id: (await supabase.auth.getUser()).data.user?.id
+          });
+
+        if (annotationError) throw annotationError;
+
+        localStorage.removeItem('pendingAnnotation');
+      }
+
+      toast.success('Tool updated successfully');
+      navigate('/tools');
+    } catch (error) {
+      console.error('Error updating tool:', error);
+      toast.error('Failed to update tool');
     }
-  }, [existingTool]);
+  };
 
   if (isLoading) {
     return (
@@ -39,52 +113,6 @@ export default function EditTool() {
       </Layout>
     );
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('[EditTool] Starting submission with state:', state);
-    console.log('[EditTool] Annotation data:', annotationData);
-    
-    const success = await updateTool(state);
-    
-    if (success && annotationData) {
-      console.log('[EditTool] Tool updated, handling annotation');
-      try {
-        // First remove any existing annotation
-        await supabase
-          .from('tool_annotations')
-          .delete()
-          .eq('tool_id', id);
-
-        // Then create new annotation
-        const { error: annotationError } = await supabase
-          .from('tool_annotations')
-          .insert({
-            photo_id: annotationData.photoId,
-            tool_id: id,
-            coordinates: annotationData.coordinates,
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          });
-
-        if (annotationError) {
-          console.error('[EditTool] Error creating annotation:', annotationError);
-          toast.error('Failed to update tool location');
-          return;
-        }
-
-        console.log('[EditTool] Annotation created successfully');
-        localStorage.removeItem('pendingAnnotation');
-        toast.success('Tool location updated');
-        navigate('/tools');
-      } catch (error) {
-        console.error('[EditTool] Error processing annotation:', error);
-        toast.error('Failed to update tool location');
-      }
-    } else if (success) {
-      toast.success('Tool updated');
-      navigate('/tools');
-    }
-  };
 
   return (
     <Layout>
