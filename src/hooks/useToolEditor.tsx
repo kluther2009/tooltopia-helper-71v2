@@ -100,7 +100,7 @@ export const useToolEditor = (toolId: string | undefined) => {
         .from('warranty-files')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true // Enable upsert to handle duplicate files
+          upsert: true
         });
 
       if (uploadError) {
@@ -117,14 +117,14 @@ export const useToolEditor = (toolId: string | undefined) => {
     }
   };
 
-  const updateTool = async () => {
+  const updateTool = async (): Promise<boolean> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         toast.error("Please sign in to update tools");
         navigate('/login');
-        return;
+        return false;
       }
 
       const updateData: any = {
@@ -140,7 +140,6 @@ export const useToolEditor = (toolId: string | undefined) => {
         updateData.warranty_length = state.warrantyLength ? parseInt(state.warrantyLength) : null;
         updateData.purchase_cost = state.purchaseCost ? parseFloat(state.purchaseCost) : null;
 
-        // Handle file uploads
         if (state.warrantyFile) {
           const warrantyPath = await uploadFile(state.warrantyFile, 'warranty');
           if (warrantyPath) {
@@ -170,10 +169,11 @@ export const useToolEditor = (toolId: string | undefined) => {
       if (error) throw error;
 
       toast.success("Tool updated successfully");
-      navigate('/');
+      return true;
     } catch (error) {
       console.error('Error updating tool:', error);
       toast.error("Failed to update tool");
+      return false;
     }
   };
 
