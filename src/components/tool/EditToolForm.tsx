@@ -7,22 +7,37 @@ import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
+import { useEffect, useState } from "react"
 
 interface EditToolFormProps {
   state: ToolEditorState;
   onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (e: React.FormEvent, annotationData?: any) => void;
 }
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
+  const [annotationData, setAnnotationData] = useState<any>(null);
+
+  // Load annotation data when component mounts
+  useEffect(() => {
+    const storedAnnotation = localStorage.getItem('pendingAnnotation');
+    if (storedAnnotation) {
+      try {
+        const parsed = JSON.parse(storedAnnotation);
+        console.log('[EditToolForm] Loaded annotation data:', parsed);
+        setAnnotationData(parsed);
+      } catch (error) {
+        console.error('[EditToolForm] Error parsing annotation data:', error);
+      }
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
-    const pendingAnnotation = localStorage.getItem('pendingAnnotation');
-    console.log('[EditToolForm] Pending annotation data:', pendingAnnotation);
-    onSubmit(e);
+    console.log('[EditToolForm] Submitting with annotation data:', annotationData);
+    onSubmit(e, annotationData);
   };
 
   return (
