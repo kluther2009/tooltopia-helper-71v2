@@ -19,7 +19,6 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const navigate = useNavigate();
   const [annotationData, setAnnotationData] = useState<any>(null);
 
-  // Load annotation data when component mounts
   useEffect(() => {
     const storedAnnotation = localStorage.getItem('pendingAnnotation');
     if (storedAnnotation) {
@@ -33,11 +32,11 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
-    onSubmit(e, annotationData);
+    await onSubmit(e, annotationData);
   };
 
   return (

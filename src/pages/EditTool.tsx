@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Layout } from "@/components/Layout"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
@@ -8,6 +8,7 @@ import { toast } from "sonner"
 
 export default function EditTool() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
 
   if (isLoading) {
@@ -22,13 +23,12 @@ export default function EditTool() {
 
   const handleSubmit = async (e: React.FormEvent, annotationData: any) => {
     e.preventDefault();
+    console.log('[EditTool] Starting submission with annotation data:', annotationData);
     
-    // First update the tool
     const success = await updateTool();
     
     if (success && annotationData) {
-      console.log('[EditTool] Creating annotation with data:', annotationData);
-      
+      console.log('[EditTool] Tool updated, creating annotation');
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -46,18 +46,20 @@ export default function EditTool() {
           });
 
         if (annotationError) {
-          console.error('Error creating annotation:', annotationError);
+          console.error('[EditTool] Error creating annotation:', annotationError);
           toast.error('Failed to create tool annotation');
-          return;
+        } else {
+          console.log('[EditTool] Annotation created successfully');
+          localStorage.removeItem('pendingAnnotation');
         }
-
-        console.log('[EditTool] Annotation created successfully');
-        localStorage.removeItem('pendingAnnotation');
-        toast.success('Tool and annotation updated successfully');
       } catch (error) {
-        console.error('Error processing annotation:', error);
+        console.error('[EditTool] Error processing annotation:', error);
         toast.error('Failed to create annotation');
       }
+    }
+
+    if (success) {
+      navigate('/');
     }
   };
 
