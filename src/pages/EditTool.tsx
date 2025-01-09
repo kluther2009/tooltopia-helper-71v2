@@ -5,11 +5,17 @@ import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { FormProvider, useForm } from "react-hook-form"
 
 export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
+  
+  // Add React Hook Form
+  const methods = useForm({
+    defaultValues: state
+  });
 
   if (isLoading) {
     return (
@@ -21,8 +27,7 @@ export default function EditTool() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent, annotationData: any) => {
-    e.preventDefault();
+  const handleSubmit = async (values: any, annotationData: any) => {
     console.log('[EditTool] Starting submission with annotation data:', annotationData);
     
     const success = await updateTool();
@@ -71,11 +76,13 @@ export default function EditTool() {
             <CardTitle className="text-2xl font-bold">Edit Tool</CardTitle>
           </CardHeader>
           <CardContent>
-            <EditToolForm
-              state={state}
-              onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
-              onSubmit={handleSubmit}
-            />
+            <FormProvider {...methods}>
+              <EditToolForm
+                state={state}
+                onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
+                onSubmit={methods.handleSubmit(handleSubmit)}
+              />
+            </FormProvider>
           </CardContent>
         </Card>
       </div>
