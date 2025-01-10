@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { DarkModeProvider } from "@/contexts/DarkModeContext";
-import AppRoutes from "@/routes/AppRoutes";
+import { AppRoutes } from "@/routes/AppRoutes";
 
 const queryClient = new QueryClient();
 
