@@ -7,22 +7,36 @@ import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
+import { useEffect, useState } from "react"
 
 interface EditToolFormProps {
   state: ToolEditorState;
   onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent) => Promise<void>;
-  annotationData: any;
+  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>;
 }
 
-export function EditToolForm({ state, onStateChange, onSubmit, annotationData }: EditToolFormProps) {
+export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
+  const [annotationData, setAnnotationData] = useState<any>(null);
+
+  useEffect(() => {
+    const storedAnnotation = localStorage.getItem('pendingAnnotation');
+    if (storedAnnotation) {
+      try {
+        const parsed = JSON.parse(storedAnnotation);
+        console.log('[EditToolForm] Loaded annotation data:', parsed);
+        setAnnotationData(parsed);
+      } catch (error) {
+        console.error('[EditToolForm] Error parsing annotation data:', error);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // This is crucial to prevent the default form submission
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
-    await onSubmit(e);
+    await onSubmit(e, annotationData);
   };
 
   return (

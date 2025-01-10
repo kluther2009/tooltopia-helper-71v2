@@ -1,15 +1,15 @@
-import { Routes, Route, Navigate } from "react-router-dom"
-import Index from "@/pages/Index"
-import Login from "@/pages/Login"
-import SignUp from "@/pages/SignUp"
-import ResetPassword from "@/pages/ResetPassword"
-import AddTool from "@/pages/AddTool"
-import EditTool from "@/pages/EditTool"
-import ToolList from "@/pages/ToolList"
-import Projects from "@/pages/Projects"
-import Settings from "@/pages/Settings"
-import Storage from "@/pages/Storage"
-import InitialInventory from "@/pages/InitialInventory"
+import { Routes, Route, Navigate } from "react-router-dom";
+import Index from "@/pages/Index";
+import Login from "@/pages/Login";
+import SignUp from "@/pages/SignUp";
+import ResetPassword from "@/pages/ResetPassword";
+import AddTool from "@/pages/AddTool";
+import EditTool from "@/pages/EditTool";
+import ToolList from "@/pages/ToolList";
+import Projects from "@/pages/Projects";
+import Settings from "@/pages/Settings";
+import Storage from "@/pages/Storage";
+import InitialInventory from "@/pages/InitialInventory";
 
 export function AppRoutes() {
   return (
@@ -20,12 +20,12 @@ export function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/add-tool" element={<AddTool />} />
       <Route path="/edit-tool/:id" element={<EditTool />} />
-      <Route path="/tools" element={<ToolList />} />
+      <Route path="/tool-list" element={<ToolList />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/storage" element={<Storage />} />
       <Route path="/initial-inventory" element={<InitialInventory />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }

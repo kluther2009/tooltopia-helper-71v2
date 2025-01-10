@@ -1,46 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Layout } from "@/components/Layout"
-import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
-import { useEffect, useState } from "react"
 
 export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
-  const [annotationData, setAnnotationData] = useState(null);
-
-  useEffect(() => {
-    // First check navigation state
-    const navigationState = location.state as { pendingAnnotation?: any };
-    if (navigationState?.pendingAnnotation) {
-      console.log('[EditTool] Found annotation data in navigation state:', navigationState.pendingAnnotation);
-      setAnnotationData(navigationState.pendingAnnotation);
-      return;
-    }
-
-    // If no navigation state, check localStorage
-    const storedData = localStorage.getItem('pendingAnnotation');
-    if (storedData) {
-      try {
-        const parsed = JSON.parse(storedData);
-        if (parsed.timestamp && Date.now() - parsed.timestamp < 30 * 60 * 1000) {
-          console.log('[EditTool] Found valid annotation data in localStorage:', parsed);
-          setAnnotationData(parsed);
-        } else {
-          console.log('[EditTool] Stored annotation data expired, clearing');
-          localStorage.removeItem('pendingAnnotation');
-        }
-      } catch (error) {
-        console.error('[EditTool] Error parsing stored annotation data:', error);
-        localStorage.removeItem('pendingAnnotation');
-      }
-    }
-  }, [location.state]);
 
   if (isLoading) {
     return (
@@ -52,7 +21,7 @@ export default function EditTool() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, annotationData: any) => {
     e.preventDefault();
     console.log('[EditTool] Starting submission with annotation data:', annotationData);
     
@@ -106,7 +75,6 @@ export default function EditTool() {
               state={state}
               onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
               onSubmit={handleSubmit}
-              annotationData={annotationData}
             />
           </CardContent>
         </Card>
