@@ -7,50 +7,22 @@ import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
-import { useEffect, useState } from "react"
 
 interface EditToolFormProps {
   state: ToolEditorState;
   onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>;
+  onSubmit: (e: React.FormEvent) => Promise<void>;
+  annotationData: any;
 }
 
-export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
+export function EditToolForm({ state, onStateChange, onSubmit, annotationData }: EditToolFormProps) {
   const navigate = useNavigate();
-  const [annotationData, setAnnotationData] = useState<any>(null);
-
-  useEffect(() => {
-    const loadAnnotationData = () => {
-      const storedAnnotation = localStorage.getItem('pendingAnnotation');
-      if (storedAnnotation) {
-        try {
-          const parsed = JSON.parse(storedAnnotation);
-          console.log('[EditToolForm] Loaded annotation data:', parsed);
-          
-          // Verify data freshness (30 minute timeout)
-          const timestamp = parsed.timestamp;
-          if (timestamp && Date.now() - timestamp > 30 * 60 * 1000) {
-            console.log('[EditToolForm] Annotation data expired');
-            localStorage.removeItem('pendingAnnotation');
-            setAnnotationData(null);
-          } else {
-            setAnnotationData(parsed);
-          }
-        } catch (error) {
-          console.error('[EditToolForm] Error parsing annotation data:', error);
-          localStorage.removeItem('pendingAnnotation');
-        }
-      }
-    };
-
-    loadAnnotationData();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
-    await onSubmit(e, annotationData);
+    await onSubmit(e);
   };
 
   return (
