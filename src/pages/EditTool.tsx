@@ -1,15 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Layout } from "@/components/Layout"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { useEffect } from "react"
 
 export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
+
+  // Handle annotation data from navigation state
+  useEffect(() => {
+    const navigationState = location.state as { pendingAnnotation?: any };
+    if (navigationState?.pendingAnnotation) {
+      console.log('[EditTool] Found annotation data in navigation state:', navigationState.pendingAnnotation);
+      // Save to localStorage to ensure it's available for the form
+      localStorage.setItem('pendingAnnotation', JSON.stringify(navigationState.pendingAnnotation));
+    }
+  }, [location.state]);
 
   if (isLoading) {
     return (

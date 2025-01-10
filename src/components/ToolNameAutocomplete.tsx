@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import { useNavigate } from "react-router-dom"
 
 interface ToolNameAutocompleteProps {
   value: string
@@ -18,6 +19,7 @@ export function ToolNameAutocomplete({
   inputRef,
   onExistingToolSelect 
 }: ToolNameAutocompleteProps) {
+  const navigate = useNavigate();
   const [existingTool, setExistingTool] = useState<{ id: string, location: string, sub_location_a?: string, sub_location_b?: string } | null>(null)
   const [isChecking, setIsChecking] = useState(false)
 
@@ -58,6 +60,19 @@ export function ToolNameAutocomplete({
     return location
   }
 
+  const handleExistingToolSelect = () => {
+    if (!existingTool) return;
+
+    // Get annotation data from localStorage before navigating
+    const annotationData = localStorage.getItem('pendingAnnotation');
+    console.log('[ToolNameAutocomplete] Annotation data before navigation:', annotationData);
+
+    // Navigate to edit page with both the tool ID and annotation data
+    navigate(`/edit-tool/${existingTool.id}`, {
+      state: { pendingAnnotation: annotationData ? JSON.parse(annotationData) : null }
+    });
+  };
+
   return (
     <div className="space-y-2">
       <Label htmlFor="toolName">Tool Name</Label>
@@ -81,7 +96,7 @@ export function ToolNameAutocomplete({
           <Button
             variant="default"
             className="w-full"
-            onClick={() => onExistingToolSelect?.(existingTool.id)}
+            onClick={handleExistingToolSelect}
           >
             Update Existing Tool
           </Button>
