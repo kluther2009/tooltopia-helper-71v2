@@ -33,7 +33,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // This is crucial to prevent the default form submission
+    e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
     await onSubmit(e, annotationData);
