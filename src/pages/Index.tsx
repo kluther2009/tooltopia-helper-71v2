@@ -11,12 +11,21 @@ export default function Index() {
   const [tools, setTools] = useState<any[]>([]);
 
   const fetchTools = async () => {
-    const { data, error } = await supabase
-      .from('tools')
-      .select('*');
-    
-    if (!error && data) {
-      setTools(data);
+    try {
+      const { data, error } = await supabase
+        .from('tools')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching tools:', error);
+        return;
+      }
+      
+      if (data) {
+        setTools(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchTools:', error);
     }
   };
 
