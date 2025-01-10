@@ -20,20 +20,34 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const [annotationData, setAnnotationData] = useState<any>(null);
 
   useEffect(() => {
-    const storedAnnotation = localStorage.getItem('pendingAnnotation');
-    if (storedAnnotation) {
-      try {
-        const parsed = JSON.parse(storedAnnotation);
-        console.log('[EditToolForm] Loaded annotation data:', parsed);
-        setAnnotationData(parsed);
-      } catch (error) {
-        console.error('[EditToolForm] Error parsing annotation data:', error);
+    const loadAnnotationData = () => {
+      const storedAnnotation = localStorage.getItem('pendingAnnotation');
+      if (storedAnnotation) {
+        try {
+          const parsed = JSON.parse(storedAnnotation);
+          console.log('[EditToolForm] Loaded annotation data:', parsed);
+          
+          // Verify data freshness (30 minute timeout)
+          const timestamp = parsed.timestamp;
+          if (timestamp && Date.now() - timestamp > 30 * 60 * 1000) {
+            console.log('[EditToolForm] Annotation data expired');
+            localStorage.removeItem('pendingAnnotation');
+            setAnnotationData(null);
+          } else {
+            setAnnotationData(parsed);
+          }
+        } catch (error) {
+          console.error('[EditToolForm] Error parsing annotation data:', error);
+          localStorage.removeItem('pendingAnnotation');
+        }
       }
-    }
+    };
+
+    loadAnnotationData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // This is crucial to prevent the default form submission
+    e.preventDefault();
     console.log('[EditToolForm] Starting form submission');
     console.log('[EditToolForm] Submitting with annotation data:', annotationData);
     await onSubmit(e, annotationData);
