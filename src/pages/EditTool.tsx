@@ -5,11 +5,27 @@ import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { useEffect, useState } from "react"
 
 export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
+  const [annotationData, setAnnotationData] = useState<any>(null);
+
+  useEffect(() => {
+    // Check for pending annotation data in localStorage
+    const storedAnnotation = localStorage.getItem('pendingAnnotation');
+    if (storedAnnotation) {
+      try {
+        const parsed = JSON.parse(storedAnnotation);
+        console.log('[EditTool] Found stored annotation data:', parsed);
+        setAnnotationData(parsed);
+      } catch (error) {
+        console.error('[EditTool] Error parsing stored annotation:', error);
+      }
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -21,7 +37,7 @@ export default function EditTool() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent, annotationData: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[EditTool] Starting submission with annotation data:', annotationData);
     

@@ -58,6 +58,19 @@ export function ToolNameAutocomplete({
     return location
   }
 
+  const handleExistingToolSelect = () => {
+    if (!existingTool || !onExistingToolSelect) return
+
+    // Get annotation data from localStorage before navigating
+    const annotationData = localStorage.getItem('pendingAnnotation')
+    if (annotationData) {
+      console.log('Found pending annotation when selecting existing tool:', annotationData)
+      // Keep the annotation data in localStorage - it will be picked up by EditTool
+    }
+
+    onExistingToolSelect(existingTool.id)
+  }
+
   return (
     <div className="space-y-2">
       <Label htmlFor="toolName">Tool Name</Label>
@@ -81,7 +94,7 @@ export function ToolNameAutocomplete({
           <Button
             variant="default"
             className="w-full"
-            onClick={() => onExistingToolSelect?.(existingTool.id)}
+            onClick={handleExistingToolSelect}
           >
             Update Existing Tool
           </Button>
