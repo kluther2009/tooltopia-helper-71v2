@@ -47,7 +47,6 @@ export function ToolNameAutocomplete({
       }
     }
 
-    // Debounce the check to avoid too many requests
     const timeoutId = setTimeout(checkExistingTool, 500)
     return () => clearTimeout(timeoutId)
   }, [value])
@@ -63,14 +62,26 @@ export function ToolNameAutocomplete({
   const handleExistingToolSelect = () => {
     if (!existingTool) return;
 
-    // Get annotation data from localStorage before navigating
     const annotationData = localStorage.getItem('pendingAnnotation');
-    console.log('[ToolNameAutocomplete] Annotation data before navigation:', annotationData);
+    console.log('[ToolNameAutocomplete] Reading annotation data from localStorage:', annotationData);
 
-    // Navigate to edit page with both the tool ID and annotation data
-    navigate(`/edit-tool/${existingTool.id}`, {
-      state: { pendingAnnotation: annotationData ? JSON.parse(annotationData) : null }
-    });
+    if (annotationData) {
+      const parsedData = JSON.parse(annotationData);
+      // Verify data freshness (30 minute timeout)
+      if (parsedData.timestamp && Date.now() - parsedData.timestamp < 30 * 60 * 1000) {
+        console.log('[ToolNameAutocomplete] Using valid annotation data for navigation');
+        navigate(`/edit-tool/${existingTool.id}`, {
+          state: { pendingAnnotation: parsedData }
+        });
+        return;
+      } else {
+        console.log('[ToolNameAutocomplete] Annotation data expired, clearing localStorage');
+        localStorage.removeItem('pendingAnnotation');
+      }
+    }
+
+    // If no valid annotation data, navigate without it
+    navigate(`/edit-tool/${existingTool.id}`);
   };
 
   return (

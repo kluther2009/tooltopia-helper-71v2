@@ -13,12 +13,10 @@ export default function EditTool() {
   const location = useLocation();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
 
-  // Handle annotation data from navigation state
   useEffect(() => {
     const navigationState = location.state as { pendingAnnotation?: any };
     if (navigationState?.pendingAnnotation) {
       console.log('[EditTool] Found annotation data in navigation state:', navigationState.pendingAnnotation);
-      // Save to localStorage to ensure it's available for the form
       localStorage.setItem('pendingAnnotation', JSON.stringify(navigationState.pendingAnnotation));
     }
   }, [location.state]);
