@@ -11,6 +11,36 @@ export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
+  const [annotationData, setAnnotationData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchTemporaryAnnotation = async () => {
+      try {
+        const { data: tempAnnotation, error } = await supabase
+          .from('temporary_annotations')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (error) {
+          if (error.code !== 'PGRST116') { // No rows returned
+            console.error('Error fetching temporary annotation:', error)
+          }
+          return
+        }
+
+        if (tempAnnotation) {
+          console.log('[EditTool] Found temporary annotation:', tempAnnotation)
+          setAnnotationData(tempAnnotation)
+        }
+      } catch (error) {
+        console.error('[EditTool] Error fetching temporary annotation:', error)
+      }
+    }
+
+    fetchTemporaryAnnotation()
+  }, [])
 
   if (isLoading) {
     return (
@@ -22,7 +52,7 @@ export default function EditTool() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent, annotationData: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[EditTool] Starting submission with annotation data:', annotationData);
     
@@ -40,7 +70,7 @@ export default function EditTool() {
         const { error: annotationError } = await supabase
           .from('tool_annotations')
           .insert({
-            photo_id: annotationData.photoId,
+            photo_id: annotationData.photo_id,
             tool_id: id,
             coordinates: annotationData.coordinates,
             user_id: user.id
@@ -51,7 +81,16 @@ export default function EditTool() {
           toast.error('Failed to create tool annotation');
         } else {
           console.log('[EditTool] Annotation created successfully');
-          localStorage.removeItem('pendingAnnotation');
+          
+          // Clean up temporary annotation
+          const { error: deleteError } = await supabase
+            .from('temporary_annotations')
+            .delete()
+            .eq('id', annotationData.id)
+
+          if (deleteError) {
+            console.error('[EditTool] Error deleting temporary annotation:', deleteError)
+          }
         }
       } catch (error) {
         console.error('[EditTool] Error processing annotation:', error);

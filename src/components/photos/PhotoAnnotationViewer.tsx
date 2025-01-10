@@ -65,46 +65,49 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     }
   }
 
-  const handleRectangleDrawn = (coordinates: { x: number; y: number; width: number; height: number }) => {
+  const handleRectangleDrawn = async (coordinates: { x: number; y: number; width: number; height: number }) => {
     if (!photo) {
       toast.error('No photo selected for annotation')
       return
     }
 
-    // Ensure coordinates are numbers and create a clean object
-    const formattedCoordinates = {
-      x: Number(coordinates.x),
-      y: Number(coordinates.y),
-      width: Number(coordinates.width),
-      height: Number(coordinates.height)
-    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to create annotations')
+        return
+      }
 
-    console.log('[PhotoAnnotationViewer] Starting annotation process with data:', {
-      photoId: photo.id,
-      coordinates: formattedCoordinates,
-      location: photo.location,
-      subLocation: photo.sub_location
-    })
+      // Save to temporary_annotations table
+      const { data: tempAnnotation, error: tempError } = await supabase
+        .from('temporary_annotations')
+        .insert({
+          photo_id: photo.id,
+          coordinates,
+          location: photo.location,
+          sub_location: photo.sub_location,
+          user_id: user.id
+        })
+        .select()
+        .single()
 
-    // Save to localStorage with a timestamp to ensure freshness
-    const annotationData = {
-      photoId: photo.id,
-      coordinates: formattedCoordinates,
-      location: photo.location,
-      subLocation: photo.sub_location,
-      timestamp: Date.now()
+      if (tempError) {
+        console.error('Error saving temporary annotation:', tempError)
+        toast.error('Failed to save annotation')
+        return
+      }
+
+      console.log('Temporary annotation saved:', tempAnnotation)
+      
+      // Close the dialog before navigating
+      onClose()
+      
+      // Navigate to add tool page
+      navigate('/add-tool')
+    } catch (error) {
+      console.error('Error in handleRectangleDrawn:', error)
+      toast.error('Failed to save annotation')
     }
-    
-    console.log('[PhotoAnnotationViewer] Saving to localStorage:', annotationData)
-    localStorage.setItem('pendingAnnotation', JSON.stringify(annotationData))
-    
-    // Close the dialog before navigating
-    onClose()
-    
-    // Navigate with state as backup
-    navigate('/add-tool', { 
-      state: { pendingAnnotation: annotationData }
-    })
   }
 
   if (!photo || !isOpen) return null

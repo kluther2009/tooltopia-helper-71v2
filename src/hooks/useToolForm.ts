@@ -3,6 +3,7 @@ import { useToolManagement } from "@/hooks/useToolManagement"
 import { useToolSubmission } from "@/components/tool/hooks/useToolSubmission"
 import { toast } from "sonner"
 import { useNavigate, useLocation } from "react-router-dom"
+import { supabase } from "@/integrations/supabase/client"
 
 export function useToolForm() {
   const navigate = useNavigate()
@@ -23,50 +24,41 @@ export function useToolForm() {
   const { checkToolExists } = useToolManagement()
   const { handleToolSubmission, isUploading } = useToolSubmission()
 
-  // Store annotation data in state to preserve it
+  // Store annotation data in state
   const [annotationData, setAnnotationData] = useState<any>(null)
 
   useEffect(() => {
-    // First check navigation state
-    const state = location.state as { pendingAnnotation?: any }
-    if (state?.pendingAnnotation) {
-      console.log('Found annotation data in navigation state:', state.pendingAnnotation)
-      setAnnotationData(state.pendingAnnotation)
-      // Save to localStorage as backup
-      localStorage.setItem('pendingAnnotation', JSON.stringify(state.pendingAnnotation))
-    } else {
-      // Fallback to localStorage
-      const storedData = localStorage.getItem('pendingAnnotation')
-      if (storedData) {
-        try {
-          const parsed = JSON.parse(storedData)
-          console.log('Found stored annotation data:', parsed)
-          setAnnotationData(parsed)
-          
-          // Verify data freshness (30 minute timeout)
-          const timestamp = parsed.timestamp
-          if (timestamp && Date.now() - timestamp > 30 * 60 * 1000) {
-            console.log('Annotation data expired')
-            localStorage.removeItem('pendingAnnotation')
-            setAnnotationData(null)
-          }
-        } catch (error) {
-          console.error('Error parsing stored annotation data:', error)
-          localStorage.removeItem('pendingAnnotation')
-        }
-      }
-    }
-  }, [location.state])
+    const fetchTemporaryAnnotation = async () => {
+      try {
+        const { data: tempAnnotation, error } = await supabase
+          .from('temporary_annotations')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
 
-  useEffect(() => {
-    if (annotationData) {
-      console.log('Setting form data from annotation:', annotationData)
-      setPrimaryLocation(annotationData.location || "")
-      if (annotationData.subLocation) {
-        setSubLocation(annotationData.subLocation)
+        if (error) {
+          if (error.code !== 'PGRST116') { // No rows returned
+            console.error('Error fetching temporary annotation:', error)
+          }
+          return
+        }
+
+        if (tempAnnotation) {
+          console.log('Found temporary annotation:', tempAnnotation)
+          setAnnotationData(tempAnnotation)
+          setPrimaryLocation(tempAnnotation.location || "")
+          if (tempAnnotation.sub_location) {
+            setSubLocation(tempAnnotation.sub_location)
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchTemporaryAnnotation:', error)
       }
     }
-  }, [annotationData])
+
+    fetchTemporaryAnnotation()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,17 +89,29 @@ export function useToolForm() {
       purchaseCost,
       warrantyFile,
       receiptFile,
-      annotationData // Pass the annotation data directly
+      annotationData
     })
 
     if (success) {
+      // Clean up temporary annotation
+      if (annotationData?.id) {
+        const { error: deleteError } = await supabase
+          .from('temporary_annotations')
+          .delete()
+          .eq('id', annotationData.id)
+
+        if (deleteError) {
+          console.error('Error deleting temporary annotation:', deleteError)
+        }
+      }
+
       console.log('Tool submission successful, navigating to initial-inventory')
       navigate('/initial-inventory')
     }
   }
 
   const handleCancel = () => {
-    console.log('Form cancelled, keeping annotation data for later use')
+    console.log('Form cancelled')
     navigate('/initial-inventory')
   }
 

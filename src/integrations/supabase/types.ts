@@ -253,6 +253,47 @@ export type Database = {
         }
         Relationships: []
       }
+      temporary_annotations: {
+        Row: {
+          coordinates: Json
+          created_at: string
+          expires_at: string
+          id: string
+          location: string | null
+          photo_id: string
+          sub_location: string | null
+          user_id: string | null
+        }
+        Insert: {
+          coordinates: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          location?: string | null
+          photo_id: string
+          sub_location?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          coordinates?: Json
+          created_at?: string
+          expires_at?: string
+          id?: string
+          location?: string | null
+          photo_id?: string
+          sub_location?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temporary_annotations_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "location_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tool_annotations: {
         Row: {
           coordinates: Json
@@ -389,6 +430,10 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_audio_files: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_temporary_annotations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
