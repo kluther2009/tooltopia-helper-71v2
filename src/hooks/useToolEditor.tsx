@@ -1,7 +1,28 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface Tool {
+  id: string;
+  name: string;
+  location: string;
+  sub_location_a: string | null;
+  sub_location_b: string | null;
+  status: string;
+  purchase_date: string | null;
+  warranty_length: number | null;
+  purchase_cost: number | null;
+  warranty_file_path: string | null;
+  receipt_file_path: string | null;
+}
+
+interface AnnotationData {
+  photoId: string;
+  location: string;
+  subLocation: string | null;
+  coordinates: { x: number; y: number; width: number; height: number };
+}
 
 export interface ToolEditorState {
   toolName: string;
@@ -17,7 +38,8 @@ export interface ToolEditorState {
   receiptFile: File | null;
 }
 
-export const useToolEditor = (toolId: string | undefined) => {
+export function useToolEditor(toolId: string | undefined) {
+  const navigate = useNavigate();
   const [state, setState] = useState<ToolEditorState>({
     toolName: "",
     primaryLocation: "",
@@ -32,7 +54,81 @@ export const useToolEditor = (toolId: string | undefined) => {
     receiptFile: null,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [annotationData, setAnnotationData] = useState<AnnotationData | null>(null);
+
+  const fetchTool = useCallback(async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("tools")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching tool:", error);
+        toast.error("Failed to load tool");
+        navigate("/");
+        return;
+      }
+
+      if (data) {
+        const hasAdditionalInfo = !!(data.purchase_date || data.warranty_length || data.purchase_cost);
+        setState({
+          toolName: data.name,
+          primaryLocation: data.location || "",
+          subLocation: data.sub_location_a || "",
+          specificLocation: data.sub_location_b || "",
+          status: data.status,
+          showAdditionalInfo: hasAdditionalInfo,
+          purchaseDate: data.purchase_date || "",
+          warrantyLength: data.warranty_length?.toString() || "",
+          purchaseCost: data.purchase_cost?.toString() || "",
+          warrantyFile: null,
+          receiptFile: null,
+        });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("An error occurred while loading the tool");
+      navigate("/");
+    }
+  }, [navigate]);
+
+  const checkForAnnotations = useCallback(async (id: string) => {
+    try {
+      console.log("[useToolEditor] Checking for annotations for tool:", id);
+      const { data, error } = await supabase
+        .from("tool_annotations")
+        .select(`
+          photo_id,
+          location_photos!inner(location, sub_location),
+          coordinates
+        `)
+        .eq("tool_id", id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching annotations:", error);
+        return;
+      }
+
+      if (data) {
+        console.log("[useToolEditor] Found annotation data:", data);
+        const { location_photos, ...rest } = data;
+        setAnnotationData({
+          photoId: data.photo_id,
+          location: location_photos.location,
+          subLocation: location_photos.sub_location,
+          coordinates: typeof data.coordinates === 'string' 
+            ? JSON.parse(data.coordinates) 
+            : data.coordinates,
+        });
+      }
+    } catch (error) {
+      console.error("Error in checkForAnnotations:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const checkAuthAndFetchTool = async () => {
@@ -41,89 +137,36 @@ export const useToolEditor = (toolId: string | undefined) => {
         
         if (sessionError || !session) {
           toast.error("Please sign in to edit tools");
-          navigate('/login');
+          navigate("/login");
           return;
         }
 
         if (!toolId) return;
 
-        const { data, error } = await supabase
-          .from('tools')
-          .select('*')
-          .eq('id', toolId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching tool:', error);
-          toast.error("Failed to fetch tool details");
-          navigate('/');
-          return;
-        }
-
-        if (data) {
-          const hasAdditionalInfo = !!(data.purchase_date || data.warranty_length || data.purchase_cost);
-          setState({
-            toolName: data.name,
-            primaryLocation: data.location || '',
-            subLocation: data.sub_location_a || '',
-            specificLocation: data.sub_location_b || '',
-            status: data.status,
-            showAdditionalInfo: hasAdditionalInfo,
-            purchaseDate: data.purchase_date || '',
-            warrantyLength: data.warranty_length?.toString() || '',
-            purchaseCost: data.purchase_cost?.toString() || '',
-            warrantyFile: null,
-            receiptFile: null,
-          });
-        }
+        await Promise.all([
+          fetchTool(toolId),
+          checkForAnnotations(toolId)
+        ]);
       } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
         toast.error("An error occurred while loading the tool");
-        navigate('/');
+        navigate("/");
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuthAndFetchTool();
-  }, [toolId, navigate]);
-
-  const uploadFile = async (file: File, type: 'warranty' | 'receipt'): Promise<string | null> => {
-    if (!file || !toolId) return null;
-
-    try {
-      const timestamp = new Date().getTime();
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${toolId}/${type}_${timestamp}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('warranty-files')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (uploadError) {
-        console.error(`Error uploading ${type} file:`, uploadError);
-        toast.error(`Failed to upload ${type} file`);
-        return null;
-      }
-
-      return filePath;
-    } catch (error) {
-      console.error(`Error in uploadFile:`, error);
-      toast.error(`Failed to upload ${type} file`);
-      return null;
-    }
-  };
+  }, [toolId, fetchTool, checkForAnnotations, navigate]);
 
   const updateTool = async (): Promise<boolean> => {
+    setIsUpdating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         toast.error("Please sign in to update tools");
-        navigate('/login');
+        navigate("/login");
         return false;
       }
 
@@ -139,20 +182,6 @@ export const useToolEditor = (toolId: string | undefined) => {
         updateData.purchase_date = state.purchaseDate || null;
         updateData.warranty_length = state.warrantyLength ? parseInt(state.warrantyLength) : null;
         updateData.purchase_cost = state.purchaseCost ? parseFloat(state.purchaseCost) : null;
-
-        if (state.warrantyFile) {
-          const warrantyPath = await uploadFile(state.warrantyFile, 'warranty');
-          if (warrantyPath) {
-            updateData.warranty_file_path = warrantyPath;
-          }
-        }
-
-        if (state.receiptFile) {
-          const receiptPath = await uploadFile(state.receiptFile, 'receipt');
-          if (receiptPath) {
-            updateData.receipt_file_path = receiptPath;
-          }
-        }
       } else {
         updateData.purchase_date = null;
         updateData.warranty_length = null;
@@ -162,18 +191,20 @@ export const useToolEditor = (toolId: string | undefined) => {
       }
 
       const { error } = await supabase
-        .from('tools')
+        .from("tools")
         .update(updateData)
-        .eq('id', toolId);
+        .eq("id", toolId);
 
       if (error) throw error;
 
       toast.success("Tool updated successfully");
       return true;
     } catch (error) {
-      console.error('Error updating tool:', error);
+      console.error("Error updating tool:", error);
       toast.error("Failed to update tool");
       return false;
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -181,6 +212,8 @@ export const useToolEditor = (toolId: string | undefined) => {
     state,
     setState,
     isLoading,
+    isUpdating,
     updateTool,
+    annotationData,
   };
-};
+}
