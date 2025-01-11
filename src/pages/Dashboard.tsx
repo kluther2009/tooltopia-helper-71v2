@@ -2,8 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTools } from "@/hooks/useTools";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { ChartContainer } from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
@@ -117,14 +117,21 @@ export default function Dashboard() {
                 <BarChart data={locationData}>
                   <XAxis dataKey="location" />
                   <YAxis />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: "var(--background)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                    }}
+                    labelStyle={{
+                      color: "var(--foreground)",
+                    }}
+                  />
                   <Bar
                     dataKey="count"
-                    name="tools"
+                    name="Tools"
                     fill="var(--color-tools)"
                   />
-                  <ChartTooltip>
-                    <ChartTooltipContent />
-                  </ChartTooltip>
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
