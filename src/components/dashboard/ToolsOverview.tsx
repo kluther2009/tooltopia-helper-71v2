@@ -14,19 +14,43 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
   const toolsInMaintenance = tools.filter(t => t.status === 'maintenance').length;
   const toolsInUse = tools.filter(t => t.status === 'in-use').length;
   
-  // Calculate tools under warranty
+  // Calculate tools under warranty with debug logging
   const toolsUnderWarranty = tools.filter(tool => {
-    if (!tool.purchase_date || !tool.warranty_length) return false;
+    console.log('Checking warranty for tool:', {
+      name: tool.name,
+      purchaseDate: tool.purchase_date,
+      warrantyLength: tool.warranty_length
+    });
+    
+    if (!tool.purchase_date || !tool.warranty_length) {
+      console.log('Tool missing purchase date or warranty length:', tool.name);
+      return false;
+    }
+    
     const purchaseDate = new Date(tool.purchase_date);
     const currentDate = new Date();
     const monthsPassed = differenceInMonths(currentDate, purchaseDate);
+    
+    console.log('Warranty calculation:', {
+      name: tool.name,
+      monthsPassed,
+      warrantyLength: tool.warranty_length,
+      isUnderWarranty: monthsPassed < tool.warranty_length
+    });
+    
     return monthsPassed < tool.warranty_length;
   }).length;
 
-  // Calculate tools with pictures (those that have warranty_file_path or receipt_file_path)
-  const toolsWithPictures = tools.filter(tool => 
-    tool.warranty_file_path || tool.receipt_file_path
-  ).length;
+  // Calculate tools with documents with debug logging
+  const toolsWithDocuments = tools.filter(tool => {
+    console.log('Checking documents for tool:', {
+      name: tool.name,
+      warrantyFile: tool.warranty_file_path,
+      receiptFile: tool.receipt_file_path
+    });
+    
+    return Boolean(tool.warranty_file_path || tool.receipt_file_path);
+  }).length;
 
   return (
     <section className="space-y-6">      
@@ -82,7 +106,7 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{toolsWithPictures}</div>
+            <div className="text-2xl font-bold">{toolsWithDocuments}</div>
           </CardContent>
         </Card>
       </div>
