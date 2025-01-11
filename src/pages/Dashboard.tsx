@@ -7,7 +7,13 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recha
 import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
-  const { tools } = useTools();
+  const { tools, fetchTools } = useTools();
+
+  // Fetch tools on component mount
+  useQuery({
+    queryKey: ['tools'],
+    queryFn: fetchTools
+  });
 
   const { data: projects, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -36,7 +42,7 @@ export default function Dashboard() {
 
   // Calculate statistics
   const totalTools = tools.length;
-  const activeProjects = projects?.filter(p => p.status === 'in-progress').length || 0;
+  const activeProjects = projects?.filter(p => p.status === 'ongoing').length || 0;
   const toolsInUse = tools.filter(t => t.status === 'in-use').length;
   const toolsInMaintenance = tools.filter(t => t.status === 'maintenance').length;
 
