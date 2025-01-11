@@ -7,13 +7,19 @@ import {
   MessageSquare,
   FolderPlus,
   Table,
+  Grid,
 } from "lucide-react";
 
 export const sidebarRoutes = [
   {
-    label: "Tool Overview",
+    label: "Dashboard",
     icon: LayoutDashboard,
     href: "/",
+  },
+  {
+    label: "Tool Overview",
+    icon: Grid,
+    href: "/tool-overview",
   },
   {
     label: "Add Tool",

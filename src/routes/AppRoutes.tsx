@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Dashboard from "@/pages/Dashboard";
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
@@ -14,7 +15,8 @@ import InitialInventory from "@/pages/InitialInventory";
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/tool-overview" element={<Index />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/reset-password" element={<ResetPassword />} />
