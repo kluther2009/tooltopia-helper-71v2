@@ -1,9 +1,10 @@
 import { useTools } from "@/hooks/useTools";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wrench, FolderKanban } from "lucide-react";
 import { ToolsOverview } from "@/components/dashboard/ToolsOverview";
 import { ProjectsOverview } from "@/components/dashboard/ProjectsOverview";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
   const { tools, fetchTools } = useTools();
@@ -50,20 +51,35 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container py-6 space-y-24"> {/* Increased space between sections */}
-      <div>
-        <h1 className="text-2xl font-bold mb-12">Dashboard</h1>
-        
-        <ToolsOverview 
-          tools={tools}
-          locationData={locationData}
-        />
-      </div>
+    <div className="container py-6">
+      <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
+      
+      <Tabs defaultValue="tools" className="space-y-8">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="tools" className="flex items-center gap-2">
+            <Wrench className="h-4 w-4" />
+            Tools Overview
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="flex items-center gap-2">
+            <FolderKanban className="h-4 w-4" />
+            Projects Overview
+          </TabsTrigger>
+        </TabsList>
 
-      <ProjectsOverview 
-        projects={projects || []}
-        toolsInUse={toolsInUse}
-      />
+        <TabsContent value="tools" className="space-y-6 animate-fade-in">
+          <ToolsOverview 
+            tools={tools}
+            locationData={locationData}
+          />
+        </TabsContent>
+
+        <TabsContent value="projects" className="space-y-6 animate-fade-in">
+          <ProjectsOverview 
+            projects={projects || []}
+            toolsInUse={toolsInUse}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
