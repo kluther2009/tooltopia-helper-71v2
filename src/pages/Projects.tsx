@@ -1,4 +1,3 @@
-import { Layout } from "@/components/Layout";
 import { ProjectsList } from "@/components/projects/ProjectsList";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { Button } from "@/components/ui/button";
@@ -23,8 +22,7 @@ export default function Projects() {
   const [sortOrder, setSortOrder] = useState<ProjectSort>("newest");
 
   return (
-    <Layout>
-      <div className="max-w-[1200px] mx-auto">
+    <div className="max-w-[1200px] mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-white">My Projects</h1>
           <div className="flex gap-2">
@@ -63,7 +61,6 @@ export default function Projects() {
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
         />
-      </div>
-    </Layout>
+    </div>
   );
 }
