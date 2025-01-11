@@ -16,31 +16,32 @@ export default function EditTool() {
   useEffect(() => {
     const fetchTemporaryAnnotation = async () => {
       try {
+        console.log('[EditTool] Fetching temporary annotation...');
         const { data: tempAnnotation, error } = await supabase
           .from('temporary_annotations')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle();
 
         if (error) {
-          if (error.code !== 'PGRST116') { // No rows returned
-            console.error('Error fetching temporary annotation:', error)
-          }
-          return
+          console.error('[EditTool] Error fetching temporary annotation:', error);
+          return;
         }
 
         if (tempAnnotation) {
-          console.log('[EditTool] Found temporary annotation:', tempAnnotation)
-          setAnnotationData(tempAnnotation)
+          console.log('[EditTool] Found temporary annotation:', tempAnnotation);
+          setAnnotationData(tempAnnotation);
+        } else {
+          console.log('[EditTool] No temporary annotation found');
         }
       } catch (error) {
-        console.error('[EditTool] Error fetching temporary annotation:', error)
+        console.error('[EditTool] Error fetching temporary annotation:', error);
       }
-    }
+    };
 
-    fetchTemporaryAnnotation()
-  }, [])
+    fetchTemporaryAnnotation();
+  }, []);
 
   if (isLoading) {
     return (

@@ -30,53 +30,54 @@ export function useToolForm() {
   useEffect(() => {
     const fetchTemporaryAnnotation = async () => {
       try {
+        console.log('Fetching temporary annotation...');
         const { data: tempAnnotation, error } = await supabase
           .from('temporary_annotations')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle();
 
         if (error) {
-          if (error.code !== 'PGRST116') { // No rows returned
-            console.error('Error fetching temporary annotation:', error)
-          }
-          return
+          console.error('Error fetching temporary annotation:', error);
+          return;
         }
 
         if (tempAnnotation) {
-          console.log('Found temporary annotation:', tempAnnotation)
-          setAnnotationData(tempAnnotation)
-          setPrimaryLocation(tempAnnotation.location || "")
+          console.log('Found temporary annotation:', tempAnnotation);
+          setAnnotationData(tempAnnotation);
+          setPrimaryLocation(tempAnnotation.location || "");
           if (tempAnnotation.sub_location) {
-            setSubLocation(tempAnnotation.sub_location)
+            setSubLocation(tempAnnotation.sub_location);
           }
+        } else {
+          console.log('No temporary annotation found');
         }
       } catch (error) {
-        console.error('Error in fetchTemporaryAnnotation:', error)
+        console.error('Error in fetchTemporaryAnnotation:', error);
       }
     }
 
-    fetchTemporaryAnnotation()
-  }, [])
+    fetchTemporaryAnnotation();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!toolName.trim()) {
-      toast.error("Please enter a tool name")
-      toolNameInputRef.current?.focus()
-      return
+      toast.error("Please enter a tool name");
+      toolNameInputRef.current?.focus();
+      return;
     }
 
-    const toolExists = await checkToolExists(toolName)
+    const toolExists = await checkToolExists(toolName);
     if (toolExists) {
-      toast.error("This tool already exists")
-      toolNameInputRef.current?.focus()
-      return
+      toast.error("This tool already exists");
+      toolNameInputRef.current?.focus();
+      return;
     }
 
-    console.log('Starting tool submission with annotation data:', annotationData)
+    console.log('Starting tool submission with annotation data:', annotationData);
     const success = await handleToolSubmission({
       toolName,
       primaryLocation,
@@ -90,7 +91,7 @@ export function useToolForm() {
       warrantyFile,
       receiptFile,
       annotationData
-    })
+    });
 
     if (success) {
       // Clean up temporary annotation
@@ -98,22 +99,22 @@ export function useToolForm() {
         const { error: deleteError } = await supabase
           .from('temporary_annotations')
           .delete()
-          .eq('id', annotationData.id)
+          .eq('id', annotationData.id);
 
         if (deleteError) {
-          console.error('Error deleting temporary annotation:', deleteError)
+          console.error('Error deleting temporary annotation:', deleteError);
         }
       }
 
-      console.log('Tool submission successful, navigating to initial-inventory')
-      navigate('/initial-inventory')
+      console.log('Tool submission successful, navigating to initial-inventory');
+      navigate('/initial-inventory');
     }
-  }
+  };
 
   const handleCancel = () => {
-    console.log('Form cancelled')
-    navigate('/initial-inventory')
-  }
+    console.log('Form cancelled');
+    navigate('/initial-inventory');
+  };
 
   return {
     formState: {
@@ -146,5 +147,5 @@ export function useToolForm() {
       handleCancel
     },
     toolNameInputRef
-  }
+  };
 }
