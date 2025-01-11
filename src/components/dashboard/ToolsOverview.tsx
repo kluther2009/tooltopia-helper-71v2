@@ -40,12 +40,12 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
         </Card>
       </div>
 
-      <Card className="mb-8">
+      <Card className="mb-16"> {/* Increased bottom margin */}
         <CardHeader>
           <CardTitle>Tools by Location</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px]">
+          <div className="h-[350px]"> {/* Reduced height */}
             <ChartContainer
               config={{
                 tools: {
@@ -56,13 +56,13 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={locationData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 90 }} {/* Increased bottom margin */}
                 >
                   <XAxis 
                     dataKey="location" 
                     angle={-45}
                     textAnchor="end"
-                    height={70}
+                    height={80}
                     interval={0}
                   />
                   <YAxis />
