@@ -40,7 +40,7 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
         </Card>
       </div>
 
-      <Card className="mb-32">
+      <Card>
         <CardHeader>
           <CardTitle>Tools by Location</CardTitle>
         </CardHeader>

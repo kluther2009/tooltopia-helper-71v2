@@ -22,10 +22,10 @@ export function ProjectsOverview({ projects, toolsInUse }: ProjectsOverviewProps
   ];
 
   return (
-    <section className="space-y-6 mt-24"> {/* Increased top margin */}
-      <h2 className="text-xl font-semibold">Projects Overview</h2>
+    <section>
+      <h2 className="text-xl font-semibold mb-6">Projects Overview</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">

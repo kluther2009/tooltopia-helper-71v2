@@ -50,13 +50,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container py-6 space-y-12">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      
-      <ToolsOverview 
-        tools={tools}
-        locationData={locationData}
-      />
+    <div className="container py-6 space-y-24"> {/* Increased space between sections */}
+      <div>
+        <h1 className="text-2xl font-bold mb-12">Dashboard</h1>
+        
+        <ToolsOverview 
+          tools={tools}
+          locationData={locationData}
+        />
+      </div>
 
       <ProjectsOverview 
         projects={projects || []}
