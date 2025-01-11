@@ -1,5 +1,5 @@
 import {
-  LayoutGrid,
+  LayoutDashboard,
   Settings,
   BoxSelect,
   Plus,
@@ -11,8 +11,8 @@ import {
 
 export const sidebarRoutes = [
   {
-    label: "Dashboard",
-    icon: LayoutGrid,
+    label: "Tool Overview",
+    icon: LayoutDashboard,
     href: "/",
   },
   {
