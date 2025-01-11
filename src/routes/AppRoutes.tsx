@@ -12,11 +12,12 @@ import Settings from "@/pages/Settings";
 import Storage from "@/pages/Storage";
 import InitialInventory from "@/pages/InitialInventory";
 import { Layout } from "@/components/Layout";
+import { Outlet } from "react-router-dom";
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route element={<Layout><Outlet /></Layout>}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/tool-overview" element={<Index />} />
         <Route path="/add-tool" element={<AddTool />} />
