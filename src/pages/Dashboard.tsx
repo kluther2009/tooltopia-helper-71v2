@@ -95,12 +95,12 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle>Tools by Location</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[400px]">
               <ChartContainer
                 config={{
                   tools: {
@@ -109,8 +109,17 @@ export default function Dashboard() {
                 }}
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={locationData}>
-                    <XAxis dataKey="location" />
+                  <BarChart 
+                    data={locationData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                  >
+                    <XAxis 
+                      dataKey="location" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
+                      interval={0}
+                    />
                     <YAxis />
                     <Tooltip 
                       contentStyle={{ 
