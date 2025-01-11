@@ -17,6 +17,7 @@ import { Outlet } from "react-router-dom";
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Protected routes wrapped in Layout */}
       <Route element={<Layout><Outlet /></Layout>}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/tool-overview" element={<Index />} />
@@ -28,6 +29,8 @@ export function AppRoutes() {
         <Route path="/storage" element={<Storage />} />
         <Route path="/initial-inventory" element={<InitialInventory />} />
       </Route>
+
+      {/* Auth routes without Layout */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/reset-password" element={<ResetPassword />} />
