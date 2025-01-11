@@ -11,22 +11,25 @@ import Projects from "@/pages/Projects";
 import Settings from "@/pages/Settings";
 import Storage from "@/pages/Storage";
 import InitialInventory from "@/pages/InitialInventory";
+import { Layout } from "@/components/Layout";
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
-      <Route path="/tool-overview" element={<Index />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/tool-overview" element={<Index />} />
+        <Route path="/add-tool" element={<AddTool />} />
+        <Route path="/edit-tool/:id" element={<EditTool />} />
+        <Route path="/tool-list" element={<ToolList />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/storage" element={<Storage />} />
+        <Route path="/initial-inventory" element={<InitialInventory />} />
+      </Route>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/add-tool" element={<AddTool />} />
-      <Route path="/edit-tool/:id" element={<EditTool />} />
-      <Route path="/tool-list" element={<ToolList />} />
-      <Route path="/projects" element={<Projects />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/storage" element={<Storage />} />
-      <Route path="/initial-inventory" element={<InitialInventory />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
