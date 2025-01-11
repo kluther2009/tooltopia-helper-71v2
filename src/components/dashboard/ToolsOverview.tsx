@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Tool } from "@/types/tools";
+import { Tool } from "@/hooks/useTools";
 
 interface ToolsOverviewProps {
   tools: Tool[];
