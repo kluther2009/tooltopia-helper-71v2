@@ -64,59 +64,37 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-6 space-y-8">
       <h1 className="text-2xl font-bold">Dashboard</h1>
       
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Tools
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalTools}</div>
-          </CardContent>
-        </Card>
+      {/* Tools Section */}
+      <section className="space-y-6">
+        <h2 className="text-xl font-semibold">Tools Overview</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalTools}</div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Projects
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeProjects}</div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Tools In Maintenance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{toolsInMaintenance}</div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tools In Use
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{toolsInUse}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              In Maintenance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{toolsInMaintenance}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Location Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Tools by Location</CardTitle>
@@ -155,8 +133,36 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+      </section>
 
-        {/* Project Status Pie Chart */}
+      {/* Projects Section */}
+      <section className="space-y-6">
+        <h2 className="text-xl font-semibold">Projects Overview</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Active Projects
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeProjects}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Tools In Use
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{toolsInUse}</div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Projects by Status</CardTitle>
@@ -191,7 +197,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </section>
     </div>
   );
 }
