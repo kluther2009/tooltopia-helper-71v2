@@ -3,7 +3,7 @@ import { useTools } from "@/hooks/useTools";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ChartContainer } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
@@ -39,6 +39,15 @@ export default function Dashboard() {
     
     return acc;
   }, []);
+
+  // Prepare project status data for pie chart
+  const projectStatusData = projects ? [
+    { name: 'Planned', value: projects.filter(p => p.status === 'planned').length },
+    { name: 'Ongoing', value: projects.filter(p => p.status === 'ongoing').length },
+    { name: 'Completed', value: projects.filter(p => p.status === 'completed').length }
+  ] : [];
+
+  const COLORS = ['#60a5fa', '#f97316', '#22c55e'];
 
   // Calculate statistics
   const totalTools = tools.length;
@@ -105,45 +114,84 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Location Chart */}
-      <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Tools by Location</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ChartContainer
-              config={{
-                tools: {
-                  color: "#f97316",
-                },
-              }}
-            >
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Location Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tools by Location</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ChartContainer
+                config={{
+                  tools: {
+                    color: "#f97316",
+                  },
+                }}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={locationData}>
+                    <XAxis dataKey="location" />
+                    <YAxis />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "var(--background)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                      }}
+                      labelStyle={{
+                        color: "var(--foreground)",
+                      }}
+                    />
+                    <Bar
+                      dataKey="count"
+                      name="Tools"
+                      fill="var(--color-tools)"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Project Status Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Projects by Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={locationData}>
-                  <XAxis dataKey="location" />
-                  <YAxis />
-                  <Tooltip 
-                    contentStyle={{ 
+                <PieChart>
+                  <Pie
+                    data={projectStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {projectStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: "var(--background)",
                       border: "1px solid var(--border)",
                       borderRadius: "6px",
                     }}
-                    labelStyle={{
-                      color: "var(--foreground)",
-                    }}
                   />
-                  <Bar
-                    dataKey="count"
-                    name="Tools"
-                    fill="var(--color-tools)"
-                  />
-                </BarChart>
+                </PieChart>
               </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
