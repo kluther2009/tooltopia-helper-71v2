@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Tool } from "@/hooks/useTools";
+import { differenceInMonths } from "date-fns";
 
 interface ToolsOverviewProps {
   tools: Tool[];
@@ -11,12 +12,25 @@ interface ToolsOverviewProps {
 export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
   const totalTools = tools.length;
   const toolsInMaintenance = tools.filter(t => t.status === 'maintenance').length;
+  const toolsInUse = tools.filter(t => t.status === 'in-use').length;
+  
+  // Calculate tools under warranty
+  const toolsUnderWarranty = tools.filter(tool => {
+    if (!tool.purchase_date || !tool.warranty_length) return false;
+    const purchaseDate = new Date(tool.purchase_date);
+    const currentDate = new Date();
+    const monthsPassed = differenceInMonths(currentDate, purchaseDate);
+    return monthsPassed < tool.warranty_length;
+  }).length;
+
+  // Calculate tools with pictures (those that have warranty_file_path or receipt_file_path)
+  const toolsWithPictures = tools.filter(tool => 
+    tool.warranty_file_path || tool.receipt_file_path
+  ).length;
 
   return (
-    <section className="space-y-6">
-      <h2 className="text-xl font-semibold">Tools Overview</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <section className="space-y-6">      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -31,11 +45,44 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
+              Tools In Use
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{toolsInUse}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Tools In Maintenance
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{toolsInMaintenance}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Tools Under Warranty
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{toolsUnderWarranty}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Tools With Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{toolsWithPictures}</div>
           </CardContent>
         </Card>
       </div>

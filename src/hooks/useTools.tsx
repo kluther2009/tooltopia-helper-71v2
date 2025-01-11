@@ -7,6 +7,10 @@ export interface Tool {
   name: string;
   location: string;
   status: "available" | "in-use" | "maintenance";
+  purchase_date?: string | null;
+  warranty_length?: number | null;
+  warranty_file_path?: string | null;
+  receipt_file_path?: string | null;
 }
 
 export function useTools() {
@@ -44,7 +48,11 @@ export function useTools() {
             id: tool.id,
             name: tool.name,
             location: location,
-            status: tool.status as "available" | "in-use" | "maintenance"
+            status: tool.status as "available" | "in-use" | "maintenance",
+            purchase_date: tool.purchase_date,
+            warranty_length: tool.warranty_length,
+            warranty_file_path: tool.warranty_file_path,
+            receipt_file_path: tool.receipt_file_path
           };
         });
         console.log('Transformed tools:', transformedTools);
