@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -23,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,7 +44,7 @@ interface UpdateTaskDialogProps {
 }
 
 export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: UpdateTaskDialogProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   const form = useForm({
@@ -75,13 +75,26 @@ export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: Update
   const onSubmit = async (values: any) => {
     if (!task) return;
     
+    const title = values.title.trim();
+    const description = values.description.trim();
+
+    if (title.length > 50) {
+      toast.error("Task title cannot exceed 50 characters");
+      return;
+    }
+
+    if (description.length > 350) {
+      toast.error("Task description cannot exceed 350 characters");
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from("project_tasks")
         .update({
-          title: values.title,
-          description: values.description,
+          title: title,
+          description: description || null,
           status: values.status,
           due_date: values.due_date || null,
           materials_used: values.materials_used,
@@ -117,8 +130,11 @@ export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: Update
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} maxLength={50} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/50 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -131,8 +147,11 @@ export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: Update
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} maxLength={350} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/350 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
