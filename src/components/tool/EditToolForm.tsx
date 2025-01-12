@@ -41,7 +41,6 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   };
 
   const handleCancel = () => {
-    // Get the previous path from the location state, default to tool-overview if not set
     const previousPath = location.state?.from || '/tool-overview';
     console.log('[EditToolForm] Navigating back to:', previousPath);
     navigate(previousPath);
@@ -54,10 +53,11 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Input
           id="toolName"
           value={state.toolName}
-          onChange={(e) => onStateChange({ toolName: e.target.value })}
+          onChange={(e) => onStateChange({ toolName: e.target.value.slice(0, 50) })}
           placeholder="Enter tool name"
           className="bg-background text-foreground"
           required
+          maxLength={50}
         />
       </div>
 
@@ -66,10 +66,11 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Input
           id="primaryLocation"
           value={state.primaryLocation}
-          onChange={(e) => onStateChange({ primaryLocation: e.target.value })}
+          onChange={(e) => onStateChange({ primaryLocation: e.target.value.slice(0, 50) })}
           placeholder="e.g., Workshop"
           className="bg-background text-foreground"
           required
+          maxLength={50}
         />
       </div>
 
@@ -78,9 +79,10 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Input
           id="subLocation"
           value={state.subLocation}
-          onChange={(e) => onStateChange({ subLocation: e.target.value })}
+          onChange={(e) => onStateChange({ subLocation: e.target.value.slice(0, 50) })}
           placeholder="e.g., Cabinet A"
           className="bg-background text-foreground"
+          maxLength={50}
         />
       </div>
 
@@ -89,9 +91,10 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Input
           id="specificLocation"
           value={state.specificLocation}
-          onChange={(e) => onStateChange({ specificLocation: e.target.value })}
+          onChange={(e) => onStateChange({ specificLocation: e.target.value.slice(0, 50) })}
           placeholder="e.g., Top Shelf"
           className="bg-background text-foreground"
+          maxLength={50}
         />
       </div>
 
