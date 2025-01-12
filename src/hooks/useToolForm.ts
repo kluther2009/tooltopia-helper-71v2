@@ -13,6 +13,8 @@ export function useToolForm() {
   const [subLocation, setSubLocation] = useState("")
   const [specificLocation, setSpecificLocation] = useState("")
   const [status, setStatus] = useState("available")
+  const [loanedTo, setLoanedTo] = useState("")
+  const [loanDate, setLoanDate] = useState("")
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false)
   const [purchaseDate, setPurchaseDate] = useState("")
   const [warrantyLength, setWarrantyLength] = useState("")
@@ -70,6 +72,11 @@ export function useToolForm() {
       return;
     }
 
+    if (status === "loaned" && (!loanedTo.trim() || !loanDate)) {
+      toast.error("Please fill in both 'Loaned To' and 'Loan Date' fields");
+      return;
+    }
+
     const toolExists = await checkToolExists(toolName);
     if (toolExists) {
       toast.error("This tool already exists");
@@ -84,6 +91,8 @@ export function useToolForm() {
       subLocation,
       specificLocation,
       status,
+      loanedTo: status === "loaned" ? loanedTo : null,
+      loanDate: status === "loaned" ? loanDate : null,
       showAdditionalInfo,
       purchaseDate,
       warrantyLength,
@@ -123,6 +132,8 @@ export function useToolForm() {
       subLocation,
       specificLocation,
       status,
+      loanedTo,
+      loanDate,
       showAdditionalInfo,
       purchaseDate,
       warrantyLength,
@@ -137,6 +148,8 @@ export function useToolForm() {
       setSubLocation,
       setSpecificLocation,
       setStatus,
+      setLoanedTo,
+      setLoanDate,
       setShowAdditionalInfo,
       setPurchaseDate,
       setWarrantyLength,

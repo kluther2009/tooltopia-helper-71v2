@@ -354,6 +354,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          loan_date: string | null
+          loaned_to: string | null
           location: string
           name: string
           purchase_cost: number | null
@@ -371,6 +373,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          loan_date?: string | null
+          loaned_to?: string | null
           location: string
           name: string
           purchase_cost?: number | null
@@ -388,6 +392,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          loan_date?: string | null
+          loaned_to?: string | null
           location?: string
           name?: string
           purchase_cost?: number | null

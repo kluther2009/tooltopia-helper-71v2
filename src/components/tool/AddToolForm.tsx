@@ -41,12 +41,16 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
           subLocation={formState.subLocation}
           specificLocation={formState.specificLocation}
           status={formState.status}
+          loanedTo={formState.loanedTo}
+          loanDate={formState.loanDate}
           toolNameInputRef={toolNameInputRef}
           onToolNameChange={handlers.setToolName}
           onPrimaryLocationChange={handlers.setPrimaryLocation}
           onSubLocationChange={handlers.setSubLocation}
           onSpecificLocationChange={handlers.setSpecificLocation}
           onStatusChange={handlers.setStatus}
+          onLoanedToChange={handlers.setLoanedTo}
+          onLoanDateChange={handlers.setLoanDate}
           onExistingToolSelect={handleExistingToolSelect}
         />
 
