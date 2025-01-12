@@ -19,6 +19,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const navigate = useNavigate();
   const location = useLocation();
   const [annotationData, setAnnotationData] = useState<any>(null);
+  const [showLoanFields, setShowLoanFields] = useState(state.status === "loaned");
 
   useEffect(() => {
     const storedAnnotation = localStorage.getItem('pendingAnnotation');
@@ -32,6 +33,10 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
       }
     }
   }, []);
+
+  useEffect(() => {
+    setShowLoanFields(state.status === "loaned");
+  }, [state.status]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,7 +107,13 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Label htmlFor="status">Status</Label>
         <Select 
           value={state.status} 
-          onValueChange={(value) => onStateChange({ status: value })}
+          onValueChange={(value) => {
+            onStateChange({ 
+              status: value,
+              // Clear loan fields if status is not loaned
+              ...(value !== "loaned" && { loanedTo: "", loanDate: "" })
+            });
+          }}
         >
           <SelectTrigger className="bg-background text-foreground border-input">
             <SelectValue placeholder="Select status" />
@@ -115,6 +126,34 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
           </SelectContent>
         </Select>
       </div>
+
+      {showLoanFields && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="loanedTo">Loaned To</Label>
+            <Input
+              id="loanedTo"
+              value={state.loanedTo || ""}
+              onChange={(e) => onStateChange({ loanedTo: e.target.value })}
+              placeholder="Enter borrower's name"
+              className="bg-background text-foreground"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="loanDate">Loan Date</Label>
+            <Input
+              id="loanDate"
+              type="date"
+              value={state.loanDate || ""}
+              onChange={(e) => onStateChange({ loanDate: e.target.value })}
+              className="bg-background text-foreground"
+              required
+            />
+          </div>
+        </>
+      )}
 
       <div className="flex items-center space-x-2">
         <Switch
