@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
 import { supabase } from "@/integrations/supabase/client"
@@ -9,6 +9,7 @@ import { useEffect, useState } from "react"
 export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { state, setState, isLoading, updateTool } = useToolEditor(id);
   const [annotationData, setAnnotationData] = useState<any>(null);
 
@@ -126,7 +127,17 @@ export default function EditTool() {
     }
 
     if (success) {
-      navigate('/');
+      // Return to the previous page based on the referrer
+      const referrer = document.referrer;
+      if (referrer.includes('/tool-list')) {
+        navigate('/tool-list');
+      } else if (referrer.includes('/storage')) {
+        navigate('/storage');
+      } else if (referrer.includes('/tool-overview')) {
+        navigate('/tool-overview');
+      } else {
+        navigate('/tool-list'); // Default fallback
+      }
     }
   };
 

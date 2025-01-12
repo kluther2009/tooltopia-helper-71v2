@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -23,6 +23,7 @@ interface DeleteToolDialogProps {
 
 export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +58,16 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
       });
 
       setIsOpen(false);
-      window.location.reload();
+      
+      // Refresh the current page instead of redirecting to dashboard
+      if (location.pathname === '/tool-list') {
+        window.location.reload();
+      } else if (location.pathname === '/storage') {
+        window.location.reload();
+      } else if (location.pathname === '/tool-overview') {
+        window.location.reload();
+      }
+      
     } catch (error) {
       console.error('Error deleting tool:', error);
       toast({
