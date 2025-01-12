@@ -15,6 +15,8 @@ export interface ToolEditorState {
   purchaseCost: string;
   warrantyFile: File | null;
   receiptFile: File | null;
+  loanedTo: string | null;
+  loanDate: string | null;
 }
 
 export const useToolEditor = (toolId: string | undefined) => {
@@ -30,6 +32,8 @@ export const useToolEditor = (toolId: string | undefined) => {
     purchaseCost: "",
     warrantyFile: null,
     receiptFile: null,
+    loanedTo: null,
+    loanDate: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -74,6 +78,8 @@ export const useToolEditor = (toolId: string | undefined) => {
             purchaseCost: data.purchase_cost?.toString() || '',
             warrantyFile: null,
             receiptFile: null,
+            loanedTo: data.loaned_to || null,
+            loanDate: data.loan_date || null,
           });
         }
       } catch (error) {
@@ -133,6 +139,8 @@ export const useToolEditor = (toolId: string | undefined) => {
         sub_location_a: state.subLocation || null,
         sub_location_b: state.specificLocation || null,
         status: state.status,
+        loaned_to: state.loanedTo,
+        loan_date: state.loanDate,
       };
 
       if (state.showAdditionalInfo) {
