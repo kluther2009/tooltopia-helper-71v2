@@ -127,17 +127,8 @@ export default function EditTool() {
     }
 
     if (success) {
-      // Return to the previous page based on the referrer
-      const referrer = document.referrer;
-      if (referrer.includes('/tool-list')) {
-        navigate('/tool-list');
-      } else if (referrer.includes('/storage')) {
-        navigate('/storage');
-      } else if (referrer.includes('/tool-overview')) {
-        navigate('/tool-overview');
-      } else {
-        navigate('/tool-list'); // Default fallback
-      }
+      // Navigate back to Tool Overview
+      navigate('/tool-overview');
     }
   };
 
