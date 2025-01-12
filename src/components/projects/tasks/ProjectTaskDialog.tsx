@@ -105,6 +105,9 @@ export function ProjectTaskDialog({ project, open, onOpenChange }: ProjectTaskDi
                   <FormControl>
                     <Input {...field} maxLength={50} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/50 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -119,6 +122,9 @@ export function ProjectTaskDialog({ project, open, onOpenChange }: ProjectTaskDi
                   <FormControl>
                     <Textarea {...field} maxLength={350} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/350 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
