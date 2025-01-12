@@ -9,7 +9,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ToolCardActionsProps {
   id: string;
@@ -18,6 +17,7 @@ interface ToolCardActionsProps {
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
   onDocumentClick: () => void;
+  onEdit?: () => void;  // Added this prop
 }
 
 export function ToolCardActions({
@@ -27,9 +27,19 @@ export function ToolCardActions({
   warrantyFilePath,
   receiptFilePath,
   onDocumentClick,
+  onEdit,  // Added this prop
 }: ToolCardActionsProps) {
   const navigate = useNavigate();
   const hasDocuments = warrantyFilePath || receiptFilePath;
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit();
+    } else {
+      navigate(`/edit-tool/${id}`);
+    }
+  };
 
   return (
     <div className="flex items-center gap-1 shrink-0">
@@ -71,7 +81,7 @@ export function ToolCardActions({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(`/edit-tool/${id}`)}
+            onClick={handleEdit}
             className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
           >
             <Pencil 

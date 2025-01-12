@@ -17,6 +17,7 @@ interface ToolCardProps {
   purchaseCost?: number | null;
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
+  onEdit?: () => void;  // Added this prop
 }
 
 export function ToolCard({ 
@@ -27,7 +28,8 @@ export function ToolCard({
   warrantyLength, 
   purchaseCost,
   warrantyFilePath,
-  receiptFilePath
+  receiptFilePath,
+  onEdit  // Added this prop
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
 
@@ -75,6 +77,7 @@ export function ToolCard({
               warrantyFilePath={warrantyFilePath}
               receiptFilePath={receiptFilePath}
               onDocumentClick={() => setIsDocumentDialogOpen(true)}
+              onEdit={onEdit}  // Pass the onEdit prop to ToolCardActions
             />
           </div>
 
