@@ -9,23 +9,32 @@ interface MaterialFormProps {
     cost: string;
     quantity: string;
   };
+  materialsCount: number;
   onMaterialChange: (field: string, value: string) => void;
   onAddMaterial: () => void;
   onCancel: () => void;
 }
 
+const MAX_MATERIALS = 20;
+
 export function MaterialForm({ 
   newMaterial, 
+  materialsCount,
   onMaterialChange, 
   onAddMaterial,
   onCancel 
 }: MaterialFormProps) {
   return (
     <div className="grid gap-4">
-      <div className="grid grid-cols-3 gap-2">
-        <Label>Name</Label>
-        <Label>Cost ($)</Label>
-        <Label>Quantity</Label>
+      <div className="flex justify-between items-center">
+        <div className="grid grid-cols-3 gap-2">
+          <Label>Name</Label>
+          <Label>Cost ($)</Label>
+          <Label>Quantity</Label>
+        </div>
+        <span className="text-sm text-muted-foreground">
+          {materialsCount}/{MAX_MATERIALS} materials
+        </span>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Input
@@ -50,7 +59,11 @@ export function MaterialForm({
         />
       </div>
       <div className="flex gap-2">
-        <Button onClick={onAddMaterial} className="flex-1">
+        <Button 
+          onClick={onAddMaterial} 
+          className="flex-1"
+          disabled={materialsCount >= MAX_MATERIALS}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Material
         </Button>

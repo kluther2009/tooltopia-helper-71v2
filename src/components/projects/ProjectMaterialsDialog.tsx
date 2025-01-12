@@ -47,6 +47,7 @@ export function ProjectMaterialsDialog({
         <div className="space-y-4">
           <MaterialForm
             newMaterial={newMaterial}
+            materialsCount={materials.length}
             onMaterialChange={handleMaterialChange}
             onAddMaterial={handleAddMaterial}
             onCancel={handleCancel}

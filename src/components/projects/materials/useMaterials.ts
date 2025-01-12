@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { ProjectMaterial, NewMaterial } from "./types";
 
+const MAX_MATERIALS = 20;
+
 export function useMaterials(projectId: string) {
   const [materials, setMaterials] = useState<ProjectMaterial[]>([]);
   const [newMaterial, setNewMaterial] = useState<NewMaterial>({
@@ -73,6 +75,11 @@ export function useMaterials(projectId: string) {
 
   const handleAddMaterial = async () => {
     if (!validateNewMaterial()) return;
+
+    if (materials.length >= MAX_MATERIALS) {
+      toast.error(`Cannot add more than ${MAX_MATERIALS} materials to a project`);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("project_materials")
