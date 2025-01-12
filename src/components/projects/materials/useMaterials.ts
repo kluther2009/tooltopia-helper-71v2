@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { ProjectMaterial, NewMaterial } from "./types";
-
-const MAX_MATERIALS = 20;
+import { useMaterialValidation } from "./hooks/useMaterialValidation";
+import { useMaterialCost } from "./hooks/useMaterialCost";
 
 export function useMaterials(projectId: string) {
   const [materials, setMaterials] = useState<ProjectMaterial[]>([]);
@@ -13,7 +12,9 @@ export function useMaterials(projectId: string) {
     cost: "",
     quantity: "1",
   });
-  const queryClient = useQueryClient();
+
+  const { validateNewMaterial, validateMaterialLimit } = useMaterialValidation();
+  const { updateProjectTotalCost } = useMaterialCost(projectId);
 
   const fetchMaterials = async () => {
     const { data, error } = await supabase
@@ -30,43 +31,8 @@ export function useMaterials(projectId: string) {
     return data;
   };
 
-  const calculateTotalCost = (materialsToCalculate: ProjectMaterial[]) => {
-    const total = materialsToCalculate.reduce(
-      (sum, material) => sum + (material.cost * material.quantity),
-      0
-    );
-    // Round to 2 decimal places to avoid floating point precision issues
-    return Number(total.toFixed(2));
-  };
-
-  const updateProjectTotalCost = async (materialsToUpdate: ProjectMaterial[]) => {
-    const totalCost = calculateTotalCost(materialsToUpdate);
-    console.log("Updating total cost to:", totalCost);
-
-    const { error } = await supabase
-      .from("projects")
-      .update({ total_cost: totalCost })
-      .eq("id", projectId);
-
-    if (error) {
-      console.error("Error updating total cost:", error);
-      toast.error("Failed to update project total cost");
-      return;
-    }
-
-    queryClient.invalidateQueries({ queryKey: ["projects"] });
-  };
-
   const handleMaterialChange = (field: string, value: string) => {
     setNewMaterial({ ...newMaterial, [field]: value });
-  };
-
-  const validateNewMaterial = () => {
-    if (!newMaterial.name || !newMaterial.cost) {
-      toast.error("Please fill in all fields");
-      return false;
-    }
-    return true;
   };
 
   const resetNewMaterialForm = () => {
@@ -74,12 +40,8 @@ export function useMaterials(projectId: string) {
   };
 
   const handleAddMaterial = async () => {
-    if (!validateNewMaterial()) return;
-
-    if (materials.length >= MAX_MATERIALS) {
-      toast.error(`Cannot add more than ${MAX_MATERIALS} materials to a project`);
-      return;
-    }
+    if (!validateNewMaterial(newMaterial)) return;
+    if (!validateMaterialLimit(materials.length)) return;
 
     const { data, error } = await supabase
       .from("project_materials")

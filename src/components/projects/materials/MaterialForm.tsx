@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
+import { useMaterialValidation } from "./hooks/useMaterialValidation";
 
 interface MaterialFormProps {
   newMaterial: {
@@ -15,8 +16,6 @@ interface MaterialFormProps {
   onCancel: () => void;
 }
 
-const MAX_MATERIALS = 20;
-
 export function MaterialForm({ 
   newMaterial, 
   materialsCount,
@@ -24,6 +23,8 @@ export function MaterialForm({
   onAddMaterial,
   onCancel 
 }: MaterialFormProps) {
+  const { MAX_MATERIALS } = useMaterialValidation();
+
   return (
     <div className="grid gap-4">
       <div className="flex justify-between items-center">
