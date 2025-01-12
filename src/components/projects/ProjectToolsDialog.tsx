@@ -1,12 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useState } from "react";
+import { ToolSelectionList } from "./tools/ToolSelectionList";
+import { ToolTransferControls } from "./tools/ToolTransferControls";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -14,7 +12,11 @@ interface ProjectToolsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
+export function ProjectToolsDialog({ 
+  projectId, 
+  open, 
+  onOpenChange 
+}: ProjectToolsDialogProps) {
   const queryClient = useQueryClient();
   const [selectedAvailableTool, setSelectedAvailableTool] = useState<string | null>(null);
   const [selectedSelectedTool, setSelectedSelectedTool] = useState<string | null>(null);
@@ -112,36 +114,6 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     }
   };
 
-  const ToolList = ({ tools, title, selectedTool, onToolSelect }: { 
-    tools: any[], 
-    title: string,
-    selectedTool: string | null,
-    onToolSelect: (id: string) => void
-  }) => (
-    <Card className="flex-1 p-4">
-      <h3 className="font-medium mb-3 text-sm text-gray-700">{title}</h3>
-      <ScrollArea className="h-[300px] pr-4">
-        <div className="space-y-2">
-          {tools.map((tool) => (
-            <div
-              key={tool.id}
-              onClick={() => onToolSelect(tool.id)}
-              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer text-sm transition-colors
-                ${selectedTool === tool.id ? 'bg-primary text-white' : 'hover:bg-slate-100'}`}
-            >
-              {tool.name}
-            </div>
-          ))}
-          {tools.length === 0 && (
-            <div className="text-center text-gray-500 py-4 text-sm">
-              No tools available
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-    </Card>
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px]">
@@ -149,43 +121,23 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           <DialogTitle>Select Tools</DialogTitle>
         </DialogHeader>
         <div className="flex items-stretch gap-4">
-          <ToolList 
-            tools={availableTools} 
-            title="Available Tools" 
+          <ToolSelectionList 
+            tools={availableTools}
+            title="Available Tools"
             selectedTool={selectedAvailableTool}
             onToolSelect={setSelectedAvailableTool}
           />
           
-          <div className="flex flex-col justify-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                if (selectedAvailableTool) {
-                  handleToolSelect(selectedAvailableTool);
-                }
-              }}
-              disabled={!selectedAvailableTool}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                if (selectedSelectedTool) {
-                  handleToolSelect(selectedSelectedTool);
-                }
-              }}
-              disabled={!selectedSelectedTool}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </div>
+          <ToolTransferControls
+            onMoveRight={() => selectedAvailableTool && handleToolSelect(selectedAvailableTool)}
+            onMoveLeft={() => selectedSelectedTool && handleToolSelect(selectedSelectedTool)}
+            canMoveRight={!!selectedAvailableTool}
+            canMoveLeft={!!selectedSelectedTool}
+          />
 
-          <ToolList 
-            tools={selectedTools} 
-            title="Selected Tools" 
+          <ToolSelectionList 
+            tools={selectedTools}
+            title="Selected Tools"
             selectedTool={selectedSelectedTool}
             onToolSelect={setSelectedSelectedTool}
           />
