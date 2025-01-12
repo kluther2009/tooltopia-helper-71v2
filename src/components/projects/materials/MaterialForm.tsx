@@ -60,9 +60,6 @@ export function MaterialForm({
           onChange={(e) => onMaterialChange("quantity", e.target.value)}
         />
       </div>
-      <div className="text-xs text-muted-foreground mb-2">
-        {newMaterial.name.length}/50 characters
-      </div>
       <div className="flex gap-2">
         <Button 
           onClick={onAddMaterial} 
