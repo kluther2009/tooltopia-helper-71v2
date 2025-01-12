@@ -13,6 +13,7 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
   const totalTools = tools.length;
   const toolsInMaintenance = tools.filter(t => t.status === 'maintenance').length;
   const toolsInUse = tools.filter(t => t.status === 'in-use').length;
+  const toolsOnLoan = tools.filter(t => t.status === 'loaned').length;
   
   // Calculate tools under warranty with debug logging
   const toolsUnderWarranty = tools.filter(tool => {
@@ -85,6 +86,17 @@ export function ToolsOverview({ tools, locationData }: ToolsOverviewProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{toolsInMaintenance}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Tools On Loan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{toolsOnLoan}</div>
           </CardContent>
         </Card>
 
