@@ -11,13 +11,13 @@ interface ToolCardProps {
   id: string;
   name: string | React.ReactNode;
   location: string;
-  status: "available" | "in-use" | "maintenance";
+  status: "available" | "in-use" | "maintenance" | "loaned";
   purchaseDate?: string | null;
   warrantyLength?: number | null;
   purchaseCost?: number | null;
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
-  onEdit?: () => void;  // Added this prop
+  onEdit?: () => void;
 }
 
 export function ToolCard({ 
@@ -29,7 +29,7 @@ export function ToolCard({
   purchaseCost,
   warrantyFilePath,
   receiptFilePath,
-  onEdit  // Added this prop
+  onEdit
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
 
@@ -77,7 +77,7 @@ export function ToolCard({
               warrantyFilePath={warrantyFilePath}
               receiptFilePath={receiptFilePath}
               onDocumentClick={() => setIsDocumentDialogOpen(true)}
-              onEdit={onEdit}  // Pass the onEdit prop to ToolCardActions
+              onEdit={onEdit}
             />
           </div>
 
