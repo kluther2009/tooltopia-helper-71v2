@@ -74,21 +74,16 @@ export function ToolNameAutocomplete({
   return (
     <div className="space-y-2">
       <Label htmlFor="toolName">Tool Name</Label>
-      <div className="space-y-1">
-        <Input
-          id="toolName"
-          value={value}
-          onChange={(e) => onValueChange(e.target.value.slice(0, 50))}
-          placeholder="Enter tool name..."
-          className="bg-background text-foreground"
-          required
-          ref={inputRef}
-          maxLength={50}
-        />
-        <p className="text-sm text-muted-foreground">
-          {value.length}/50 characters
-        </p>
-      </div>
+      <Input
+        id="toolName"
+        value={value}
+        onChange={(e) => onValueChange(e.target.value.slice(0, 50))}
+        placeholder="Enter tool name..."
+        className="bg-background text-foreground"
+        required
+        ref={inputRef}
+        maxLength={50}
+      />
       
       {existingTool && (
         <div className="space-y-2">
