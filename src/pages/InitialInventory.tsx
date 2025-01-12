@@ -3,16 +3,18 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InitialInventoryViewer } from "@/components/photos/InitialInventoryViewer";
+import { CameraDialog } from "@/components/photos/CameraDialog";
 
 export default function InitialInventory() {
   const [location, setLocation] = useState("");
   const [subLocation, setSubLocation] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -66,6 +68,50 @@ export default function InitialInventory() {
     }
   };
 
+  const handleCameraCapture = async (file: File) => {
+    if (!location.trim()) {
+      toast.error("Please enter a location");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const fileExt = 'jpg';
+      const filePath = `${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('location-photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase
+        .from('location_photos')
+        .insert({
+          location: location.trim(),
+          sub_location: subLocation.trim() || null,
+          file_path: filePath,
+          user_id: user.id,
+          is_initial_inventory: true
+        });
+
+      if (dbError) throw dbError;
+
+      toast.success('Photo captured and uploaded successfully');
+      setLocation("");
+      setSubLocation("");
+    } catch (error) {
+      console.error('Camera capture error:', error);
+      toast.error('Failed to upload captured photo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <Card className="max-w-7xl mx-auto p-6">
       <Tabs defaultValue="view" className="space-y-6">
@@ -105,15 +151,26 @@ export default function InitialInventory() {
                 />
               </div>
 
-              <div className="pt-4">
+              <div className="pt-4 flex gap-2">
                 <Button
                   variant="outline"
-                  className="w-full"
+                  size="sm"
+                  className="flex-1"
                   disabled={isUploading}
                   onClick={() => document.getElementById('photo-upload')?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   {isUploading ? 'Uploading...' : 'Upload Photo'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  disabled={isUploading}
+                  onClick={() => setIsCameraOpen(true)}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Take Photo
                 </Button>
                 <Input
                   id="photo-upload"
@@ -128,6 +185,12 @@ export default function InitialInventory() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <CameraDialog
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCapture}
+      />
     </Card>
   );
 }
