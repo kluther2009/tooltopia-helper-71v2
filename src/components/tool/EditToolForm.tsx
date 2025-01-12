@@ -39,6 +39,10 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
     await onSubmit(e, annotationData);
   };
 
+  const handleCancel = () => {
+    navigate('/tool-overview');
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
@@ -135,7 +139,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Button type="submit" className="flex-1">
           Update Tool
         </Button>
-        <Button type="button" variant="outline" onClick={() => navigate('/')} className="flex-1">
+        <Button type="button" variant="outline" onClick={handleCancel} className="flex-1">
           Cancel
         </Button>
       </div>
