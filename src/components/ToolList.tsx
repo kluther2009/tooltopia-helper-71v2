@@ -8,9 +8,16 @@ interface ToolListProps {
   tools: Tool[];
   isDraggingOver?: boolean;
   showLocationTitle?: boolean;
+  onEditTool?: (toolId: string) => void;
 }
 
-export function ToolList({ location, tools, isDraggingOver, showLocationTitle = true }: ToolListProps) {
+export function ToolList({ 
+  location, 
+  tools, 
+  isDraggingOver, 
+  showLocationTitle = true,
+  onEditTool 
+}: ToolListProps) {
   const locationTitle = location.includes(" > ") ? location.split(" > ")[1] : location;
 
   return (
@@ -48,6 +55,7 @@ export function ToolList({ location, tools, isDraggingOver, showLocationTitle = 
                       {...tool}
                       name={tool.name}
                       location={tool.location}
+                      onEdit={onEditTool ? () => onEditTool(tool.id) : undefined}
                     />
                   </div>
                 )}

@@ -127,7 +127,7 @@ export default function EditTool() {
     }
 
     if (success) {
-      // Navigate back to the previous page
+      // Navigate back to the previous page using location state
       const previousPath = location.state?.from || '/tool-overview';
       navigate(previousPath);
     }

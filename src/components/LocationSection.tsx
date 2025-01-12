@@ -5,6 +5,7 @@ import { Image } from "lucide-react";
 import { useState } from "react";
 import { LocationPhotoViewer } from "./photos/LocationPhotoViewer";
 import { Button } from "./ui/button";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface LocationSectionProps {
   mainLocation: string;
@@ -22,6 +23,14 @@ export function LocationSection({
   isDraggingOver 
 }: LocationSectionProps) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleEditTool = (toolId: string) => {
+    navigate(`/edit-tool/${toolId}`, {
+      state: { from: location.pathname }
+    });
+  };
 
   return (
     <Card className={`p-6 ${colorClass} border-2 border-black bg-opacity-90 hover:bg-opacity-100 transition-all duration-200`}>
@@ -44,6 +53,7 @@ export function LocationSection({
             tools={mainLocationTools}
             isDraggingOver={isDraggingOver === mainLocation}
             showLocationTitle={false}
+            onEditTool={handleEditTool}
           />
         </div>
       )}
@@ -58,6 +68,7 @@ export function LocationSection({
                 tools={locationTools}
                 isDraggingOver={isDraggingOver === fullLocation}
                 showLocationTitle={true}
+                onEditTool={handleEditTool}
               />
             </div>
           );
