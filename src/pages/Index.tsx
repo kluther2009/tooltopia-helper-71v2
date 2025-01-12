@@ -11,6 +11,7 @@ export default function Index() {
 
   const fetchTools = async () => {
     try {
+      console.log('Fetching tools...');
       const { data, error } = await supabase
         .from('tools')
         .select('*');
@@ -21,6 +22,7 @@ export default function Index() {
       }
       
       if (data) {
+        console.log('Tools fetched successfully:', data);
         setTools(data);
       }
     } catch (error) {
