@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 import { useEffect, useState } from "react"
 
@@ -17,6 +17,7 @@ interface EditToolFormProps {
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [annotationData, setAnnotationData] = useState<any>(null);
 
   useEffect(() => {
@@ -40,7 +41,10 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   };
 
   const handleCancel = () => {
-    navigate('/tool-overview');
+    // Get the previous path from the location state, default to tool-overview if not set
+    const previousPath = location.state?.from || '/tool-overview';
+    console.log('[EditToolForm] Navigating back to:', previousPath);
+    navigate(previousPath);
   };
 
   return (
