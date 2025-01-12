@@ -1,7 +1,7 @@
 import { Wrench } from "lucide-react";
 
 interface ToolStatusIconProps {
-  status: "available" | "in-use" | "maintenance";
+  status: "available" | "in-use" | "maintenance" | "loaned";
 }
 
 export function ToolStatusIcon({ status }: ToolStatusIconProps) {
@@ -13,6 +13,8 @@ export function ToolStatusIcon({ status }: ToolStatusIconProps) {
         return "#ef4444"; // Red
       case "maintenance":
         return "#eab308"; // Yellow
+      case "loaned":
+        return "#8b5cf6"; // Purple
       default:
         return "#000000";
     }

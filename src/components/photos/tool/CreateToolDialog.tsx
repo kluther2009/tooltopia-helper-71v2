@@ -68,7 +68,8 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
 
       if (error) {
         console.error('Error creating tool:', error)
-        throw error
+        toast.error('Failed to create tool')
+        return false
       }
 
       console.log('Tool created successfully:', data)
@@ -134,6 +135,7 @@ export function CreateToolDialog({ isOpen, onClose, onToolCreated, initialLocati
                 <SelectItem value="available">Available</SelectItem>
                 <SelectItem value="in-use">In Use</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="loaned">Loaned</SelectItem>
               </SelectContent>
             </Select>
           </div>
