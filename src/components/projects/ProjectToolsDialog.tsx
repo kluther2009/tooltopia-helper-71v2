@@ -12,6 +12,8 @@ interface ProjectToolsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const MAX_TOOLS_PER_PROJECT = 20;
+
 export function ProjectToolsDialog({ 
   projectId, 
   open, 
@@ -87,7 +89,13 @@ export function ProjectToolsDialog({
         if (deleteError) throw deleteError;
         toast.success('Tool removed from project');
       } else {
-        // If tool doesn't exist, add it
+        // Check if adding another tool would exceed the limit
+        if (selectedTools.length >= MAX_TOOLS_PER_PROJECT) {
+          toast.error(`Cannot add more than ${MAX_TOOLS_PER_PROJECT} tools to a project`);
+          return;
+        }
+
+        // If tool doesn't exist and under limit, add it
         const { error: insertError } = await supabase
           .from('project_tools')
           .insert({
@@ -118,7 +126,7 @@ export function ProjectToolsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>Select Tools</DialogTitle>
+          <DialogTitle>Select Tools ({selectedTools.length}/{MAX_TOOLS_PER_PROJECT})</DialogTitle>
         </DialogHeader>
         <div className="flex items-stretch gap-4">
           <ToolSelectionList 
@@ -131,7 +139,7 @@ export function ProjectToolsDialog({
           <ToolTransferControls
             onMoveRight={() => selectedAvailableTool && handleToolSelect(selectedAvailableTool)}
             onMoveLeft={() => selectedSelectedTool && handleToolSelect(selectedSelectedTool)}
-            canMoveRight={!!selectedAvailableTool}
+            canMoveRight={!!selectedAvailableTool && selectedTools.length < MAX_TOOLS_PER_PROJECT}
             canMoveLeft={!!selectedSelectedTool}
           />
 
