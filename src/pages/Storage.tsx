@@ -1,6 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LocationPhotoManager } from "@/components/LocationPhotoManager";
 import { useEffect, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { MoveToolDialog } from "@/components/MoveToolDialog";
@@ -119,48 +117,35 @@ export default function Storage() {
 
   return (
     <Card className="max-w-7xl mx-auto p-6 bg-white">
-      <Tabs defaultValue="tools" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="tools">Tools</TabsTrigger>
-          <TabsTrigger value="photos">Photos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tools">
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Storage Locations</h1>
-          <DragDropContext 
-            onDragEnd={handleDragEnd}
-            onDragUpdate={(update) => {
-              if (update.destination) {
-                setDraggingOver(update.destination.droppableId);
-              } else {
-                setDraggingOver(null);
-              }
-            }}
-          >
-            <div className="space-y-8">
-              {Object.entries(groupedTools).map(([mainLocation, { mainTools, subLocations }], index) => (
-                <LocationSection
-                  key={mainLocation}
-                  mainLocation={mainLocation}
-                  mainLocationTools={mainTools}
-                  subLocations={subLocations}
-                  colorClass={locationColors[index % locationColors.length]}
-                  isDraggingOver={draggingOver}
-                />
-              ))}
-              {Object.keys(groupedTools).length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  No tools found.
-                </div>
-              )}
+      <h1 className="text-3xl font-bold mb-8 text-gray-900">Storage Locations</h1>
+      <DragDropContext 
+        onDragEnd={handleDragEnd}
+        onDragUpdate={(update) => {
+          if (update.destination) {
+            setDraggingOver(update.destination.droppableId);
+          } else {
+            setDraggingOver(null);
+          }
+        }}
+      >
+        <div className="space-y-8">
+          {Object.entries(groupedTools).map(([mainLocation, { mainTools, subLocations }], index) => (
+            <LocationSection
+              key={mainLocation}
+              mainLocation={mainLocation}
+              mainLocationTools={mainTools}
+              subLocations={subLocations}
+              colorClass={locationColors[index % locationColors.length]}
+              isDraggingOver={draggingOver}
+            />
+          ))}
+          {Object.keys(groupedTools).length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No tools found.
             </div>
-          </DragDropContext>
-        </TabsContent>
-
-        <TabsContent value="photos">
-          <LocationPhotoManager />
-        </TabsContent>
-      </Tabs>
+          )}
+        </div>
+      </DragDropContext>
 
       <MoveToolDialog
         isOpen={!!dragConfirmation}
