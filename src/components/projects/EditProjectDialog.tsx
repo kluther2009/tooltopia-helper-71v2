@@ -49,14 +49,27 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
   });
 
   const onSubmit = async (values: any) => {
+    const name = values.name.trim();
+    const notes = values.notes.trim();
+
+    if (name.length > 50) {
+      toast.error("Project name cannot exceed 50 characters");
+      return;
+    }
+
+    if (notes.length > 350) {
+      toast.error("Project notes cannot exceed 350 characters");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from("projects")
         .update({
-          name: values.name,
+          name: name,
           status: values.status,
-          notes: values.notes,
+          notes: notes || null,
           target_date: values.target_date || null,
         })
         .eq("id", project.id);
@@ -89,8 +102,11 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} maxLength={50} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/50 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -143,8 +159,11 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} maxLength={350} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/350 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

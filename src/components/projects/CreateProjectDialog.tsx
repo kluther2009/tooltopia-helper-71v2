@@ -47,8 +47,21 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
   });
 
   const onSubmit = async (values: any) => {
-    if (!values.name.trim()) {
+    const name = values.name.trim();
+    const notes = values.notes.trim();
+
+    if (!name) {
       toast.error("Please enter a project name");
+      return;
+    }
+
+    if (name.length > 50) {
+      toast.error("Project name cannot exceed 50 characters");
+      return;
+    }
+
+    if (notes.length > 350) {
+      toast.error("Project notes cannot exceed 350 characters");
       return;
     }
 
@@ -60,9 +73,9 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       const { error } = await supabase
         .from("projects")
         .insert({
-          name: values.name.trim(),
+          name: name,
           status: values.status,
-          notes: values.notes,
+          notes: notes || null,
           target_date: values.target_date || null,
           user_id: user.id
         });
@@ -96,8 +109,15 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter project name" />
+                    <Input 
+                      {...field} 
+                      placeholder="Enter project name" 
+                      maxLength={50}
+                    />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/50 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -150,8 +170,15 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea {...field} placeholder="Add project notes..." />
+                    <Textarea 
+                      {...field} 
+                      placeholder="Add project notes..." 
+                      maxLength={350}
+                    />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/350 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

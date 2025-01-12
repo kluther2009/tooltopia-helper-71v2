@@ -42,6 +42,7 @@ export function MaterialForm({
           placeholder="Material name"
           value={newMaterial.name}
           onChange={(e) => onMaterialChange("name", e.target.value)}
+          maxLength={50}
         />
         <Input
           type="number"
@@ -59,11 +60,14 @@ export function MaterialForm({
           onChange={(e) => onMaterialChange("quantity", e.target.value)}
         />
       </div>
+      <div className="text-xs text-muted-foreground mb-2">
+        {newMaterial.name.length}/50 characters
+      </div>
       <div className="flex gap-2">
         <Button 
           onClick={onAddMaterial} 
           className="flex-1"
-          disabled={materialsCount >= MAX_MATERIALS}
+          disabled={materialsCount >= MAX_MATERIALS || !newMaterial.name.trim() || newMaterial.name.length > 50}
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Material

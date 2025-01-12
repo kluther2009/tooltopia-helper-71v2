@@ -43,14 +43,32 @@ export function ProjectTaskDialog({ project, open, onOpenChange }: ProjectTaskDi
   });
 
   const onSubmit = async (values: any) => {
+    const title = values.title.trim();
+    const description = values.description.trim();
+
+    if (!title) {
+      toast.error("Please enter a task title");
+      return;
+    }
+
+    if (title.length > 50) {
+      toast.error("Task title cannot exceed 50 characters");
+      return;
+    }
+
+    if (description.length > 350) {
+      toast.error("Task description cannot exceed 350 characters");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from("project_tasks")
         .insert({
           project_id: project.id,
-          title: values.title,
-          description: values.description,
+          title: title,
+          description: description || null,
           due_date: values.due_date || null,
           materials_used: values.materials_used,
           tools_used: values.tools_used,
@@ -85,8 +103,11 @@ export function ProjectTaskDialog({ project, open, onOpenChange }: ProjectTaskDi
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} maxLength={50} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/50 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -99,8 +120,11 @@ export function ProjectTaskDialog({ project, open, onOpenChange }: ProjectTaskDi
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} maxLength={350} />
                   </FormControl>
+                  <div className="text-xs text-muted-foreground">
+                    {field.value.length}/350 characters
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
