@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Layout } from "@/components/Layout"
 import { useParams, useNavigate } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
 import { useToolEditor } from "@/hooks/useToolEditor"
@@ -45,11 +44,9 @@ export default function EditTool() {
 
   if (isLoading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-screen">
-          Loading...
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
     );
   }
 
@@ -134,21 +131,19 @@ export default function EditTool() {
   };
 
   return (
-    <Layout>
-      <div className="max-w-2xl mx-auto p-4">
-        <Card className="bg-card">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Edit Tool</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <EditToolForm
-              state={state}
-              onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
-              onSubmit={handleSubmit}
-            />
-          </CardContent>
-        </Card>
-      </div>
-    </Layout>
+    <div className="max-w-2xl mx-auto p-4">
+      <Card className="bg-card">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Edit Tool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EditToolForm
+            state={state}
+            onStateChange={(newState) => setState(prev => ({ ...prev, ...newState }))}
+            onSubmit={handleSubmit}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
