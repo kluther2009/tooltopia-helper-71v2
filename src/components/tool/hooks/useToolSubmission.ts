@@ -20,7 +20,7 @@ export function useToolSubmission() {
     purchaseCost,
     warrantyFile,
     receiptFile,
-    annotationData // Add this parameter
+    annotationData
   }: {
     toolName: string
     primaryLocation: string
@@ -33,7 +33,7 @@ export function useToolSubmission() {
     purchaseCost: string
     warrantyFile: File | null
     receiptFile: File | null
-    annotationData: any // Add this type
+    annotationData: any
   }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -103,7 +103,7 @@ export function useToolSubmission() {
       if (annotationData) {
         try {
           console.log('Creating annotation with data:', {
-            photoId: annotationData.photoId,
+            photoId: annotationData.photo_id,
             toolId: newTool.id,
             coordinates: annotationData.coordinates,
             userId: user.id
@@ -112,7 +112,7 @@ export function useToolSubmission() {
           const { error: annotationError } = await supabase
             .from('tool_annotations')
             .insert({
-              photo_id: annotationData.photoId,
+              photo_id: annotationData.photo_id,
               tool_id: newTool.id,
               coordinates: annotationData.coordinates,
               user_id: user.id
@@ -121,7 +121,6 @@ export function useToolSubmission() {
           if (annotationError) {
             console.error('Error creating annotation:', annotationError)
             toast.error('Failed to create tool annotation')
-            return true
           } else {
             console.log('Annotation created successfully')
             localStorage.removeItem('pendingAnnotation')
