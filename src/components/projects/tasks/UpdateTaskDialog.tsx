@@ -132,9 +132,13 @@ export function UpdateTaskDialog({ task, projectId, open, onOpenChange }: Update
                   <FormControl>
                     <Input {...field} maxLength={50} />
                   </FormControl>
+</lov-replace>
+<lov-search>
                   <div className="text-xs text-muted-foreground">
-                    {field.value.length}/50 characters
+                    {field.value.length}/350 characters
                   </div>
+</lov-search>
+<lov-replace>
                   <FormMessage />
                 </FormItem>
               )}
