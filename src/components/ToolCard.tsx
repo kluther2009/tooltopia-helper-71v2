@@ -17,7 +17,6 @@ interface ToolCardProps {
   purchaseCost?: number | null;
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
-  onEdit?: (id: string) => void;
 }
 
 export function ToolCard({ 
@@ -28,8 +27,7 @@ export function ToolCard({
   warrantyLength, 
   purchaseCost,
   warrantyFilePath,
-  receiptFilePath,
-  onEdit
+  receiptFilePath
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
 
@@ -77,7 +75,6 @@ export function ToolCard({
               warrantyFilePath={warrantyFilePath}
               receiptFilePath={receiptFilePath}
               onDocumentClick={() => setIsDocumentDialogOpen(true)}
-              onEdit={onEdit ? () => onEdit(id) : undefined}
             />
           </div>
 

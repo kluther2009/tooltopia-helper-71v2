@@ -1,12 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { FileText, MoreVertical, Pencil } from "lucide-react";
+import { Pencil, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { DeleteToolDialog } from "./DeleteToolDialog";
+import { Badge } from "../ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ToolCardActionsProps {
   id: string;
@@ -15,51 +18,82 @@ interface ToolCardActionsProps {
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
   onDocumentClick: () => void;
-  onEdit?: () => void;
 }
 
 export function ToolCardActions({
+  id,
+  name,
   documentCount,
+  warrantyFilePath,
+  receiptFilePath,
   onDocumentClick,
-  onEdit
 }: ToolCardActionsProps) {
+  const navigate = useNavigate();
+  const hasDocuments = warrantyFilePath || receiptFilePath;
+
   return (
-    <div className="flex items-center gap-2">
-      {documentCount > 0 && (
+    <div className="flex items-center gap-1 shrink-0">
+      {hasDocuments && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
-              onClick={onDocumentClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDocumentClick();
+              }}
+              className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
             >
-              <FileText className="h-4 w-4" />
-              <span className="sr-only">View documents</span>
+              <FileText 
+                className="h-3 w-3 sm:h-4 sm:w-4" 
+                style={{ 
+                  color: '#64748b',
+                  fill: 'none',
+                  strokeWidth: 2.5
+                }} 
+              />
+              {documentCount > 1 && (
+                <Badge 
+                  className="absolute -top-1 -right-1 h-3 w-3 p-0 flex items-center justify-center text-[10px] bg-blue-500"
+                  variant="secondary"
+                >
+                  {documentCount}
+                </Badge>
+              )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p>View documents ({documentCount})</p>
-          </TooltipContent>
+          <TooltipContent>View Documents</TooltipContent>
         </Tooltip>
       )}
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreVertical className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/edit-tool/${id}`)}
+            className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+          >
+            <Pencil 
+              className="h-3 w-3 sm:h-4 sm:w-4" 
+              style={{ 
+                color: '#64748b',
+                fill: 'none',
+                strokeWidth: 2.5
+              }} 
+            />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {onEdit && (
-            <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </TooltipTrigger>
+        <TooltipContent>Edit Tool</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <DeleteToolDialog id={id} name={typeof name === 'string' ? name : 'this tool'} />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>Delete Tool</TooltipContent>
+      </Tooltip>
     </div>
   );
 }
