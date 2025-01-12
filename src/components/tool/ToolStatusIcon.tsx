@@ -14,7 +14,7 @@ export function ToolStatusIcon({ status }: ToolStatusIconProps) {
       case "maintenance":
         return "#eab308"; // Yellow
       case "loaned":
-        return "#8b5cf6"; // Purple
+        return "#0EA5E9"; // Ocean Blue
       default:
         return "#000000";
     }
