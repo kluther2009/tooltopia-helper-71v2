@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useState } from "react";
 
 interface ProjectToolsDialogProps {
   projectId: string;
@@ -15,6 +16,8 @@ interface ProjectToolsDialogProps {
 
 export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToolsDialogProps) {
   const queryClient = useQueryClient();
+  const [selectedAvailableTool, setSelectedAvailableTool] = useState<string | null>(null);
+  const [selectedSelectedTool, setSelectedSelectedTool] = useState<string | null>(null);
 
   // Fetch all tools
   const { data: allTools = [] } = useQuery({
@@ -94,6 +97,10 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
         toast.success('Tool added to project');
       }
       
+      // Reset selections after moving a tool
+      setSelectedAvailableTool(null);
+      setSelectedSelectedTool(null);
+      
       // Invalidate both the dialog's tools query and the project card's tools query
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project-tools", projectId] }),
@@ -105,7 +112,12 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
     }
   };
 
-  const ToolList = ({ tools, title }: { tools: any[], title: string }) => (
+  const ToolList = ({ tools, title, selectedTool, onToolSelect }: { 
+    tools: any[], 
+    title: string,
+    selectedTool: string | null,
+    onToolSelect: (id: string) => void
+  }) => (
     <Card className="flex-1 p-4">
       <h3 className="font-medium mb-3 text-sm text-gray-700">{title}</h3>
       <ScrollArea className="h-[300px] pr-4">
@@ -113,7 +125,9 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           {tools.map((tool) => (
             <div
               key={tool.id}
-              className="flex items-center justify-between p-3 hover:bg-slate-100 rounded-lg text-sm"
+              onClick={() => onToolSelect(tool.id)}
+              className={`flex items-center justify-between p-3 rounded-lg cursor-pointer text-sm transition-colors
+                ${selectedTool === tool.id ? 'bg-primary text-white' : 'hover:bg-slate-100'}`}
             >
               {tool.name}
             </div>
@@ -135,19 +149,23 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
           <DialogTitle>Select Tools</DialogTitle>
         </DialogHeader>
         <div className="flex items-stretch gap-4">
-          <ToolList tools={availableTools} title="Available Tools" />
+          <ToolList 
+            tools={availableTools} 
+            title="Available Tools" 
+            selectedTool={selectedAvailableTool}
+            onToolSelect={setSelectedAvailableTool}
+          />
           
           <div className="flex flex-col justify-center gap-2">
             <Button
               variant="outline"
               size="icon"
               onClick={() => {
-                const selectedTool = availableTools[0];
-                if (selectedTool) {
-                  handleToolSelect(selectedTool.id);
+                if (selectedAvailableTool) {
+                  handleToolSelect(selectedAvailableTool);
                 }
               }}
-              disabled={availableTools.length === 0}
+              disabled={!selectedAvailableTool}
             >
               <ArrowRight className="h-4 w-4" />
             </Button>
@@ -155,18 +173,22 @@ export function ProjectToolsDialog({ projectId, open, onOpenChange }: ProjectToo
               variant="outline"
               size="icon"
               onClick={() => {
-                const selectedTool = selectedTools[0];
-                if (selectedTool) {
-                  handleToolSelect(selectedTool.id);
+                if (selectedSelectedTool) {
+                  handleToolSelect(selectedSelectedTool);
                 }
               }}
-              disabled={selectedTools.length === 0}
+              disabled={!selectedSelectedTool}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </div>
 
-          <ToolList tools={selectedTools} title="Selected Tools" />
+          <ToolList 
+            tools={selectedTools} 
+            title="Selected Tools" 
+            selectedTool={selectedSelectedTool}
+            onToolSelect={setSelectedSelectedTool}
+          />
         </div>
       </DialogContent>
     </Dialog>
