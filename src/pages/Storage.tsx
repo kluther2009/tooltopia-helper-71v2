@@ -6,7 +6,7 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { MoveToolDialog } from "@/components/MoveToolDialog";
 import { useTools, Tool } from "@/hooks/useTools";
 import { LocationSection } from "@/components/LocationSection";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -35,7 +35,6 @@ interface DragConfirmation {
 
 export default function Storage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { tools, fetchTools, updateToolLocation } = useTools();
   const [dragConfirmation, setDragConfirmation] = useState<DragConfirmation | null>(null);
   const [draggingOver, setDraggingOver] = useState<string | null>(null);
@@ -61,13 +60,6 @@ export default function Storage() {
     }
 
     fetchTools();
-  };
-
-  // Add this function to handle edit navigation
-  const handleEditTool = (toolId: string) => {
-    navigate(`/edit-tool/${toolId}`, {
-      state: { from: '/storage' }
-    });
   };
 
   const handleDragEnd = async (result: any) => {
@@ -154,7 +146,6 @@ export default function Storage() {
                   subLocations={subLocations}
                   colorClass={locationColors[index % locationColors.length]}
                   isDraggingOver={draggingOver}
-                  onEditTool={handleEditTool}
                 />
               ))}
               {Object.keys(groupedTools).length === 0 && (
