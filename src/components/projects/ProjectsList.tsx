@@ -6,7 +6,7 @@ import { ProjectFilter, ProjectSort } from "@/pages/Projects";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, ArrowRight, Tool, Package2 } from "lucide-react";
+import { Calendar, DollarSign, ArrowRight, Wrench, Package2 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ProjectMaterials } from "./project-card/ProjectMaterials";
@@ -138,7 +138,7 @@ export function ProjectsList({ statusFilter, sortOrder }: ProjectsListProps) {
               
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <Tool className="h-4 w-4" />
+                  <Wrench className="h-4 w-4" />
                   <span>Tools:</span>
                 </div>
                 <ProjectTools projectId={project.id} />
