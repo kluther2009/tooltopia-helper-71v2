@@ -17,10 +17,16 @@ export default function ProjectDetails() {
         .from("projects")
         .select("*")
         .eq("id", projectId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data;
+      if (!data) throw new Error("Project not found");
+      
+      // Cast the status to ensure it matches the Project type
+      return {
+        ...data,
+        status: data.status as "planned" | "ongoing" | "completed"
+      } as Project;
     },
   });
 
