@@ -6,9 +6,11 @@ import { ProjectFilter, ProjectSort } from "@/pages/Projects";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, ArrowRight } from "lucide-react";
+import { Calendar, DollarSign, ArrowRight, Tool, Package2 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { ProjectMaterials } from "./project-card/ProjectMaterials";
+import { ProjectTools } from "./project-card/ProjectTools";
 
 interface ProjectsListProps {
   statusFilter: ProjectFilter;
@@ -90,38 +92,58 @@ export function ProjectsList({ statusFilter, sortOrder }: ProjectsListProps) {
     <div className="space-y-4">
       {projects.map((project) => (
         <Card key={project.id} className="p-4 bg-slate-800 text-white">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">{project.name}</h3>
-                <Badge className={statusColors[project.status]} variant="secondary">
-                  {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-slate-300">
-                {project.target_date && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">{project.name}</h3>
+                  <Badge className={statusColors[project.status]} variant="secondary">
+                    {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-slate-300">
+                  {project.target_date && (
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {format(new Date(project.target_date), "MMM d, yyyy")}
+                    </div>
+                  )}
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {format(new Date(project.target_date), "MMM d, yyyy")}
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    {typeof project.total_cost === 'number' 
+                      ? `$${project.total_cost.toFixed(2)}`
+                      : '$0.00'
+                    }
                   </div>
-                )}
-                <div className="flex items-center">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  {typeof project.total_cost === 'number' 
-                    ? `$${project.total_cost.toFixed(2)}`
-                    : '$0.00'
-                  }
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={() => navigate(`/projects/${project.id}`)}
+              >
+                View Details
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              className="text-slate-300 hover:text-white hover:bg-slate-700"
-              onClick={() => navigate(`/projects/${project.id}`)}
-            >
-              View Details
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-700">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Package2 className="h-4 w-4" />
+                  <span>Materials:</span>
+                </div>
+                <ProjectMaterials projectId={project.id} />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Tool className="h-4 w-4" />
+                  <span>Tools:</span>
+                </div>
+                <ProjectTools projectId={project.id} />
+              </div>
+            </div>
           </div>
         </Card>
       ))}
