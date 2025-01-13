@@ -13,6 +13,17 @@ export function ExportDataSection() {
       // Fetch latest tools data before export
       await fetchTools();
       
+      if (!tools || tools.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "No Data",
+          description: "There are no tools to export",
+        });
+        return;
+      }
+
+      console.log('Exporting tools:', tools); // Debug log
+      
       const headers = [
         "Tool Name",
         "Primary Location",
@@ -25,22 +36,29 @@ export function ExportDataSection() {
       ];
       
       // Create CSV rows from tools data
-      const rows = tools.map(tool => [
-        tool.name,
-        tool.location.split(' > ')[0] || '', // Primary location
-        tool.sub_location_a || '',
-        tool.sub_location_b || '',
-        tool.status,
-        tool.purchase_date || '',
-        tool.warranty_length?.toString() || '',
-        tool.purchase_cost ? `$${tool.purchase_cost}` : ''
-      ]);
+      const rows = tools.map(tool => {
+        const locationParts = tool.location.split(' > ');
+        return [
+          tool.name,
+          locationParts[0] || '', // Primary location
+          locationParts[1] || '', // Sub location (from location string)
+          locationParts[2] || '', // Specific location (from location string)
+          tool.status,
+          tool.purchase_date || '',
+          tool.warranty_length?.toString() || '',
+          tool.purchase_cost ? `$${tool.purchase_cost}` : ''
+        ];
+      });
+
+      console.log('Generated rows:', rows); // Debug log
 
       // Combine headers and rows
       const csvContent = [
         headers.join(','),
         ...rows.map(row => row.join(','))
       ].join('\n');
+
+      console.log('CSV Content:', csvContent); // Debug log
 
       // Create and download the file
       const blob = new Blob([csvContent], { type: "text/csv" });
