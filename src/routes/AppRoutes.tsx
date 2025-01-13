@@ -8,6 +8,7 @@ import AddTool from "@/pages/AddTool";
 import EditTool from "@/pages/EditTool";
 import ToolList from "@/pages/ToolList";
 import Projects from "@/pages/Projects";
+import ProjectDetails from "@/pages/ProjectDetails";
 import Settings from "@/pages/Settings";
 import Storage from "@/pages/Storage";
 import InitialInventory from "@/pages/InitialInventory";
@@ -25,6 +26,7 @@ export function AppRoutes() {
         <Route path="/edit-tool/:id" element={<EditTool />} />
         <Route path="/tool-list" element={<ToolList />} />
         <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:projectId" element={<ProjectDetails />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/storage" element={<Storage />} />
         <Route path="/initial-inventory" element={<InitialInventory />} />
