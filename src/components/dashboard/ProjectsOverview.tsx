@@ -19,6 +19,7 @@ interface ProjectMetrics {
   totalCost: number;
   toolsCount: number;
   tasksCount: number;
+  materialsCount: number;
 }
 
 export function ProjectsOverview({ projects, toolsInUse }: ProjectsOverviewProps) {
@@ -46,6 +47,18 @@ export function ProjectsOverview({ projects, toolsInUse }: ProjectsOverviewProps
     },
   });
 
+  // Query to get project materials count
+  const { data: projectMaterials } = useQuery({
+    queryKey: ["project-materials-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_materials")
+        .select("project_id");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const calculateMetrics = (projectList: Project[]): ProjectMetrics => {
     return {
       count: projectList.length,
@@ -55,6 +68,9 @@ export function ProjectsOverview({ projects, toolsInUse }: ProjectsOverviewProps
       ).length || 0,
       tasksCount: projectTasks?.filter(t => 
         projectList.some(p => p.id === t.project_id)
+      ).length || 0,
+      materialsCount: projectMaterials?.filter(m => 
+        projectList.some(p => p.id === m.project_id)
       ).length || 0,
     };
   };

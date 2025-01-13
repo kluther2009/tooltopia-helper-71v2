@@ -5,6 +5,7 @@ interface ProjectMetrics {
   totalCost: number;
   toolsCount: number;
   tasksCount: number;
+  materialsCount: number;
 }
 
 interface MetricCardProps {
@@ -18,8 +19,8 @@ export function ProjectMetricCard({ title, metrics }: MetricCardProps) {
       <CardHeader>
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Count</p>
             <p className="text-2xl font-bold">{metrics.count}</p>
@@ -31,6 +32,10 @@ export function ProjectMetricCard({ title, metrics }: MetricCardProps) {
           <div>
             <p className="text-sm text-muted-foreground">Tools</p>
             <p className="text-2xl font-bold">{metrics.toolsCount}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Materials</p>
+            <p className="text-2xl font-bold">{metrics.materialsCount}</p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Tasks</p>
