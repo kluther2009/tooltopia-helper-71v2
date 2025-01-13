@@ -12,16 +12,9 @@ export default function Index() {
   const fetchTools = async () => {
     try {
       console.log('Fetching tools...');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('No authenticated user found');
-        return;
-      }
-
       const { data, error } = await supabase
         .from('tools')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*');
       
       if (error) {
         console.error('Error fetching tools:', error);
@@ -75,15 +68,15 @@ export default function Index() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="space-y-6">
       <Card className="w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full">ToolTrackerHub</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-left w-full text-white">ToolTrackerHub</h1>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
             <Input
               placeholder="Search tools..."
-              className="pl-8 sm:pl-10 w-full text-sm font-medium"
+              className="pl-8 sm:pl-10 bg-white text-gray-900 border-input w-full text-sm font-medium"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -106,7 +99,7 @@ export default function Index() {
             />
           ))}
           {filteredTools.length === 0 && (
-            <div className="col-span-full text-center py-4 sm:py-8 text-gray-500 font-medium">
+            <div className="col-span-full text-center py-4 sm:py-8 text-white font-bold text-sm">
               No tools found matching your search.
             </div>
           )}
