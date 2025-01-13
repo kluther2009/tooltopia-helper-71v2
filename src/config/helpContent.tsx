@@ -15,6 +15,26 @@ export const helpContent = {
       </>
     )
   },
+  "/tool-overview": {
+    title: "Tool Overview Help",
+    description: (
+      <>
+        <p className="mb-4">Welcome to the Tool Overview screen! Here's how to use this view:</p>
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Use the search bar to quickly find tools by name or location</li>
+          <li>Each tool card displays:
+            <ul className="list-disc pl-6 mt-2 space-y-1">
+              <li>Tool name and location hierarchy</li>
+              <li>Current status indicator</li>
+              <li>Location details with primary and sub-locations</li>
+            </ul>
+          </li>
+          <li>Click on any tool card to view more details or manage the tool</li>
+          <li>Tools are sorted alphabetically for easy reference</li>
+        </ul>
+      </>
+    )
+  },
   "/add-tool": {
     title: "Add Tool Help",
     description: (
