@@ -22,7 +22,7 @@ export function ExportDataSection() {
         return;
       }
 
-      console.log('Exporting tools:', tools); // Debug log
+      console.log('Number of tools to export:', tools.length);
       
       const headers = [
         "Tool Name",
@@ -37,31 +37,39 @@ export function ExportDataSection() {
       
       // Create CSV rows from tools data
       const rows = tools.map(tool => {
-        const locationParts = tool.location.split(' > ');
-        return [
+        const locationParts = tool.location.split(' > ').map(part => part.trim());
+        const row = [
           tool.name,
           locationParts[0] || '', // Primary location
-          locationParts[1] || '', // Sub location (from location string)
-          locationParts[2] || '', // Specific location (from location string)
+          locationParts[1] || '', // Sub location
+          locationParts[2] || '', // Specific location
           tool.status,
           tool.purchase_date || '',
           tool.warranty_length?.toString() || '',
           tool.purchase_cost ? `$${tool.purchase_cost}` : ''
         ];
+        console.log('Generated row for tool:', tool.name, row);
+        return row;
       });
 
-      console.log('Generated rows:', rows); // Debug log
-
-      // Combine headers and rows
+      // Combine headers and rows, properly escaping fields
       const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.join(','))
+        ...rows.map(row => 
+          row.map(field => {
+            // Escape fields that contain commas or quotes
+            if (field.includes(',') || field.includes('"')) {
+              return `"${field.replace(/"/g, '""')}"`;
+            }
+            return field;
+          }).join(',')
+        )
       ].join('\n');
 
-      console.log('CSV Content:', csvContent); // Debug log
+      console.log('Final CSV Content:', csvContent);
 
       // Create and download the file
-      const blob = new Blob([csvContent], { type: "text/csv" });
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -73,7 +81,7 @@ export function ExportDataSection() {
 
       toast({
         title: "Success",
-        description: "Tools exported successfully as CSV",
+        description: `Successfully exported ${tools.length} tools to CSV`,
       });
     } catch (error) {
       console.error("Error exporting CSV:", error);
@@ -86,7 +94,6 @@ export function ExportDataSection() {
   };
 
   const exportPDF = () => {
-    // For now, we'll show a toast that PDF export is coming soon
     toast({
       title: "Coming Soon",
       description: "PDF export functionality will be available soon",
