@@ -10,13 +10,26 @@ export function ExportDataSection() {
 
   const exportCSV = () => {
     try {
-      const headers = ["Name", "Location", "Status", "Purchase Date", "Warranty Length"];
+      const headers = [
+        "Tool Name",
+        "Primary Location",
+        "Sub Location",
+        "Specific Location",
+        "Status",
+        "Purchase Date",
+        "Warranty Length in Months",
+        "Purchase Cost"
+      ];
+      
       const csvContent = tools.map(tool => [
         tool.name,
         tool.location,
+        tool.sub_location_a || "",
+        tool.sub_location_b || "",
         tool.status,
         tool.purchase_date || "",
-        tool.warranty_length || ""
+        tool.warranty_length || "",
+        tool.purchase_cost ? `$${tool.purchase_cost}` : ""
       ].join(",")).join("\n");
 
       const csv = [headers.join(","), csvContent].join("\n");
