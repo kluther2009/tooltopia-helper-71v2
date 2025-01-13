@@ -5,11 +5,14 @@ import { useTools } from "@/hooks/useTools";
 import { useToast } from "@/hooks/use-toast";
 
 export function ExportDataSection() {
-  const { tools } = useTools();
+  const { tools, fetchTools } = useTools();
   const { toast } = useToast();
 
-  const exportCSV = () => {
+  const exportCSV = async () => {
     try {
+      // Fetch latest tools data before export
+      await fetchTools();
+      
       const headers = [
         "Tool Name",
         "Primary Location",
@@ -21,19 +24,26 @@ export function ExportDataSection() {
         "Purchase Cost"
       ];
       
-      const csvContent = tools.map(tool => [
+      // Create CSV rows from tools data
+      const rows = tools.map(tool => [
         tool.name,
-        tool.location,
-        tool.sub_location_a || "",
-        tool.sub_location_b || "",
+        tool.location.split(' > ')[0] || '', // Primary location
+        tool.sub_location_a || '',
+        tool.sub_location_b || '',
         tool.status,
-        tool.purchase_date || "",
-        tool.warranty_length || "",
-        tool.purchase_cost ? `$${tool.purchase_cost}` : ""
-      ].join(",")).join("\n");
+        tool.purchase_date || '',
+        tool.warranty_length?.toString() || '',
+        tool.purchase_cost ? `$${tool.purchase_cost}` : ''
+      ]);
 
-      const csv = [headers.join(","), csvContent].join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
