@@ -5,12 +5,23 @@ export const helpContent = {
     title: "Dashboard Help",
     description: (
       <>
-        <p className="mb-4">Welcome to the ToolTrackerHub dashboard! Here's how to use this screen:</p>
+        <p className="mb-4">Welcome to the ToolTrackerHub dashboard! Here's what you can find:</p>
         <ul className="list-disc pl-6 space-y-2">
-          <li>Use the search bar to find tools by name or location</li>
-          <li>Each tool card shows the tool's name and location hierarchy</li>
-          <li>The status indicator shows if a tool is available, in use, or in maintenance</li>
-          <li>Click on a tool card to view more details or edit the tool</li>
+          <li>Tools Overview Tab:
+            <ul className="list-disc pl-6 mt-2 space-y-1">
+              <li>View key metrics about your tools (total count, status breakdowns)</li>
+              <li>See tools distribution across different locations</li>
+              <li>Track tools under warranty and with documentation</li>
+            </ul>
+          </li>
+          <li>Projects Overview Tab:
+            <ul className="list-disc pl-6 mt-2 space-y-1">
+              <li>Monitor project statuses and progress</li>
+              <li>View project metrics and statistics</li>
+              <li>Track tools currently assigned to projects</li>
+            </ul>
+          </li>
+          <li>Switch between tabs using the navigation at the top</li>
         </ul>
       </>
     )
