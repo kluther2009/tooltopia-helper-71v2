@@ -53,10 +53,12 @@ serve(async (req) => {
     const taskDetails = tasks ? formatTaskDetails(tasks) : 'No tasks available'
     const systemPrompt = getSystemPrompt(projectDetails, toolInventory, taskDetails)
 
-    // Format conversation history for the API
+    // Take only the last 3 exchanges from the conversation history
+    const recentConversation = conversation.slice(-3)
+
+    // Format messages for the API
     const messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversation.flatMap(entry => [
+      ...recentConversation.flatMap(entry => [
         { role: 'user', content: entry.message },
         { role: 'assistant', content: entry.response }
       ]),
@@ -76,6 +78,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: 'claude-3-haiku-20240307',
           max_tokens: 1024,
+          system: systemPrompt,
           messages: messages,
         }),
       })
