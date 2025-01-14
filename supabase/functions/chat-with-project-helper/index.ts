@@ -25,7 +25,7 @@ serve(async (req) => {
     const requestBody = await req.json()
     console.log('Request body:', requestBody)
 
-    const { message, userId, projectId, tasks } = requestBody
+    const { message, userId, projectId, tasks, conversation = [] } = requestBody
     
     if (!message || !userId || !projectId) {
       console.error('Missing required parameters:', { message, userId, projectId })
@@ -53,6 +53,19 @@ serve(async (req) => {
     const taskDetails = tasks ? formatTaskDetails(tasks) : 'No tasks available'
     const systemPrompt = getSystemPrompt(projectDetails, toolInventory, taskDetails)
 
+    // Format conversation history for the API
+    const messages = [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      ...conversation.flatMap(entry => [
+        { role: 'user', content: entry.message },
+        { role: 'assistant', content: entry.response }
+      ]),
+      { role: 'user', content: message }
+    ]
+
     console.log('Making request to Anthropic API...')
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -65,12 +78,7 @@ serve(async (req) => {
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
         system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: message
-          }
-        ],
+        messages,
       }),
     })
 

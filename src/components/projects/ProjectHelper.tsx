@@ -9,19 +9,30 @@ interface ProjectHelperProps {
   projectId: string;
 }
 
+interface ConversationEntry {
+  message: string;
+  response: string;
+}
+
 export function ProjectHelper({ projectId }: ProjectHelperProps) {
   const [message, setMessage] = useState("")
-  const [response, setResponse] = useState("")
   const [isListening, setIsListening] = useState(false)
+  const [conversation, setConversation] = useState<ConversationEntry[]>([])
   const { sendMessage, isLoading } = useProjectHelper(projectId)
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!message.trim()) return
 
-    const aiResponse = await sendMessage(message)
+    if (conversation.length >= 3) {
+      toast.error("Maximum of 3 questions reached. Please start a new conversation.")
+      return
+    }
+
+    const aiResponse = await sendMessage(message, conversation)
     if (aiResponse) {
-      setResponse(aiResponse)
+      setConversation(prev => [...prev, { message, response: aiResponse }])
+      setMessage("")
     }
   }
 
@@ -61,6 +72,12 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
     }
   }
 
+  const startNewConversation = () => {
+    setConversation([])
+    setMessage("")
+    toast.success("Started new conversation")
+  }
+
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,22 +102,45 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
             )}
           </Button>
         </div>
-        <Button type="submit" disabled={isLoading || !message.trim()}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            "Ask Project Helper"
+        <div className="flex gap-2 justify-between">
+          <Button type="submit" disabled={isLoading || !message.trim()}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              "Ask Project Helper"
+            )}
+          </Button>
+          {conversation.length > 0 && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={startNewConversation}
+            >
+              Start New Conversation
+            </Button>
           )}
-        </Button>
+        </div>
       </form>
-      {response && (
-        <div className="mt-4">
-          <div className="bg-muted p-4 rounded-md whitespace-pre-wrap text-sm">
-            {response}
+
+      {conversation.map((entry, index) => (
+        <div key={index} className="space-y-2">
+          <div className="bg-muted/50 p-4 rounded-md">
+            <p className="font-medium text-sm">Question {index + 1}:</p>
+            <p className="text-sm">{entry.message}</p>
           </div>
+          <div className="bg-muted p-4 rounded-md whitespace-pre-wrap text-sm">
+            <p className="font-medium text-sm">Answer:</p>
+            {entry.response}
+          </div>
+        </div>
+      ))}
+
+      {conversation.length === 3 && (
+        <div className="text-center text-sm text-muted-foreground">
+          Maximum questions reached. Click "Start New Conversation" to begin a new session.
         </div>
       )}
     </div>

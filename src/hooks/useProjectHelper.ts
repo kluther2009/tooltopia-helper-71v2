@@ -2,10 +2,15 @@ import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 
+interface ConversationEntry {
+  message: string;
+  response: string;
+}
+
 export function useProjectHelper(projectId: string) {
   const [isLoading, setIsLoading] = useState(false)
 
-  const sendMessage = async (message: string) => {
+  const sendMessage = async (message: string, conversation: ConversationEntry[] = []) => {
     setIsLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -31,7 +36,8 @@ export function useProjectHelper(projectId: string) {
         message, 
         userId: user.id, 
         projectId,
-        tasks 
+        tasks,
+        conversation 
       })
 
       const { data, error } = await supabase.functions.invoke('chat-with-project-helper', {
@@ -39,7 +45,8 @@ export function useProjectHelper(projectId: string) {
           message,
           userId: user.id,
           projectId,
-          tasks
+          tasks,
+          conversation
         }
       })
 
