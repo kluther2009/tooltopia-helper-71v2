@@ -55,10 +55,7 @@ serve(async (req) => {
 
     // Format conversation history for the API
     const messages = [
-      {
-        role: 'system',
-        content: systemPrompt
-      },
+      { role: 'system', content: systemPrompt },
       ...conversation.flatMap(entry => [
         { role: 'user', content: entry.message },
         { role: 'assistant', content: entry.response }
@@ -66,7 +63,7 @@ serve(async (req) => {
       { role: 'user', content: message }
     ]
 
-    console.log('Making request to Anthropic API...')
+    console.log('Making request to Anthropic API with messages:', messages)
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -77,8 +74,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1024,
-        system: systemPrompt,
-        messages,
+        messages: messages,
       }),
     })
 
