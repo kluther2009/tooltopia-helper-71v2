@@ -18,9 +18,14 @@ import { Outlet } from "react-router-dom";
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Auth routes without Layout */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<SignUp />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       {/* Protected routes wrapped in Layout */}
       <Route element={<Layout><Outlet /></Layout>}>
-        <Route path="/" element={<Dashboard />} />
+        <Route index element={<Dashboard />} />
         <Route path="/tool-overview" element={<Index />} />
         <Route path="/add-tool" element={<AddTool />} />
         <Route path="/edit-tool/:id" element={<EditTool />} />
@@ -32,10 +37,7 @@ export function AppRoutes() {
         <Route path="/initial-inventory" element={<InitialInventory />} />
       </Route>
 
-      {/* Auth routes without Layout */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Catch all route - redirect to dashboard */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
