@@ -125,10 +125,10 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
         </div>
       </form>
 
-      {conversation.map((entry, index) => (
+      {[...conversation].reverse().map((entry, index) => (
         <div key={index} className="space-y-2">
           <div className="bg-muted/50 p-4 rounded-md">
-            <p className="font-medium text-sm">Question {index + 1}:</p>
+            <p className="font-medium text-sm">Question {conversation.length - index}:</p>
             <p className="text-sm">{entry.message}</p>
           </div>
           <div className="bg-muted p-4 rounded-md whitespace-pre-wrap text-sm">
