@@ -64,46 +64,46 @@ serve(async (req) => {
     ]
 
     console.log('Making request to Anthropic API with messages:', messages)
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 1024,
-        messages: messages,
-      }),
-    })
-
-    console.log('Anthropic API response status:', response.status)
     
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Anthropic API error:', response.status, errorText)
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 1024,
+          messages: messages,
+        }),
+      })
+
+      console.log('Anthropic API response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Anthropic API error:', response.status, errorText)
+        throw new Error(`Anthropic API error: ${response.status} ${errorText}`)
+      }
+
+      const data = await response.json()
+      console.log('Anthropic API response:', data)
+
+      if (!data.content || !data.content[0] || !data.content[0].text) {
+        console.error('Invalid response format from Anthropic:', data)
+        throw new Error('Invalid response format from AI service')
+      }
+
       return new Response(
-        JSON.stringify({ error: 'AI service error' }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ content: data.content[0].text }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    } catch (error) {
+      console.error('Error calling Anthropic API:', error)
+      throw error
     }
-
-    const data = await response.json()
-    console.log('Anthropic API response:', data)
-
-    if (!data.content || !data.content[0] || !data.content[0].text) {
-      console.error('Invalid response format from Anthropic:', data)
-      return new Response(
-        JSON.stringify({ error: 'Invalid response format from AI service' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    return new Response(
-      JSON.stringify({ content: data.content[0].text }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
   } catch (error) {
     console.error('Error in project-helper function:', error)
     return new Response(
