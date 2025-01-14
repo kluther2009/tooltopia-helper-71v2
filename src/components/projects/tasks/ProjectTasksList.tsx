@@ -35,7 +35,7 @@ export function ProjectTasksList({ projectId }: { projectId: string }) {
         .from("project_tasks")
         .select("*")
         .eq("project_id", projectId)
-        .order("created_at", { ascending: false });
+        .order("due_date", { ascending: true, nullsLast: true });
 
       if (error) throw error;
       return data as ProjectTask[];
