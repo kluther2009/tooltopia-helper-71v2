@@ -5,29 +5,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Form } from "@/components/ui/form";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { ProjectNameField } from "./form-fields/ProjectNameField";
+import { ProjectStatusField } from "./form-fields/ProjectStatusField";
+import { ProjectDateField } from "./form-fields/ProjectDateField";
+import { ProjectNotesField } from "./form-fields/ProjectNotesField";
 
 interface CreateProjectDialogProps {
   open: boolean;
@@ -103,90 +90,10 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="Enter project name" 
-                      maxLength={50}
-                    />
-                  </FormControl>
-                  <div className="text-xs text-muted-foreground">
-                    {field.value.length}/50 characters
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="target_date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Target Date</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      date={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      {...field} 
-                      placeholder="Add project notes..." 
-                      maxLength={350}
-                    />
-                  </FormControl>
-                  <div className="text-xs text-muted-foreground">
-                    {field.value.length}/350 characters
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <ProjectNameField form={form} />
+            <ProjectStatusField form={form} />
+            <ProjectDateField form={form} />
+            <ProjectNotesField form={form} />
 
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
