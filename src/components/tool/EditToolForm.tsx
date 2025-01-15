@@ -8,6 +8,7 @@ import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate, useLocation } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 import { useEffect, useState } from "react"
+import { DatePicker } from "@/components/ui/date-picker"
 
 interface EditToolFormProps {
   state: ToolEditorState;
@@ -143,13 +144,9 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
 
           <div className="space-y-2">
             <Label htmlFor="loanDate">Loan Date</Label>
-            <Input
-              id="loanDate"
-              type="date"
-              value={state.loanDate || ""}
-              onChange={(e) => onStateChange({ loanDate: e.target.value })}
-              className="bg-background text-foreground"
-              required
+            <DatePicker
+              date={state.loanDate ? new Date(state.loanDate) : undefined}
+              onSelect={(date) => onStateChange({ loanDate: date ? date.toISOString().split('T')[0] : '' })}
             />
           </div>
         </>

@@ -2,13 +2,8 @@ import { ToolNameAutocomplete } from "@/components/ToolNameAutocomplete"
 import { ToolLocationFields } from "@/components/ToolLocationFields"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+import { DatePicker } from "@/components/ui/date-picker"
 import { useState, useEffect } from "react"
 
 interface BasicToolInfoProps {
@@ -110,34 +105,9 @@ export function BasicToolInfo({
 
           <div className="space-y-2">
             <Label htmlFor="loanDate">Loan Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !loanDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {loanDate ? format(new Date(loanDate), "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={loanDate ? new Date(loanDate) : undefined}
-                  onSelect={(date) => onLoanDateChange?.(date ? format(date, "yyyy-MM-dd") : "")}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Input
-              id="loanDate"
-              type="date"
-              value={loanDate}
-              onChange={(e) => onLoanDateChange?.(e.target.value)}
-              className="bg-background text-foreground"
+            <DatePicker
+              date={loanDate ? new Date(loanDate) : undefined}
+              onSelect={(date) => onLoanDateChange?.(date ? date.toISOString().split('T')[0] : '')}
             />
           </div>
         </>
