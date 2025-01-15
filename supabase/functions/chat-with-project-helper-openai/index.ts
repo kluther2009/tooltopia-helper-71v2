@@ -56,7 +56,7 @@ serve(async (req) => {
     // Take only the last 3 exchanges from the conversation history
     const recentConversation = conversation.slice(-3)
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
