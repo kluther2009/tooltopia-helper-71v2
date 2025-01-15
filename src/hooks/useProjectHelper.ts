@@ -7,8 +7,11 @@ interface ConversationEntry {
   response: string;
 }
 
+type AIModel = 'claude' | 'openai';
+
 export function useProjectHelper(projectId: string) {
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedModel, setSelectedModel] = useState<AIModel>('claude')
 
   const sendMessage = async (message: string, conversation: ConversationEntry[] = []) => {
     setIsLoading(true)
@@ -37,10 +40,13 @@ export function useProjectHelper(projectId: string) {
         userId: user.id, 
         projectId,
         tasks,
-        conversation 
+        conversation,
+        model: selectedModel
       })
 
-      const { data, error } = await supabase.functions.invoke('chat-with-project-helper', {
+      const functionName = selectedModel === 'claude' ? 'chat-with-project-helper' : 'chat-with-project-helper-openai'
+      
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { 
           message,
           userId: user.id,
@@ -72,5 +78,5 @@ export function useProjectHelper(projectId: string) {
     }
   }
 
-  return { sendMessage, isLoading }
+  return { sendMessage, isLoading, selectedModel, setSelectedModel }
 }

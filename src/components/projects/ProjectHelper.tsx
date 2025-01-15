@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useProjectHelper } from "@/hooks/useProjectHelper"
 import { Loader2, Mic, MicOff } from "lucide-react"
 import { toast } from "sonner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface ProjectHelperProps {
   projectId: string;
@@ -18,7 +19,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
   const [message, setMessage] = useState("")
   const [isListening, setIsListening] = useState(false)
   const [conversation, setConversation] = useState<ConversationEntry[]>([])
-  const { sendMessage, isLoading } = useProjectHelper(projectId)
+  const { sendMessage, isLoading, selectedModel, setSelectedModel } = useProjectHelper(projectId)
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,6 +81,18 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Select value={selectedModel} onValueChange={(value: 'claude' | 'openai') => setSelectedModel(value)}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select AI Model" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="claude">Claude (Anthropic)</SelectItem>
+            <SelectItem value="openai">GPT-4 (OpenAI)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
           <Textarea
