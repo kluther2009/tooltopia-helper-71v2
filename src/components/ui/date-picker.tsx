@@ -36,6 +36,7 @@ export function DatePicker({ date, onSelect }: DatePickerProps) {
           selected={date}
           onSelect={onSelect}
           initialFocus
+          className="bg-background rounded-md border"
         />
       </PopoverContent>
     </Popover>
