@@ -15,7 +15,7 @@ const corsHeaders = {
 const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
 serve(async (req) => {
-  console.log('Starting OpenAI Project Helper function...')
+  console.log('Starting Deepseek Project Helper function...')
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -56,14 +56,14 @@ serve(async (req) => {
     // Take only the last 3 exchanges from the conversation history
     const recentConversation = conversation.slice(-3)
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: systemPrompt },
           ...recentConversation.flatMap(entry => [
@@ -77,12 +77,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('OpenAI API error:', response.status, errorText)
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`)
+      console.error('Deepseek API error:', response.status, errorText)
+      throw new Error(`Deepseek API error: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
-    console.log('OpenAI API response:', data)
+    console.log('Deepseek API response:', data)
 
     return new Response(
       JSON.stringify({ content: data.choices[0].message.content }),
