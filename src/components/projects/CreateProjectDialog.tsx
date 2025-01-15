@@ -179,7 +179,10 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                    <PopoverContent 
+                      className="w-auto p-0 bg-popover" 
+                      align="start"
+                    >
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
@@ -190,6 +193,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
                           }
                         }}
                         initialFocus
+                        className="rounded-md border"
                       />
                     </PopoverContent>
                   </Popover>
