@@ -5,34 +5,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Project } from "@/types/projects";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { ProjectNameField } from "./form-fields/ProjectNameField";
+import { ProjectStatusField } from "./form-fields/ProjectStatusField";
+import { ProjectDateField } from "./form-fields/ProjectDateField";
+import { ProjectNotesField } from "./form-fields/ProjectNotesField";
 
 interface EditProjectDialogProps {
   project: Project;
@@ -56,6 +39,11 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
   const onSubmit = async (values: any) => {
     const name = values.name.trim();
     const notes = values.notes.trim();
+
+    if (!name) {
+      toast.error("Please enter a project name");
+      return;
+    }
 
     if (name.length > 50) {
       toast.error("Project name cannot exceed 50 characters");
@@ -100,117 +88,19 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} maxLength={50} />
-                  </FormControl>
-                  <div className="text-xs text-muted-foreground">
-                    {field.value.length}/50 characters
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <ProjectNameField form={form} />
+            <ProjectStatusField form={form} />
+            <ProjectDateField form={form} />
+            <ProjectNotesField form={form} />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="target_date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Target Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-auto p-0 bg-popover" 
-                      align="start"
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const formattedDate = format(date, "yyyy-MM-dd");
-                            field.onChange(formattedDate);
-                          }
-                        }}
-                        initialFocus
-                        className="rounded-md border"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} maxLength={350} />
-                  </FormControl>
-                  <div className="text-xs text-muted-foreground">
-                    {field.value.length}/350 characters
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
-            </Button>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>
