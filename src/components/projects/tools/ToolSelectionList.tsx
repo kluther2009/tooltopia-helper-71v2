@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 interface Tool {
   id: string;
@@ -11,17 +12,28 @@ interface ToolSelectionListProps {
   title: string;
   selectedTool: string | null;
   onToolSelect: (id: string) => void;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
 }
 
 export function ToolSelectionList({ 
   tools, 
   title, 
   selectedTool, 
-  onToolSelect 
+  onToolSelect,
+  searchValue,
+  onSearchChange
 }: ToolSelectionListProps) {
   return (
     <Card className="flex-1 p-4">
       <h3 className="font-medium mb-3 text-sm text-gray-700">{title}</h3>
+      <Input
+        type="search"
+        placeholder="Search tools..."
+        value={searchValue}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="mb-3"
+      />
       <ScrollArea className="h-[300px] pr-4">
         <div className="space-y-2">
           {tools.map((tool) => (

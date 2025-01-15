@@ -22,6 +22,8 @@ export function ProjectToolsDialog({
   const queryClient = useQueryClient();
   const [selectedAvailableTool, setSelectedAvailableTool] = useState<string | null>(null);
   const [selectedSelectedTool, setSelectedSelectedTool] = useState<string | null>(null);
+  const [availableToolsSearch, setAvailableToolsSearch] = useState("");
+  const [selectedToolsSearch, setSelectedToolsSearch] = useState("");
 
   // Fetch all tools
   const { data: allTools = [] } = useQuery({
@@ -66,6 +68,14 @@ export function ProjectToolsDialog({
   // Filter tools into available and selected lists
   const selectedTools = allTools.filter(tool => selectedToolIds.includes(tool.id));
   const availableTools = allTools.filter(tool => !selectedToolIds.includes(tool.id));
+
+  // Filter tools based on search input
+  const filteredAvailableTools = availableTools.filter(tool => 
+    tool.name.toLowerCase().includes(availableToolsSearch.toLowerCase())
+  );
+  const filteredSelectedTools = selectedTools.filter(tool => 
+    tool.name.toLowerCase().includes(selectedToolsSearch.toLowerCase())
+  );
 
   const handleToolSelect = async (toolId: string) => {
     try {
@@ -130,10 +140,12 @@ export function ProjectToolsDialog({
         </DialogHeader>
         <div className="flex items-stretch gap-4">
           <ToolSelectionList 
-            tools={availableTools}
+            tools={filteredAvailableTools}
             title="Available Tools"
             selectedTool={selectedAvailableTool}
             onToolSelect={setSelectedAvailableTool}
+            searchValue={availableToolsSearch}
+            onSearchChange={setAvailableToolsSearch}
           />
           
           <ToolTransferControls
@@ -144,10 +156,12 @@ export function ProjectToolsDialog({
           />
 
           <ToolSelectionList 
-            tools={selectedTools}
+            tools={filteredSelectedTools}
             title="Selected Tools"
             selectedTool={selectedSelectedTool}
             onToolSelect={setSelectedSelectedTool}
+            searchValue={selectedToolsSearch}
+            onSearchChange={setSelectedToolsSearch}
           />
         </div>
       </DialogContent>
