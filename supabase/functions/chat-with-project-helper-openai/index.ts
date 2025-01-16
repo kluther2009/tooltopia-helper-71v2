@@ -56,14 +56,14 @@ serve(async (req) => {
     // Take only the last 3 exchanges from the conversation history
     const recentConversation = conversation.slice(-3)
 
-    const response = await fetch('https://api.deepseek.com/v1', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemPrompt },
           ...recentConversation.flatMap(entry => [
@@ -75,6 +75,8 @@ serve(async (req) => {
       }),
     })
 
+    console.log('Deepseek API response status:', response.status)
+    
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Deepseek API error:', response.status, errorText)
@@ -84,12 +86,17 @@ serve(async (req) => {
     const data = await response.json()
     console.log('Deepseek API response:', data)
 
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      console.error('Invalid response format from Deepseek:', data)
+      throw new Error('Invalid response format from AI service')
+    }
+
     return new Response(
       JSON.stringify({ content: data.choices[0].message.content }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error in project-helper-openai function:', error)
+    console.error('Error in project-helper function:', error)
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
