@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Tool,
+  Wrench,
   Settings,
   MapPin,
   FolderKanban,
   ClipboardList,
   ChevronRight,
-  Wrench,
   FileText,
   Shield,
 } from "lucide-react";
@@ -19,7 +18,7 @@ export default function Landing() {
 
   const features = [
     {
-      icon: <Tool className="h-6 w-6" />,
+      icon: <Wrench className="h-6 w-6" />,
       title: "Tool Inventory",
       description: "Track and manage your tools with ease",
     },
@@ -169,7 +168,7 @@ export default function Landing() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
-              { icon: <Tool />, label: "Tool Overview", path: "/tool-overview" },
+              { icon: <Wrench />, label: "Tool Overview", path: "/tool-overview" },
               {
                 icon: <ClipboardList />,
                 label: "Visual Inventory",
