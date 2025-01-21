@@ -13,13 +13,12 @@ import Projects from "@/pages/Projects";
 import ProjectDetails from "@/pages/ProjectDetails";
 import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
-import Landing from "@/pages/Landing";
 
 export function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Navigate to="/tool-overview" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/reset-password" element={<ResetPassword />} />
