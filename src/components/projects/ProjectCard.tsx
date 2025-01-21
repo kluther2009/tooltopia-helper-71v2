@@ -13,6 +13,7 @@ import { ProjectTasksList } from "./tasks/ProjectTasksList";
 import { ProjectHelper } from "./ProjectHelper";
 import { Button } from "../ui/button";
 import { MessageSquare, ListPlus } from "lucide-react";
+import { ProjectPhotos } from "./photos/ProjectPhotos";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -46,6 +47,8 @@ export function ProjectCard({ project }: { project: Project }) {
             </div>
           </div>
         )}
+
+        <ProjectPhotos projectId={project.id} />
 
         <div className="border-t border-slate-700 pt-4">
           <div className="flex items-center justify-between mb-3">
