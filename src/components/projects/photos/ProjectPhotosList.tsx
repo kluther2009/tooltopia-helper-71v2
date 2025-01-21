@@ -63,19 +63,13 @@ export function ProjectPhotosList({ projectId }: ProjectPhotosListProps) {
     );
   }
 
-  const { data: { publicUrl } } = supabase.storage
-    .from("project-photos")
-    .getPublicUrl("");
-
-  const baseUrl = publicUrl.slice(0, -1); // Remove trailing slash
-
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
       {photos.map((photo) => (
         <div key={photo.id} className="relative group">
           <AspectRatio ratio={4/3} className="bg-slate-900 rounded-lg overflow-hidden">
             <img
-              src={`${baseUrl}/${photo.file_path}`}
+              src={`${supabase.storageUrl}/object/public/project-photos/${photo.file_path}`}
               alt={photo.description || "Project photo"}
               className="object-cover w-full h-full"
             />

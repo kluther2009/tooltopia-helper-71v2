@@ -97,13 +97,10 @@ export function ProjectPhotoCameraDialog({
     <Dialog 
       open={open} 
       onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          stopCamera();
-        } else {
-          startCamera();
-        }
+        if (!isOpen) stopCamera();
         onOpenChange(isOpen);
       }}
+      onOpenAutoFocus={() => startCamera()}
     >
       <DialogContent>
         <DialogHeader>
