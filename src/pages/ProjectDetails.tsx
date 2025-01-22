@@ -8,10 +8,8 @@ import { Project } from "@/types/projects";
 import { toast } from "sonner";
 
 export default function ProjectDetails() {
-  const { projectId } = useParams();
+  const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-
-  console.log("Attempting to fetch project with ID:", projectId);
 
   const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", projectId],
@@ -43,6 +41,7 @@ export default function ProjectDetails() {
       } as Project;
     },
     retry: 1,
+    enabled: !!projectId, // Only run query when projectId exists
   });
 
   if (isError) {
