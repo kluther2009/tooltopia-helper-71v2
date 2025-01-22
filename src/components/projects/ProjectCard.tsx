@@ -12,7 +12,11 @@ import { ProjectMaterials } from "./project-card/ProjectMaterials";
 import { ProjectTasksList } from "./tasks/ProjectTasksList";
 import { ProjectHelper } from "./ProjectHelper";
 import { Button } from "../ui/button";
-import { MessageSquare, ListPlus } from "lucide-react";
+import { MessageSquare, ListPlus, Image } from "lucide-react";
+import { ProjectPhotoCameraDialog } from "./photos/ProjectPhotoCameraDialog";
+import { ProjectPhotosList } from "./photos/ProjectPhotosList";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -21,6 +25,88 @@ export function ProjectCard({ project }: { project: Project }) {
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [showProjectHelper, setShowProjectHelper] = useState(false);
+  const [isPhotoCameraOpen, setIsPhotoCameraOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const { data: photos = [] } = useQuery({
+    queryKey: ["project-photos", project.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("project_photos")
+        .select("*")
+        .eq("project_id", project.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${project.id}/${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-photos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase
+        .from('project_photos')
+        .insert({
+          project_id: project.id,
+          file_path: filePath,
+        });
+
+      if (dbError) throw dbError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-photos", project.id] });
+      toast.success("Photo added successfully");
+    },
+    onError: (error) => {
+      console.error("Error uploading photo:", error);
+      toast.error("Failed to upload photo");
+    },
+  });
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: async (photoId: string) => {
+      const { data: photo } = await supabase
+        .from("project_photos")
+        .select("file_path")
+        .eq("id", photoId)
+        .single();
+
+      if (photo) {
+        await supabase.storage
+          .from('project-photos')
+          .remove([photo.file_path]);
+      }
+
+      const { error } = await supabase
+        .from("project_photos")
+        .delete()
+        .eq("id", photoId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-photos", project.id] });
+      toast.success("Photo deleted successfully");
+    },
+    onError: (error) => {
+      console.error("Error deleting photo:", error);
+      toast.error("Failed to delete photo");
+    },
+  });
+
+  const handlePhotoCapture = async (file: File) => {
+    uploadPhotoMutation.mutate(file);
+  };
 
   return (
     <Card className="p-4 bg-slate-800 text-white">
@@ -36,6 +122,26 @@ export function ProjectCard({ project }: { project: Project }) {
         <div className="grid grid-cols-2 gap-4 pt-2">
           <ProjectMaterials projectId={project.id} />
           <ProjectTools projectId={project.id} />
+        </div>
+
+        <div className="border-t border-slate-700 pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-slate-300">Photos</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPhotoCameraOpen(true)}
+              className="text-slate-300 hover:text-white hover:bg-slate-700"
+            >
+              <Image className="h-4 w-4 mr-2" />
+              Add Photo
+            </Button>
+          </div>
+          <ProjectPhotosList
+            projectId={project.id}
+            photos={photos}
+            onDeletePhoto={(photoId) => deletePhotoMutation.mutate(photoId)}
+          />
         </div>
 
         {project.notes && (
@@ -106,6 +212,11 @@ export function ProjectCard({ project }: { project: Project }) {
         project={project}
         open={isTaskDialogOpen}
         onOpenChange={setIsTaskDialogOpen}
+      />
+      <ProjectPhotoCameraDialog
+        isOpen={isPhotoCameraOpen}
+        onClose={() => setIsPhotoCameraOpen(false)}
+        onCapture={handlePhotoCapture}
       />
     </Card>
   );
