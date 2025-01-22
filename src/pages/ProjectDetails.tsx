@@ -15,36 +15,53 @@ export default function ProjectDetails() {
     queryKey: ["project", projectId],
     queryFn: async () => {
       if (!projectId) {
+        console.error("No project ID provided");
         throw new Error("Project ID is required");
       }
 
-      console.log("Fetching project with ID:", projectId);
+      console.log("Attempting to fetch project with ID:", projectId);
       
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("id", projectId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select(`
+            *,
+            project_materials (*),
+            project_tools (
+              *,
+              tool:tools (*)
+            )
+          `)
+          .eq("id", projectId)
+          .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching project:", error);
+        if (error) {
+          console.error("Supabase error fetching project:", error);
+          throw error;
+        }
+        
+        if (!data) {
+          console.error("No project found with ID:", projectId);
+          throw new Error("Project not found");
+        }
+
+        console.log("Successfully fetched project:", data);
+        
+        // Cast the status to ensure it matches the Project type
+        return {
+          ...data,
+          status: data.status as "planned" | "ongoing" | "completed"
+        } as Project;
+      } catch (error) {
+        console.error("Error in project fetch:", error);
         throw error;
       }
-      
-      if (!data) {
-        throw new Error("Project not found");
-      }
-      
-      // Cast the status to ensure it matches the Project type
-      return {
-        ...data,
-        status: data.status as "planned" | "ongoing" | "completed"
-      } as Project;
     },
     enabled: !!projectId,
   });
 
   if (isError) {
+    console.error("Project query error state triggered");
     toast.error("Failed to load project");
     return (
       <div className="max-w-[1200px] mx-auto">
