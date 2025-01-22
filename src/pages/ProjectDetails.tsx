@@ -11,6 +11,8 @@ export default function ProjectDetails() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
 
+  console.log("Component mounted with projectId:", projectId);
+
   const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", projectId],
     queryFn: async () => {
@@ -19,16 +21,20 @@ export default function ProjectDetails() {
         throw new Error("Project ID is required");
       }
 
+      console.log("Attempting to fetch project with ID:", projectId);
+
       const { data, error } = await supabase
         .from("projects")
         .select("id, name, status, notes, target_date, total_cost, created_at, updated_at, user_id")
         .eq("id", projectId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Supabase error:", error);
         throw error;
       }
+
+      console.log("Supabase query response:", data);
 
       if (!data) {
         console.error("No project found with ID:", projectId);
@@ -41,7 +47,7 @@ export default function ProjectDetails() {
       } as Project;
     },
     retry: 1,
-    enabled: !!projectId, // Only run query when projectId exists
+    enabled: !!projectId,
   });
 
   if (isError) {
