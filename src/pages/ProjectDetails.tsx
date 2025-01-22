@@ -11,7 +11,7 @@ export default function ProjectDetails() {
   const { projectId } = useParams();
   const navigate = useNavigate();
 
-  console.log("Current projectId from params:", projectId); // Debug log
+  console.log("Attempting to fetch project with ID:", projectId);
 
   const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", projectId],
@@ -21,52 +21,32 @@ export default function ProjectDetails() {
         throw new Error("Project ID is required");
       }
 
-      console.log("Attempting to fetch project with ID:", projectId);
-      
-      try {
-        const { data, error } = await supabase
-          .from("projects")
-          .select(`
-            id,
-            name,
-            status,
-            notes,
-            target_date,
-            total_cost,
-            created_at,
-            updated_at,
-            user_id
-          `)
-          .eq("id", projectId)
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, name, status, notes, target_date, total_cost, created_at, updated_at, user_id")
+        .eq("id", projectId)
+        .single();
 
-        if (error) {
-          console.error("Supabase error fetching project:", error);
-          throw error;
-        }
-        
-        if (!data) {
-          console.error("No project found with ID:", projectId);
-          throw new Error("Project not found");
-        }
-
-        console.log("Successfully fetched project:", data);
-        
-        return {
-          ...data,
-          status: data.status as "planned" | "ongoing" | "completed"
-        } as Project;
-      } catch (error) {
-        console.error("Error in project fetch:", error);
+      if (error) {
+        console.error("Supabase error:", error);
         throw error;
       }
+
+      if (!data) {
+        console.error("No project found with ID:", projectId);
+        throw new Error("Project not found");
+      }
+
+      return {
+        ...data,
+        status: data.status as "planned" | "ongoing" | "completed"
+      } as Project;
     },
-    enabled: !!projectId,
-    retry: 1, // Only retry once to avoid too many failed attempts
+    retry: 1,
   });
 
   if (isError) {
-    console.error("Project query error details:", error); // Additional error logging
+    console.error("Project query error:", error);
     toast.error("Failed to load project");
     return (
       <div className="max-w-[1200px] mx-auto">
