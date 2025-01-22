@@ -17,6 +17,7 @@ import { ProjectPhotoCameraDialog } from "./photos/ProjectPhotoCameraDialog";
 import { ProjectPhotosList } from "./photos/ProjectPhotosList";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
