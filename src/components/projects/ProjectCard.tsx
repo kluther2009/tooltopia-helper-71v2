@@ -30,22 +30,35 @@ export function ProjectCard({ project }: { project: Project }) {
 
   const queryClient = useQueryClient();
 
-  const { data: photos = [] } = useQuery({
+  const { data: photos = [], isError } = useQuery({
     queryKey: ["project-photos", project.id],
     queryFn: async () => {
+      if (!project.id) {
+        throw new Error("Project ID is required");
+      }
+
       const { data, error } = await supabase
         .from("project_photos")
         .select("*")
         .eq("project_id", project.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching photos:", error);
+        throw error;
+      }
+
+      return data || [];
     },
+    enabled: !!project.id, // Only run query if project.id exists
   });
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
+      if (!project.id) {
+        throw new Error("Project ID is required");
+      }
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${project.id}/${crypto.randomUUID()}.${fileExt}`;
 
@@ -53,7 +66,10 @@ export function ProjectCard({ project }: { project: Project }) {
         .from('project-photos')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Error uploading file:", uploadError);
+        throw uploadError;
+      }
 
       const { error: dbError } = await supabase
         .from('project_photos')
@@ -62,14 +78,18 @@ export function ProjectCard({ project }: { project: Project }) {
           file_path: filePath,
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("Error inserting photo record:", dbError);
+        throw dbError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-photos", project.id] });
       toast.success("Photo added successfully");
+      setIsPhotoCameraOpen(false);
     },
     onError: (error) => {
-      console.error("Error uploading photo:", error);
+      console.error("Error in photo mutation:", error);
       toast.error("Failed to upload photo");
     },
   });
@@ -83,9 +103,14 @@ export function ProjectCard({ project }: { project: Project }) {
         .single();
 
       if (photo) {
-        await supabase.storage
+        const { error: storageError } = await supabase.storage
           .from('project-photos')
           .remove([photo.file_path]);
+          
+        if (storageError) {
+          console.error("Error removing file from storage:", storageError);
+          throw storageError;
+        }
       }
 
       const { error } = await supabase
@@ -93,14 +118,17 @@ export function ProjectCard({ project }: { project: Project }) {
         .delete()
         .eq("id", photoId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting photo record:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-photos", project.id] });
       toast.success("Photo deleted successfully");
     },
     onError: (error) => {
-      console.error("Error deleting photo:", error);
+      console.error("Error in delete mutation:", error);
       toast.error("Failed to delete photo");
     },
   });
@@ -108,6 +136,10 @@ export function ProjectCard({ project }: { project: Project }) {
   const handlePhotoCapture = async (file: File) => {
     uploadPhotoMutation.mutate(file);
   };
+
+  if (isError) {
+    toast.error("Failed to load project photos");
+  }
 
   return (
     <Card className="p-4 bg-slate-800 text-white">
