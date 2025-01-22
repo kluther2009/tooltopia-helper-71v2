@@ -11,7 +11,9 @@ export default function ProjectDetails() {
   const { projectId } = useParams();
   const navigate = useNavigate();
 
-  const { data: project, isLoading, isError } = useQuery({
+  console.log("Current projectId from params:", projectId); // Debug log
+
+  const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", projectId],
     queryFn: async () => {
       if (!projectId) {
@@ -25,12 +27,15 @@ export default function ProjectDetails() {
         const { data, error } = await supabase
           .from("projects")
           .select(`
-            *,
-            project_materials (*),
-            project_tools (
-              *,
-              tool:tools (*)
-            )
+            id,
+            name,
+            status,
+            notes,
+            target_date,
+            total_cost,
+            created_at,
+            updated_at,
+            user_id
           `)
           .eq("id", projectId)
           .maybeSingle();
@@ -47,7 +52,6 @@ export default function ProjectDetails() {
 
         console.log("Successfully fetched project:", data);
         
-        // Cast the status to ensure it matches the Project type
         return {
           ...data,
           status: data.status as "planned" | "ongoing" | "completed"
@@ -58,10 +62,11 @@ export default function ProjectDetails() {
       }
     },
     enabled: !!projectId,
+    retry: 1, // Only retry once to avoid too many failed attempts
   });
 
   if (isError) {
-    console.error("Project query error state triggered");
+    console.error("Project query error details:", error); // Additional error logging
     toast.error("Failed to load project");
     return (
       <div className="max-w-[1200px] mx-auto">
