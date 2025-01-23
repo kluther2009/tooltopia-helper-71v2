@@ -19,24 +19,31 @@ export function ProjectPhotosDialog({
 }: ProjectPhotosDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <div className="grid grid-cols-2 gap-4">
-          <Button
-            variant="outline"
-            className="w-full flex items-center gap-2"
-            onClick={onViewPhotos}
-          >
-            <Camera className="h-4 w-4" />
-            View Photos
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full flex items-center gap-2"
-            onClick={onUploadPhoto}
-          >
-            <Upload className="h-4 w-4" />
-            Upload Photo
-          </Button>
+      <DialogContent className="sm:max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6">Project Photos</h2>
+          <div className="space-y-4">
+            <div className="pt-4 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={onViewPhotos}
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                View Photos
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={onUploadPhoto}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Photo
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
