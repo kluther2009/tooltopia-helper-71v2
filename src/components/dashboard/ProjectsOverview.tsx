@@ -27,36 +27,60 @@ export function ProjectsOverview({ projects, toolsInUse }: ProjectsOverviewProps
   const { data: projectTools } = useQuery({
     queryKey: ["project-tools-count"],
     queryFn: async () => {
+      if (!projects?.length) return [];
+      
       const { data, error } = await supabase
         .from("project_tools")
-        .select("project_id");
-      if (error) throw error;
-      return data;
+        .select("project_id")
+        .in('project_id', projects.map(p => p.id));
+        
+      if (error) {
+        console.error('Error fetching project tools:', error);
+        throw error;
+      }
+      return data || [];
     },
+    enabled: !!projects?.length
   });
 
   // Query to get project tasks count
   const { data: projectTasks } = useQuery({
     queryKey: ["project-tasks-count"],
     queryFn: async () => {
+      if (!projects?.length) return [];
+
       const { data, error } = await supabase
         .from("project_tasks")
-        .select("project_id");
-      if (error) throw error;
-      return data;
+        .select("project_id")
+        .in('project_id', projects.map(p => p.id));
+        
+      if (error) {
+        console.error('Error fetching project tasks:', error);
+        throw error;
+      }
+      return data || [];
     },
+    enabled: !!projects?.length
   });
 
   // Query to get project materials count
   const { data: projectMaterials } = useQuery({
     queryKey: ["project-materials-count"],
     queryFn: async () => {
+      if (!projects?.length) return [];
+
       const { data, error } = await supabase
         .from("project_materials")
-        .select("project_id");
-      if (error) throw error;
-      return data;
+        .select("project_id")
+        .in('project_id', projects.map(p => p.id));
+        
+      if (error) {
+        console.error('Error fetching project materials:', error);
+        throw error;
+      }
+      return data || [];
     },
+    enabled: !!projects?.length
   });
 
   const calculateMetrics = (projectList: Project[]): ProjectMetrics => {
