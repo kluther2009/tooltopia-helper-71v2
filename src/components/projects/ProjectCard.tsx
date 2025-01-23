@@ -11,8 +11,10 @@ import { ProjectTools } from "./project-card/ProjectTools";
 import { ProjectMaterials } from "./project-card/ProjectMaterials";
 import { ProjectTasksList } from "./tasks/ProjectTasksList";
 import { ProjectHelper } from "./ProjectHelper";
+import { ProjectPhotosDialog } from "./photos/ProjectPhotosDialog";
 import { Button } from "../ui/button";
 import { MessageSquare, ListPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function ProjectCard({ project }: { project: Project }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -21,10 +23,19 @@ export function ProjectCard({ project }: { project: Project }) {
   const [isMaterialsDialogOpen, setIsMaterialsDialogOpen] = useState(false);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [showProjectHelper, setShowProjectHelper] = useState(false);
+  const [isPhotosDialogOpen, setIsPhotosDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const handlePhotosClick = () => {
-    // This will be implemented in the next step when we add the photos dialog
-    console.log("Photos clicked for project:", project.id);
+  const handleViewPhotos = () => {
+    setIsPhotosDialogOpen(false);
+    // Navigate to photos view page - this will be implemented in the next step
+    console.log("View photos for project:", project.id);
+  };
+
+  const handleUploadPhoto = () => {
+    setIsPhotosDialogOpen(false);
+    // Navigate to photo upload page - this will be implemented in the next step
+    console.log("Upload photo for project:", project.id);
   };
 
   return (
@@ -36,7 +47,7 @@ export function ProjectCard({ project }: { project: Project }) {
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onToolsClick={() => setIsToolsDialogOpen(true)}
           onMaterialsClick={() => setIsMaterialsDialogOpen(true)}
-          onPhotosClick={handlePhotosClick}
+          onPhotosClick={() => setIsPhotosDialogOpen(true)}
         />
 
         <div className="grid grid-cols-2 gap-4 pt-2">
@@ -112,6 +123,13 @@ export function ProjectCard({ project }: { project: Project }) {
         project={project}
         open={isTaskDialogOpen}
         onOpenChange={setIsTaskDialogOpen}
+      />
+      <ProjectPhotosDialog
+        projectId={project.id}
+        open={isPhotosDialogOpen}
+        onOpenChange={setIsPhotosDialogOpen}
+        onViewPhotos={handleViewPhotos}
+        onUploadPhoto={handleUploadPhoto}
       />
     </Card>
   );
