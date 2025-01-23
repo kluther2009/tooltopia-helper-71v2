@@ -22,6 +22,11 @@ export function ProjectCard({ project }: { project: Project }) {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [showProjectHelper, setShowProjectHelper] = useState(false);
 
+  const handlePhotosClick = () => {
+    // This will be implemented in the next step when we add the photos dialog
+    console.log("Photos clicked for project:", project.id);
+  };
+
   return (
     <Card className="p-4 bg-slate-800 text-white">
       <div className="space-y-4">
@@ -31,6 +36,7 @@ export function ProjectCard({ project }: { project: Project }) {
           onDeleteClick={() => setIsDeleteDialogOpen(true)}
           onToolsClick={() => setIsToolsDialogOpen(true)}
           onMaterialsClick={() => setIsMaterialsDialogOpen(true)}
+          onPhotosClick={handlePhotosClick}
         />
 
         <div className="grid grid-cols-2 gap-4 pt-2">

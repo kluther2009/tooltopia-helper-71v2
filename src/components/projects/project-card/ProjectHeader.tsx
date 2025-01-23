@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, Pencil, Trash2, Wrench } from "lucide-react";
+import { Calendar, DollarSign, Pencil, Trash2, Wrench, Camera } from "lucide-react";
 import { format } from "date-fns";
 import { Project } from "@/types/projects";
 import {
@@ -16,6 +16,7 @@ interface ProjectHeaderProps {
   onDeleteClick: () => void;
   onToolsClick: () => void;
   onMaterialsClick: () => void;
+  onPhotosClick: () => void;
 }
 
 export function ProjectHeader({ 
@@ -23,7 +24,8 @@ export function ProjectHeader({
   onEditClick, 
   onDeleteClick, 
   onToolsClick,
-  onMaterialsClick 
+  onMaterialsClick,
+  onPhotosClick
 }: ProjectHeaderProps) {
   const statusColors = {
     planned: "bg-blue-600 text-white",
@@ -87,6 +89,22 @@ export function ProjectHeader({
             </TooltipTrigger>
             <TooltipContent>
               <p>Manage Tools</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-300 hover:text-white hover:bg-slate-700"
+                onClick={onPhotosClick}
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Project Photos</p>
             </TooltipContent>
           </Tooltip>
 
