@@ -4,6 +4,7 @@ import { Camera, Upload } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { CameraDialog } from "@/components/photos/CameraDialog"
+import { ProjectPhotosViewer } from "./ProjectPhotosViewer"
 
 interface ProjectPhotosDialogProps {
   projectId: string
@@ -21,6 +22,7 @@ export function ProjectPhotosDialog({
   onUploadPhoto,
 }: ProjectPhotosDialogProps) {
   const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [isViewerOpen, setIsViewerOpen] = useState(false)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -44,7 +46,10 @@ export function ProjectPhotosDialog({
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={onViewPhotos}
+                  onClick={() => {
+                    onOpenChange(false);
+                    setIsViewerOpen(true);
+                  }}
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   View Photos
@@ -79,6 +84,12 @@ export function ProjectPhotosDialog({
           </div>
         </DialogContent>
       </Dialog>
+
+      <ProjectPhotosViewer
+        projectId={projectId}
+        open={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+      />
 
       <CameraDialog
         isOpen={isCameraOpen}
