@@ -13,7 +13,7 @@ export function FileUploadFields({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="warrantyFile">Warranty File (Optional)</Label>
+        <Label htmlFor="warrantyFile">User guides/Maintenance Guide (Optional)</Label>
         <Input
           type="file"
           id="warrantyFile"
@@ -24,7 +24,7 @@ export function FileUploadFields({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="receiptFile">Receipt File (Optional)</Label>
+        <Label htmlFor="receiptFile">Warranty/Receipt File (Optional)</Label>
         <Input
           type="file"
           id="receiptFile"
