@@ -1,10 +1,12 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Camera, Upload } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { CameraDialog } from "@/components/photos/CameraDialog"
 import { ProjectPhotosViewer } from "./ProjectPhotosViewer"
+import { supabase } from "@/integrations/supabase/client"
+import { toast } from "sonner"
 
 interface ProjectPhotosDialogProps {
   projectId: string
@@ -24,22 +26,108 @@ export function ProjectPhotosDialog({
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    onUploadPhoto()
+
+    try {
+      console.log('Starting photo upload for project:', projectId)
+      
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to upload photos')
+        return
+      }
+
+      const fileExt = file.name.split('.').pop()
+      const filePath = `${projectId}/${crypto.randomUUID()}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-photos')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError)
+        toast.error('Failed to upload photo')
+        return
+      }
+
+      const { error: dbError } = await supabase
+        .from('project_photos')
+        .insert({
+          project_id: projectId,
+          file_path: filePath,
+          user_id: user.id
+        })
+
+      if (dbError) {
+        console.error('Error saving to database:', dbError)
+        toast.error('Failed to save photo information')
+        return
+      }
+
+      toast.success('Photo uploaded successfully')
+      onUploadPhoto()
+    } catch (error) {
+      console.error('Error in handleFileSelect:', error)
+      toast.error('Failed to upload photo')
+    }
   }
 
-  const handleCameraCapture = (file: File) => {
-    onUploadPhoto()
+  const handleCameraCapture = async (file: File) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to upload photos')
+        return
+      }
+
+      const fileExt = 'jpg'
+      const filePath = `${projectId}/${crypto.randomUUID()}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('project-photos')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        console.error('Error uploading camera photo:', uploadError)
+        toast.error('Failed to upload photo')
+        return
+      }
+
+      const { error: dbError } = await supabase
+        .from('project_photos')
+        .insert({
+          project_id: projectId,
+          file_path: filePath,
+          user_id: user.id
+        })
+
+      if (dbError) {
+        console.error('Error saving camera photo to database:', dbError)
+        toast.error('Failed to save photo information')
+        return
+      }
+
+      toast.success('Photo captured and uploaded successfully')
+      onUploadPhoto()
+    } catch (error) {
+      console.error('Error in handleCameraCapture:', error)
+      toast.error('Failed to upload photo')
+    }
   }
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl mx-auto">
+          <DialogHeader>
+            <DialogTitle>Project Photos</DialogTitle>
+            <DialogDescription>
+              View, upload, or take new photos for your project.
+            </DialogDescription>
+          </DialogHeader>
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">Project Photos</h2>
             <div className="space-y-4">
               <div className="pt-4 flex gap-2">
                 <Button
