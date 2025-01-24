@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProjectPhotosViewerProps {
   projectId: string;
@@ -21,7 +22,7 @@ interface ProjectPhoto {
 export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPhotosViewerProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<ProjectPhoto | null>(null);
 
-  const { data: photos, isLoading } = useQuery({
+  const { data: photos, isLoading, refetch } = useQuery({
     queryKey: ["project-photos", projectId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,6 +36,40 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
     },
   });
 
+  const handleDeletePhoto = async (photo: ProjectPhoto) => {
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from("project-photos")
+        .remove([photo.file_path]);
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError);
+        toast.error("Failed to delete photo from storage");
+        return;
+      }
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from("project_photos")
+        .delete()
+        .eq("id", photo.id);
+
+      if (dbError) {
+        console.error('Error deleting from database:', dbError);
+        toast.error("Failed to delete photo record");
+        return;
+      }
+
+      toast.success("Photo deleted successfully");
+      setSelectedPhoto(null);
+      refetch();
+    } catch (error) {
+      console.error('Error in handleDeletePhoto:', error);
+      toast.error("Failed to delete photo");
+    }
+  };
+
   if (isLoading) {
     return <div>Loading photos...</div>;
   }
@@ -46,14 +81,22 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
           <h2 className="text-2xl font-bold mb-6">Project Photos</h2>
           {selectedPhoto ? (
             <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 z-10"
-                onClick={() => setSelectedPhoto(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex justify-between items-start mb-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedPhoto(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleDeletePhoto(selectedPhoto)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
               <img
                 src={`${supabase.storage.from("project-photos").getPublicUrl(selectedPhoto.file_path).data.publicUrl}`}
                 alt="Selected project photo"
