@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
 
 interface ProjectPhotosViewerProps {
   projectId: string;
@@ -75,61 +75,67 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl mx-auto">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6">Project Photos</h2>
-          {selectedPhoto ? (
-            <div className="relative">
-              <div className="flex justify-between items-start mb-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedPhoto(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+    <div className="max-w-4xl mx-auto">
+      {selectedPhoto ? (
+        <div className="relative">
+          <div className="flex justify-between items-start mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedPhoto(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="icon"
+              onClick={() => handleDeletePhoto(selectedPhoto)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <img
+            src={`${supabase.storage.from("project-photos").getPublicUrl(selectedPhoto.file_path).data.publicUrl}`}
+            alt="Selected project photo"
+            className="w-full h-auto max-h-[70vh] object-contain mx-auto"
+          />
+          {selectedPhoto.description && (
+            <p className="mt-4 text-sm text-gray-500">{selectedPhoto.description}</p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {photos?.map((photo) => (
+            <Card key={photo.id} className="p-4">
+              <div className="aspect-video relative rounded-md overflow-hidden mb-3">
+                <img
+                  src={`${supabase.storage.from("project-photos").getPublicUrl(photo.file_path).data.publicUrl}`}
+                  alt="Project photo"
+                  className="object-cover w-full h-full cursor-pointer"
+                  onClick={() => setSelectedPhoto(photo)}
+                />
+              </div>
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">
+                  {new Date(photo.created_at).toLocaleDateString()}
+                </p>
                 <Button
                   variant="destructive"
                   size="icon"
-                  onClick={() => handleDeletePhoto(selectedPhoto)}
+                  onClick={() => handleDeletePhoto(photo)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-              <img
-                src={`${supabase.storage.from("project-photos").getPublicUrl(selectedPhoto.file_path).data.publicUrl}`}
-                alt="Selected project photo"
-                className="w-full h-auto max-h-[70vh] object-contain mx-auto"
-              />
-              {selectedPhoto.description && (
-                <p className="mt-4 text-sm text-gray-500">{selectedPhoto.description}</p>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {photos?.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="relative aspect-square cursor-pointer group"
-                  onClick={() => setSelectedPhoto(photo)}
-                >
-                  <img
-                    src={`${supabase.storage.from("project-photos").getPublicUrl(photo.file_path).data.publicUrl}`}
-                    alt="Project photo"
-                    className="w-full h-full object-cover rounded-lg transition-transform group-hover:scale-105"
-                  />
-                </div>
-              ))}
-              {photos?.length === 0 && (
-                <div className="col-span-full text-center py-8 text-gray-500">
-                  No photos uploaded yet
-                </div>
-              )}
+            </Card>
+          ))}
+          {(!photos || photos.length === 0) && (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              No photos uploaded yet
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   );
 }
