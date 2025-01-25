@@ -8,6 +8,8 @@ import { MaintenanceFields } from "./form/MaintenanceFields"
 import { useToolForm } from "@/hooks/useToolForm"
 import { useBackgroundPhoto } from "@/hooks/useBackgroundPhoto"
 import { useNavigate } from "react-router-dom"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 interface AddToolFormProps {
   onBeforeSubmit?: () => Promise<boolean>;
@@ -78,27 +80,23 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
           </>
         )}
 
-        <div className="space-y-4">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent"
-            onClick={() => handlers.setShowMaintenanceInfo(!formState.showMaintenanceInfo)}
-          >
-            <div className="flex items-center gap-2">
-              <span>Maintenance Schedule</span>
-            </div>
-            <div>{formState.showMaintenanceInfo ? "−" : "+"}</div>
-          </button>
-
-          {formState.showMaintenanceInfo && (
-            <MaintenanceFields
-              lastMaintenanceDate={formState.lastMaintenanceDate}
-              maintenancePeriod={formState.maintenancePeriod}
-              onLastMaintenanceDateChange={handlers.setLastMaintenanceDate}
-              onMaintenancePeriodChange={handlers.setMaintenancePeriod}
-            />
-          )}
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="show-maintenance-info"
+            checked={formState.showMaintenanceInfo}
+            onCheckedChange={handlers.setShowMaintenanceInfo}
+          />
+          <Label htmlFor="show-maintenance-info">Maintenance Schedule</Label>
         </div>
+
+        {formState.showMaintenanceInfo && (
+          <MaintenanceFields
+            lastMaintenanceDate={formState.lastMaintenanceDate}
+            maintenancePeriod={formState.maintenancePeriod}
+            onLastMaintenanceDateChange={handlers.setLastMaintenanceDate}
+            onMaintenancePeriodChange={handlers.setMaintenancePeriod}
+          />
+        )}
 
         <FormButtons 
           isUploading={formState.isUploading}
