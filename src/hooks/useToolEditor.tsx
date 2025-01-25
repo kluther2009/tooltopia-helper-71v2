@@ -10,6 +10,7 @@ export interface ToolEditorState {
   specificLocation: string;
   status: string;
   showAdditionalInfo: boolean;
+  showMaintenanceInfo: boolean;
   purchaseDate: string;
   warrantyLength: string;
   purchaseCost: string;
@@ -17,6 +18,8 @@ export interface ToolEditorState {
   receiptFile: File | null;
   loanedTo: string | null;
   loanDate: string | null;
+  lastMaintenanceDate: string;
+  maintenancePeriod: string;
 }
 
 export const useToolEditor = (toolId: string | undefined) => {
@@ -27,6 +30,7 @@ export const useToolEditor = (toolId: string | undefined) => {
     specificLocation: "",
     status: "available",
     showAdditionalInfo: false,
+    showMaintenanceInfo: false,
     purchaseDate: "",
     warrantyLength: "",
     purchaseCost: "",
@@ -34,6 +38,8 @@ export const useToolEditor = (toolId: string | undefined) => {
     receiptFile: null,
     loanedTo: null,
     loanDate: null,
+    lastMaintenanceDate: "",
+    maintenancePeriod: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -66,6 +72,7 @@ export const useToolEditor = (toolId: string | undefined) => {
 
         if (data) {
           const hasAdditionalInfo = !!(data.purchase_date || data.warranty_length || data.purchase_cost);
+          const hasMaintenanceInfo = !!(data.last_maintenance_date || data.maintenance_period_months);
           setState({
             toolName: data.name,
             primaryLocation: data.location || '',
@@ -73,6 +80,7 @@ export const useToolEditor = (toolId: string | undefined) => {
             specificLocation: data.sub_location_b || '',
             status: data.status,
             showAdditionalInfo: hasAdditionalInfo,
+            showMaintenanceInfo: hasMaintenanceInfo,
             purchaseDate: data.purchase_date || '',
             warrantyLength: data.warranty_length?.toString() || '',
             purchaseCost: data.purchase_cost?.toString() || '',
@@ -80,6 +88,8 @@ export const useToolEditor = (toolId: string | undefined) => {
             receiptFile: null,
             loanedTo: data.loaned_to || null,
             loanDate: data.loan_date || null,
+            lastMaintenanceDate: data.last_maintenance_date || '',
+            maintenancePeriod: data.maintenance_period_months?.toString() || '',
           });
         }
       } catch (error) {
@@ -141,6 +151,8 @@ export const useToolEditor = (toolId: string | undefined) => {
         status: state.status,
         loaned_to: state.loanedTo,
         loan_date: state.loanDate,
+        last_maintenance_date: state.lastMaintenanceDate || null,
+        maintenance_period_months: state.maintenancePeriod ? parseInt(state.maintenancePeriod) : null,
       };
 
       if (state.showAdditionalInfo) {
