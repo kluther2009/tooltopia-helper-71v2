@@ -389,9 +389,11 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          last_maintenance_date: string | null
           loan_date: string | null
           loaned_to: string | null
           location: string
+          maintenance_period_months: number | null
           name: string
           purchase_cost: number | null
           purchase_date: string | null
@@ -408,9 +410,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          last_maintenance_date?: string | null
           loan_date?: string | null
           loaned_to?: string | null
           location: string
+          maintenance_period_months?: number | null
           name: string
           purchase_cost?: number | null
           purchase_date?: string | null
@@ -427,9 +431,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          last_maintenance_date?: string | null
           loan_date?: string | null
           loaned_to?: string | null
           location?: string
+          maintenance_period_months?: number | null
           name?: string
           purchase_cost?: number | null
           purchase_date?: string | null

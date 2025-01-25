@@ -4,6 +4,7 @@ import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
 import { FormButtons } from "./form/FormButtons"
 import { BackgroundPhoto } from "./form/BackgroundPhoto"
+import { MaintenanceFields } from "./form/MaintenanceFields"
 import { useToolForm } from "@/hooks/useToolForm"
 import { useBackgroundPhoto } from "@/hooks/useBackgroundPhoto"
 import { useNavigate } from "react-router-dom"
@@ -76,6 +77,28 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
             />
           </>
         )}
+
+        <div className="space-y-4">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent"
+            onClick={() => handlers.setShowMaintenanceInfo(!formState.showMaintenanceInfo)}
+          >
+            <div className="flex items-center gap-2">
+              <span>Maintenance Schedule</span>
+            </div>
+            <div>{formState.showMaintenanceInfo ? "−" : "+"}</div>
+          </button>
+
+          {formState.showMaintenanceInfo && (
+            <MaintenanceFields
+              lastMaintenanceDate={formState.lastMaintenanceDate}
+              maintenancePeriod={formState.maintenancePeriod}
+              onLastMaintenanceDateChange={handlers.setLastMaintenanceDate}
+              onMaintenancePeriodChange={handlers.setMaintenancePeriod}
+            />
+          )}
+        </div>
 
         <FormButtons 
           isUploading={formState.isUploading}

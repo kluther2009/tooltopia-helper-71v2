@@ -16,11 +16,14 @@ export function useToolForm() {
   const [loanedTo, setLoanedTo] = useState("")
   const [loanDate, setLoanDate] = useState("")
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false)
+  const [showMaintenanceInfo, setShowMaintenanceInfo] = useState(false)
   const [purchaseDate, setPurchaseDate] = useState("")
   const [warrantyLength, setWarrantyLength] = useState("")
   const [purchaseCost, setPurchaseCost] = useState("")
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null)
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [lastMaintenanceDate, setLastMaintenanceDate] = useState("")
+  const [maintenancePeriod, setMaintenancePeriod] = useState("")
   
   const toolNameInputRef = useRef<HTMLInputElement>(null)
   const { checkToolExists } = useToolManagement()
@@ -99,6 +102,8 @@ export function useToolForm() {
       purchaseCost,
       warrantyFile,
       receiptFile,
+      lastMaintenanceDate,
+      maintenancePeriod,
       annotationData
     });
 
@@ -135,11 +140,14 @@ export function useToolForm() {
       loanedTo,
       loanDate,
       showAdditionalInfo,
+      showMaintenanceInfo,
       purchaseDate,
       warrantyLength,
       purchaseCost,
       warrantyFile,
       receiptFile,
+      lastMaintenanceDate,
+      maintenancePeriod,
       isUploading
     },
     handlers: {
@@ -151,11 +159,14 @@ export function useToolForm() {
       setLoanedTo,
       setLoanDate,
       setShowAdditionalInfo,
+      setShowMaintenanceInfo,
       setPurchaseDate,
       setWarrantyLength,
       setPurchaseCost,
       setWarrantyFile,
       setReceiptFile,
+      setLastMaintenanceDate,
+      setMaintenancePeriod,
       handleSubmit,
       handleCancel
     },

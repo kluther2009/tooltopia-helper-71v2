@@ -16,6 +16,8 @@ interface ToolSubmissionData {
   purchaseCost: string
   warrantyFile: File | null
   receiptFile: File | null
+  lastMaintenanceDate: string
+  maintenancePeriod: string
   annotationData?: any
 }
 
@@ -63,7 +65,9 @@ export function useToolSubmission() {
           warranty_length: data.showAdditionalInfo && data.warrantyLength ? parseInt(data.warrantyLength) : null,
           purchase_cost: data.showAdditionalInfo && data.purchaseCost ? parseFloat(data.purchaseCost) : null,
           warranty_file_path: warrantyFilePath,
-          receipt_file_path: receiptFilePath
+          receipt_file_path: receiptFilePath,
+          last_maintenance_date: data.lastMaintenanceDate || null,
+          maintenance_period_months: data.maintenancePeriod ? parseInt(data.maintenancePeriod) : null
         })
         .select()
         .single()
