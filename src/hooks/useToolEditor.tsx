@@ -15,6 +15,8 @@ export interface ToolEditorState {
   purchaseCost: string;
   warrantyFile: File | null;
   receiptFile: File | null;
+  warrantyFilePath: string | null;
+  receiptFilePath: string | null;
   loanedTo: string | null;
   loanDate: string | null;
 }
@@ -32,6 +34,8 @@ export const useToolEditor = (toolId: string | undefined) => {
     purchaseCost: "",
     warrantyFile: null,
     receiptFile: null,
+    warrantyFilePath: null,
+    receiptFilePath: null,
     loanedTo: null,
     loanDate: null,
   });
@@ -78,6 +82,8 @@ export const useToolEditor = (toolId: string | undefined) => {
             purchaseCost: data.purchase_cost?.toString() || '',
             warrantyFile: null,
             receiptFile: null,
+            warrantyFilePath: data.warranty_file_path,
+            receiptFilePath: data.receipt_file_path,
             loanedTo: data.loaned_to || null,
             loanDate: data.loan_date || null,
           });
