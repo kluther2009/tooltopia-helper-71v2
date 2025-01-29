@@ -68,9 +68,9 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
               purchaseDate={formState.purchaseDate}
               warrantyLength={formState.warrantyLength}
               purchaseCost={formState.purchaseCost}
-              onPurchaseDateChange={handlers.setPurchaseDate}
-              onWarrantyLengthChange={handlers.setWarrantyLength}
-              onPurchaseCostChange={handlers.setPurchaseCost}
+              onPurchaseDateChange={handlers.setPurchaseDateChange}
+              onWarrantyLengthChange={handlers.setWarrantyLengthChange}
+              onPurchaseCostChange={handlers.setPurchaseCostChange}
             />
 
             <FileUploadFields
