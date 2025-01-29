@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
-import { MaintenanceFields } from "./form/MaintenanceFields"
 import { useNavigate, useLocation } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 import { useEffect, useState } from "react"
@@ -178,24 +177,6 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
             onReceiptFileChange={(file) => onStateChange({ receiptFile: file })}
           />
         </>
-      )}
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="show-maintenance-info"
-          checked={state.showMaintenanceInfo}
-          onCheckedChange={(checked) => onStateChange({ showMaintenanceInfo: checked })}
-        />
-        <Label htmlFor="show-maintenance-info">Maintenance Schedule</Label>
-      </div>
-
-      {state.showMaintenanceInfo && (
-        <MaintenanceFields
-          lastMaintenanceDate={state.lastMaintenanceDate}
-          maintenancePeriod={state.maintenancePeriod}
-          onLastMaintenanceDateChange={(value) => onStateChange({ lastMaintenanceDate: value })}
-          onMaintenancePeriodChange={(value) => onStateChange({ maintenancePeriod: value })}
-        />
       )}
 
       <div className="flex gap-4">

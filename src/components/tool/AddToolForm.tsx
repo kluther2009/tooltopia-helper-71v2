@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
 interface AddToolFormProps {
-  onBeforeSubmit?: () => Promise<boolean>
+  onBeforeSubmit?: () => Promise<boolean>;
 }
 
 export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
@@ -25,13 +25,13 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (onBeforeSubmit) {
-      const canProceed = await onBeforeSubmit()
-      if (!canProceed) return
+      const canProceed = await onBeforeSubmit();
+      if (!canProceed) return;
     }
-    handlers.handleSubmit(e)
-  }
+    handlers.handleSubmit(e);
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -76,8 +76,6 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
             <FileUploadFields
               onWarrantyFileChange={handlers.setWarrantyFile}
               onReceiptFileChange={handlers.setReceiptFile}
-              onManualSelect={handlers.setSelectedManual}
-              selectedManual={formState.selectedManual}
             />
           </>
         )}

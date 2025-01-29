@@ -31,7 +31,6 @@ export function useToolForm() {
 
   // Store annotation data in state
   const [annotationData, setAnnotationData] = useState<any>(null)
-  const [selectedManual, setSelectedManual] = useState<{ id: string; make: string; model: string } | null>(null)
 
   useEffect(() => {
     const fetchTemporaryAnnotation = async () => {
@@ -105,8 +104,7 @@ export function useToolForm() {
       receiptFile,
       lastMaintenanceDate,
       maintenancePeriod,
-      annotationData,
-      manualId: selectedManual?.id
+      annotationData
     });
 
     if (success) {
@@ -150,8 +148,7 @@ export function useToolForm() {
       receiptFile,
       lastMaintenanceDate,
       maintenancePeriod,
-      isUploading,
-      selectedManual,
+      isUploading
     },
     handlers: {
       setToolName,
@@ -171,8 +168,7 @@ export function useToolForm() {
       setLastMaintenanceDate,
       setMaintenancePeriod,
       handleSubmit,
-      handleCancel,
-      setSelectedManual,
+      handleCancel
     },
     toolNameInputRef
   };

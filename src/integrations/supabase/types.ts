@@ -42,42 +42,6 @@ export type Database = {
         }
         Relationships: []
       }
-      manuals: {
-        Row: {
-          added_by: string | null
-          created_at: string
-          file_path: string
-          id: string
-          maintenance_schedule: Json | null
-          make: string
-          model: string
-          summary: string | null
-          updated_at: string
-        }
-        Insert: {
-          added_by?: string | null
-          created_at?: string
-          file_path: string
-          id?: string
-          maintenance_schedule?: Json | null
-          make: string
-          model: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Update: {
-          added_by?: string | null
-          created_at?: string
-          file_path?: string
-          id?: string
-          maintenance_schedule?: Json | null
-          make?: string
-          model?: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string
@@ -430,7 +394,6 @@ export type Database = {
           loaned_to: string | null
           location: string
           maintenance_period_months: number | null
-          manual_id: string | null
           name: string
           purchase_cost: number | null
           purchase_date: string | null
@@ -452,7 +415,6 @@ export type Database = {
           loaned_to?: string | null
           location: string
           maintenance_period_months?: number | null
-          manual_id?: string | null
           name: string
           purchase_cost?: number | null
           purchase_date?: string | null
@@ -474,7 +436,6 @@ export type Database = {
           loaned_to?: string | null
           location?: string
           maintenance_period_months?: number | null
-          manual_id?: string | null
           name?: string
           purchase_cost?: number | null
           purchase_date?: string | null
@@ -487,15 +448,7 @@ export type Database = {
           warranty_file_path?: string | null
           warranty_length?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "tools_manual_id_fkey"
-            columns: ["manual_id"]
-            isOneToOne: false
-            referencedRelation: "manuals"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       tools_reference: {
         Row: {
