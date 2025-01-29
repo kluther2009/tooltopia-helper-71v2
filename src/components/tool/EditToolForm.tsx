@@ -173,6 +173,8 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
           />
 
           <FileUploadFields
+            warrantyFilePath={state.warrantyFilePath}
+            receiptFilePath={state.receiptFilePath}
             onWarrantyFileChange={(file) => onStateChange({ warrantyFile: file })}
             onReceiptFileChange={(file) => onStateChange({ receiptFile: file })}
           />
