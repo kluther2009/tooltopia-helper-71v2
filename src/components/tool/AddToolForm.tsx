@@ -75,7 +75,6 @@ export function AddToolForm({ onBeforeSubmit }: AddToolFormProps) {
 
             <FileUploadFields
               onWarrantyFileChange={handlers.setWarrantyFile}
-              onReceiptFileChange={handlers.setReceiptFile}
               onManualSelect={handlers.setManualId}
             />
           </>
