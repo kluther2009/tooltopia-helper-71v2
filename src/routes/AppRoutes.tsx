@@ -12,6 +12,7 @@ import ProjectDetails from "@/pages/ProjectDetails";
 import Settings from "@/pages/Settings";
 import Storage from "@/pages/Storage";
 import InitialInventory from "@/pages/InitialInventory";
+import AddManual from "@/pages/AddManual";
 import { Layout } from "@/components/Layout";
 import { Outlet } from "react-router-dom";
 
@@ -35,6 +36,7 @@ export function AppRoutes() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/storage" element={<Storage />} />
         <Route path="/initial-inventory" element={<InitialInventory />} />
+        <Route path="/add-manual" element={<AddManual />} />
       </Route>
 
       {/* Catch all route - redirect to dashboard */}
