@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { FilePreviewDialog } from "../table/FilePreviewDialog"
 
 interface Manual {
   id: string;
@@ -19,7 +20,7 @@ interface FileUploadFieldsProps {
   onReceiptFileChange: (file: File | null) => void;
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
-  onManualSelect?: (manualId: string) => void;
+  onManualSelect?: (manualId: string | null) => void;
   manualId?: string | null;
 }
 
@@ -41,9 +42,9 @@ export function FileUploadFields({
   const [manualFile, setManualFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [selectedManual, setSelectedManual] = useState<Manual | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   useEffect(() => {
-    // Fetch selected manual details if manualId is provided
     const fetchManualDetails = async () => {
       if (manualId) {
         const { data, error } = await supabase
@@ -110,14 +111,12 @@ export function FileUploadFields({
       const fileExt = manualFile.name.split('.').pop();
       const filePath = `${timestamp}_${newManualMake}_${newManualModel}.${fileExt}`;
 
-      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('warranty-files')
         .upload(filePath, manualFile);
 
       if (uploadError) throw uploadError;
 
-      // Add manual to database
       const { data: manual, error: dbError } = await supabase
         .from('manuals')
         .insert({
@@ -136,7 +135,6 @@ export function FileUploadFields({
       setNewManualModel('');
       setManualFile(null);
 
-      // If onManualSelect is provided, select the newly added manual
       if (onManualSelect && manual) {
         onManualSelect(manual.id);
         setSelectedManual(manual);
@@ -146,6 +144,23 @@ export function FileUploadFields({
       toast.error('Failed to add manual');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleManualClick = async () => {
+    if (!selectedManual?.file_path) return;
+
+    try {
+      const { data } = await supabase.storage
+        .from('warranty-files')
+        .getPublicUrl(selectedManual.file_path);
+
+      if (data?.publicUrl) {
+        setIsPreviewOpen(true);
+      }
+    } catch (error) {
+      console.error('Error getting manual URL:', error);
+      toast.error('Failed to open manual');
     }
   };
 
@@ -173,11 +188,21 @@ export function FileUploadFields({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="receiptFile">User Manuals (Optional)</Label>
+        <Label htmlFor="manualField">User Manuals (Optional)</Label>
         <div className="flex flex-col gap-2">
-          {selectedManual ? (
-            <div className="text-sm bg-muted p-2 rounded-md flex justify-between items-center">
-              <span>Selected: {selectedManual.make} - {selectedManual.model}</span>
+          <div className="flex items-center gap-2 min-h-[2.5rem] p-2 bg-muted rounded-md">
+            {selectedManual ? (
+              <button
+                onClick={handleManualClick}
+                className="text-primary hover:underline focus:outline-none"
+                type="button"
+              >
+                {selectedManual.make} - {selectedManual.model}
+              </button>
+            ) : (
+              <span className="text-muted-foreground">No manual selected</span>
+            )}
+            {selectedManual && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -188,31 +213,9 @@ export function FileUploadFields({
               >
                 Clear
               </Button>
-            </div>
-          ) : (
-            receiptFilePath && (
-              <div className="text-sm text-muted-foreground">
-                Current file: {getFileName(receiptFilePath)}
-              </div>
-            )
-          )}
+            )}
+          </div>
           <div className="flex gap-2">
-            <Input
-              type="file"
-              id="receiptFile"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                onReceiptFileChange(file);
-                // Clear selected manual when uploading a file
-                if (file && selectedManual) {
-                  setSelectedManual(null);
-                  if (onManualSelect) onManualSelect(null);
-                }
-              }}
-              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-              className="bg-background text-foreground file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-              disabled={!!selectedManual}
-            />
             <Button 
               type="button" 
               variant="outline"
@@ -231,7 +234,6 @@ export function FileUploadFields({
         </div>
       </div>
 
-      {/* Search Manuals Dialog */}
       <Dialog open={isManualDialogOpen} onOpenChange={setIsManualDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -324,6 +326,14 @@ export function FileUploadFields({
           </div>
         </DialogContent>
       </Dialog>
+
+      <FilePreviewDialog
+        isOpen={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        filePath={selectedManual?.file_path ? 
+          supabase.storage.from('warranty-files').getPublicUrl(selectedManual.file_path).data?.publicUrl || null 
+          : null}
+      />
     </>
   );
 }
