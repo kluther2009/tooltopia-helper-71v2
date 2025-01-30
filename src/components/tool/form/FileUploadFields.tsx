@@ -107,6 +107,9 @@ export function FileUploadFields({
 
     setIsUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const timestamp = new Date().getTime();
       const fileExt = manualFile.name.split('.').pop();
       const filePath = `${timestamp}_${newManualMake}_${newManualModel}.${fileExt}`;
@@ -123,11 +126,17 @@ export function FileUploadFields({
           make: newManualMake.trim(),
           model: newManualModel.trim(),
           file_path: filePath,
+          added_by: user.id
         })
         .select()
         .single();
 
       if (dbError) throw dbError;
+
+      if (manual && onManualSelect) {
+        onManualSelect(manual.id);
+        setSelectedManual(manual);
+      }
 
       toast.success('Manual added successfully');
       setIsAddManualDialogOpen(false);
@@ -135,10 +144,6 @@ export function FileUploadFields({
       setNewManualModel('');
       setManualFile(null);
 
-      if (onManualSelect && manual) {
-        onManualSelect(manual.id);
-        setSelectedManual(manual);
-      }
     } catch (error) {
       console.error('Error adding manual:', error);
       toast.error('Failed to add manual');
@@ -279,7 +284,6 @@ export function FileUploadFields({
         </DialogContent>
       </Dialog>
 
-      {/* Add Manual Dialog */}
       <Dialog open={isAddManualDialogOpen} onOpenChange={setIsAddManualDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
