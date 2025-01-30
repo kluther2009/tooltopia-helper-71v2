@@ -19,6 +19,7 @@ export interface ToolEditorState {
   receiptFilePath: string | null;
   loanedTo: string | null;
   loanDate: string | null;
+  manualId: string | null;
 }
 
 export const useToolEditor = (toolId: string | undefined) => {
@@ -38,6 +39,7 @@ export const useToolEditor = (toolId: string | undefined) => {
     receiptFilePath: null,
     loanedTo: null,
     loanDate: null,
+    manualId: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -86,6 +88,7 @@ export const useToolEditor = (toolId: string | undefined) => {
             receiptFilePath: data.receipt_file_path,
             loanedTo: data.loaned_to || null,
             loanDate: data.loan_date || null,
+            manualId: data.manual_id || null,
           });
         }
       } catch (error) {
@@ -139,6 +142,8 @@ export const useToolEditor = (toolId: string | undefined) => {
         return false;
       }
 
+      console.log('Updating tool with state:', state);
+
       const updateData: any = {
         name: state.toolName,
         location: state.primaryLocation,
@@ -147,6 +152,7 @@ export const useToolEditor = (toolId: string | undefined) => {
         status: state.status,
         loaned_to: state.loanedTo,
         loan_date: state.loanDate,
+        manual_id: state.manualId,
       };
 
       if (state.showAdditionalInfo) {

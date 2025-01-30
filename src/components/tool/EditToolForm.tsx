@@ -52,6 +52,11 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
     navigate(previousPath);
   };
 
+  const handleManualSelect = (manualId: string | null) => {
+    console.log('[EditToolForm] Manual selected:', manualId);
+    onStateChange({ manualId });
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
@@ -177,6 +182,8 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
             receiptFilePath={state.receiptFilePath}
             onWarrantyFileChange={(file) => onStateChange({ warrantyFile: file })}
             onReceiptFileChange={(file) => onStateChange({ receiptFile: file })}
+            onManualSelect={handleManualSelect}
+            manualId={state.manualId}
           />
         </>
       )}
