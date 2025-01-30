@@ -13,18 +13,14 @@ interface Manual {
 
 interface FileUploadFieldsProps {
   onWarrantyFileChange: (file: File | null) => void
-  onReceiptFileChange: (file: File | null) => void
   warrantyFilePath?: string | null
-  receiptFilePath?: string | null
   onManualSelect?: (manualId: string | null) => void
   manualId?: string | null
 }
 
 export function FileUploadFields({
   onWarrantyFileChange,
-  onReceiptFileChange,
   warrantyFilePath,
-  receiptFilePath,
   onManualSelect,
   manualId
 }: FileUploadFieldsProps) {
@@ -71,27 +67,6 @@ export function FileUploadFields({
             onChange={(e) => {
               const file = e.target.files?.[0] || null
               onWarrantyFileChange(file)
-            }}
-            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-            className="bg-background text-foreground file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="receiptFile">Receipt (Optional)</Label>
-        <div className="flex flex-col gap-2">
-          {receiptFilePath && (
-            <div className="text-sm text-muted-foreground">
-              Current file: {getFileName(receiptFilePath)}
-            </div>
-          )}
-          <Input
-            type="file"
-            id="receiptFile"
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null
-              onReceiptFileChange(file)
             }}
             accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
             className="bg-background text-foreground file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
