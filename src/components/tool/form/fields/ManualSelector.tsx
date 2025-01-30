@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { useNavigate } from "react-router-dom"
 
 interface Manual {
   id: string
@@ -24,6 +25,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
   const [searchQuery, setSearchQuery] = useState("")
   const [manuals, setManuals] = useState<Manual[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const navigate = useNavigate()
 
   const handleManualSearch = async () => {
     console.log('Searching for manuals with query:', searchQuery)
@@ -60,8 +62,9 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
   }
 
   const handleAddManual = () => {
-    // Navigate to the add manual page
-    window.location.href = '/add-manual'
+    // Store the current location to return to after adding the manual
+    const currentPath = window.location.pathname
+    navigate('/add-manual', { state: { returnTo: currentPath } })
   }
 
   return (
