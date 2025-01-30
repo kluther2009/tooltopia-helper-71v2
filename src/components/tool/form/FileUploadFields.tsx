@@ -22,7 +22,7 @@ export function FileUploadFields({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="warrantyFile">Warranty File (Optional)</Label>
+        <Label htmlFor="warrantyFile">Warranty Documents (Optional)</Label>
         <div className="flex flex-col gap-2">
           {warrantyFilePath && (
             <div className="text-sm text-muted-foreground">
@@ -43,7 +43,7 @@ export function FileUploadFields({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="receiptFile">Receipt File (Optional)</Label>
+        <Label htmlFor="receiptFile">User Manuals (Optional)</Label>
         <div className="flex flex-col gap-2">
           {receiptFilePath && (
             <div className="text-sm text-muted-foreground">
