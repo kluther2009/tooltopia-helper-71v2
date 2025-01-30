@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
@@ -30,9 +30,14 @@ export function FileUploadFields({
   onManualSelect
 }: FileUploadFieldsProps) {
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false)
+  const [isAddManualDialogOpen, setIsAddManualDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [manuals, setManuals] = useState<Manual[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [newManualMake, setNewManualMake] = useState("")
+  const [newManualModel, setNewManualModel] = useState("")
+  const [manualFile, setManualFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const getFileName = (path: string | null | undefined) => {
     if (!path) return '';
@@ -65,6 +70,56 @@ export function FileUploadFields({
       onManualSelect(manual.id);
       toast.success(`Manual selected: ${manual.make} ${manual.model}`);
       setIsManualDialogOpen(false);
+    }
+  };
+
+  const handleAddManual = async () => {
+    if (!manualFile || !newManualMake.trim() || !newManualModel.trim()) {
+      toast.error('Please fill in all fields and upload a file');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const timestamp = new Date().getTime();
+      const fileExt = manualFile.name.split('.').pop();
+      const filePath = `${timestamp}_${newManualMake}_${newManualModel}.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('warranty-files')
+        .upload(filePath, manualFile);
+
+      if (uploadError) throw uploadError;
+
+      // Add manual to database
+      const { data: manual, error: dbError } = await supabase
+        .from('manuals')
+        .insert({
+          make: newManualMake.trim(),
+          model: newManualModel.trim(),
+          file_path: filePath,
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      toast.success('Manual added successfully');
+      setIsAddManualDialogOpen(false);
+      setNewManualMake('');
+      setNewManualModel('');
+      setManualFile(null);
+
+      // If onManualSelect is provided, select the newly added manual
+      if (onManualSelect && manual) {
+        onManualSelect(manual.id);
+      }
+    } catch (error) {
+      console.error('Error adding manual:', error);
+      toast.error('Failed to add manual');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -117,10 +172,18 @@ export function FileUploadFields({
             >
               Search Manuals
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddManualDialogOpen(true)}
+            >
+              Add Manual
+            </Button>
           </div>
         </div>
       </div>
 
+      {/* Search Manuals Dialog */}
       <Dialog open={isManualDialogOpen} onOpenChange={setIsManualDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -162,6 +225,54 @@ export function FileUploadFields({
                 )}
               </div>
             </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Manual Dialog */}
+      <Dialog open={isAddManualDialogOpen} onOpenChange={setIsAddManualDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Manual</DialogTitle>
+            <DialogDescription>
+              Add a new manual to the shared repository
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="make">Make</Label>
+              <Input
+                id="make"
+                value={newManualMake}
+                onChange={(e) => setNewManualMake(e.target.value)}
+                placeholder="e.g., DeWalt"
+              />
+            </div>
+            <div>
+              <Label htmlFor="model">Model</Label>
+              <Input
+                id="model"
+                value={newManualModel}
+                onChange={(e) => setNewManualModel(e.target.value)}
+                placeholder="e.g., DCD777C2"
+              />
+            </div>
+            <div>
+              <Label htmlFor="manualFile">Manual File</Label>
+              <Input
+                type="file"
+                id="manualFile"
+                onChange={(e) => setManualFile(e.target.files?.[0] || null)}
+                accept=".pdf,.doc,.docx,.txt"
+              />
+            </div>
+            <Button
+              onClick={handleAddManual}
+              disabled={isUploading}
+              className="w-full"
+            >
+              {isUploading ? "Adding..." : "Add Manual"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
