@@ -1,160 +1,96 @@
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { WarrantyFields } from "./form/WarrantyFields"
 import { FileUploadFields } from "./form/FileUploadFields"
 import { useNavigate, useLocation } from "react-router-dom"
 import { ToolEditorState } from "@/hooks/useToolEditor"
 import { useEffect, useState } from "react"
-import { DatePicker } from "@/components/ui/date-picker"
+import { ToolLocationFields } from "@/components/ToolLocationFields"
+import { ToolNameField } from "./form/fields/ToolNameField"
+import { StatusField } from "./form/fields/StatusField"
+import { LoanFields } from "./form/fields/LoanFields"
 
 interface EditToolFormProps {
-  state: ToolEditorState;
-  onStateChange: (newState: Partial<ToolEditorState>) => void;
-  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>;
+  state: ToolEditorState
+  onStateChange: (newState: Partial<ToolEditorState>) => void
+  onSubmit: (e: React.FormEvent, annotationData?: any) => Promise<void>
 }
 
 export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormProps) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [annotationData, setAnnotationData] = useState<any>(null);
-  const [showLoanFields, setShowLoanFields] = useState(state.status === "loaned");
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [annotationData, setAnnotationData] = useState<any>(null)
+  const [showLoanFields, setShowLoanFields] = useState(state.status === "loaned")
 
   useEffect(() => {
-    const storedAnnotation = localStorage.getItem('pendingAnnotation');
+    const storedAnnotation = localStorage.getItem('pendingAnnotation')
     if (storedAnnotation) {
       try {
-        const parsed = JSON.parse(storedAnnotation);
-        console.log('[EditToolForm] Loaded annotation data:', parsed);
-        setAnnotationData(parsed);
+        const parsed = JSON.parse(storedAnnotation)
+        console.log('[EditToolForm] Loaded annotation data:', parsed)
+        setAnnotationData(parsed)
       } catch (error) {
-        console.error('[EditToolForm] Error parsing annotation data:', error);
+        console.error('[EditToolForm] Error parsing annotation data:', error)
       }
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    setShowLoanFields(state.status === "loaned");
-  }, [state.status]);
+    setShowLoanFields(state.status === "loaned")
+  }, [state.status])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log('[EditToolForm] Starting form submission');
-    console.log('[EditToolForm] Submitting with annotation data:', annotationData);
-    await onSubmit(e, annotationData);
-  };
+    e.preventDefault()
+    console.log('[EditToolForm] Starting form submission')
+    console.log('[EditToolForm] Submitting with annotation data:', annotationData)
+    await onSubmit(e, annotationData)
+  }
 
   const handleCancel = () => {
-    const previousPath = location.state?.from || '/tool-overview';
-    console.log('[EditToolForm] Navigating back to:', previousPath);
-    navigate(previousPath);
-  };
+    const previousPath = location.state?.from || '/tool-overview'
+    console.log('[EditToolForm] Navigating back to:', previousPath)
+    navigate(previousPath)
+  }
 
   const handleManualSelect = (manualId: string | null) => {
-    console.log('[EditToolForm] Manual selected:', manualId);
-    onStateChange({ manualId });
-  };
+    console.log('[EditToolForm] Manual selected:', manualId)
+    onStateChange({ manualId })
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="toolName">Tool Name</Label>
-        <Input
-          id="toolName"
-          value={state.toolName}
-          onChange={(e) => onStateChange({ toolName: e.target.value.slice(0, 50) })}
-          placeholder="Enter tool name"
-          className="bg-background text-foreground"
-          required
-          maxLength={50}
-        />
-      </div>
+      <ToolNameField
+        toolName={state.toolName}
+        onToolNameChange={(value) => onStateChange({ toolName: value })}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="primaryLocation">Primary Location</Label>
-        <Input
-          id="primaryLocation"
-          value={state.primaryLocation}
-          onChange={(e) => onStateChange({ primaryLocation: e.target.value.slice(0, 50) })}
-          placeholder="e.g., Workshop"
-          className="bg-background text-foreground"
-          required
-          maxLength={50}
-        />
-      </div>
+      <ToolLocationFields
+        primaryLocation={state.primaryLocation}
+        subLocation={state.subLocation}
+        specificLocation={state.specificLocation}
+        onPrimaryLocationChange={(value) => onStateChange({ primaryLocation: value })}
+        onSubLocationChange={(value) => onStateChange({ subLocation: value })}
+        onSpecificLocationChange={(value) => onStateChange({ specificLocation: value })}
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="subLocation">Sub Location (Optional)</Label>
-        <Input
-          id="subLocation"
-          value={state.subLocation}
-          onChange={(e) => onStateChange({ subLocation: e.target.value.slice(0, 50) })}
-          placeholder="e.g., Cabinet A"
-          className="bg-background text-foreground"
-          maxLength={50}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="specificLocation">Specific Location (Optional)</Label>
-        <Input
-          id="specificLocation"
-          value={state.specificLocation}
-          onChange={(e) => onStateChange({ specificLocation: e.target.value.slice(0, 50) })}
-          placeholder="e.g., Top Shelf"
-          className="bg-background text-foreground"
-          maxLength={50}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
-        <Select 
-          value={state.status} 
-          onValueChange={(value) => {
-            onStateChange({ 
-              status: value,
-              // Clear loan fields if status is not loaned
-              ...(value !== "loaned" && { loanedTo: "", loanDate: "" })
-            });
-          }}
-        >
-          <SelectTrigger className="bg-background text-foreground border-input">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent className="bg-background text-foreground border-input">
-            <SelectItem value="available">Available</SelectItem>
-            <SelectItem value="in-use">In Use</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
-            <SelectItem value="loaned">Loaned</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <StatusField
+        status={state.status}
+        onStatusChange={(value) => {
+          onStateChange({ 
+            status: value,
+            ...(value !== "loaned" && { loanedTo: "", loanDate: "" })
+          })
+        }}
+      />
 
       {showLoanFields && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="loanedTo">Loaned To</Label>
-            <Input
-              id="loanedTo"
-              value={state.loanedTo || ""}
-              onChange={(e) => onStateChange({ loanedTo: e.target.value })}
-              placeholder="Enter borrower's name"
-              className="bg-background text-foreground"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="loanDate">Loan Date</Label>
-            <DatePicker
-              date={state.loanDate ? new Date(state.loanDate) : undefined}
-              onSelect={(date) => onStateChange({ loanDate: date ? date.toISOString().split('T')[0] : '' })}
-            />
-          </div>
-        </>
+        <LoanFields
+          loanedTo={state.loanedTo}
+          loanDate={state.loanDate}
+          onLoanedToChange={(value) => onStateChange({ loanedTo: value })}
+          onLoanDateChange={(value) => onStateChange({ loanDate: value })}
+        />
       )}
 
       <div className="flex items-center space-x-2">
@@ -197,5 +133,5 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         </Button>
       </div>
     </form>
-  );
+  )
 }
