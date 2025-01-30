@@ -51,7 +51,7 @@ export function FileUploadFields({
           .from('manuals')
           .select('*')
           .eq('id', manualId)
-          .single()
+          .maybeSingle()
 
         if (error) {
           console.error('Error fetching manual details:', error)
@@ -70,8 +70,7 @@ export function FileUploadFields({
   };
 
   const handleManualSearch = async () => {
-    if (!searchQuery.trim()) return;
-    
+    console.log('Searching for manuals with query:', searchQuery);
     setIsSearching(true);
     try {
       const { data, error } = await supabase
@@ -80,7 +79,12 @@ export function FileUploadFields({
         .or(`make.ilike.%${searchQuery}%,model.ilike.%${searchQuery}%`)
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Search error:', error);
+        throw error;
+      }
+
+      console.log('Search results:', data);
       setManuals(data || []);
     } catch (error) {
       console.error('Error searching manuals:', error);
@@ -89,6 +93,13 @@ export function FileUploadFields({
       setIsSearching(false);
     }
   };
+
+  // Load initial manuals when dialog opens
+  useEffect(() => {
+    if (isManualDialogOpen) {
+      handleManualSearch();
+    }
+  }, [isManualDialogOpen]);
 
   const handleManualSelect = (manual: Manual) => {
     if (onManualSelect) {
@@ -273,7 +284,7 @@ export function FileUploadFields({
                     </div>
                   </div>
                 ))}
-                {manuals.length === 0 && searchQuery && !isSearching && (
+                {manuals.length === 0 && !isSearching && (
                   <div className="text-center text-muted-foreground py-4">
                     No manuals found
                   </div>
