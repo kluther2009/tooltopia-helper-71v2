@@ -62,9 +62,25 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
   }
 
   const handleAddManual = () => {
-    // Store the current location to return to after adding the manual
     const currentPath = window.location.pathname
     navigate('/add-manual', { state: { returnTo: currentPath } })
+  }
+
+  const openManual = async () => {
+    if (!selectedManual?.file_path) return
+
+    try {
+      const { data } = supabase.storage
+        .from('warranty-files')
+        .getPublicUrl(selectedManual.file_path)
+      
+      if (data.publicUrl) {
+        window.open(data.publicUrl, '_blank')
+      }
+    } catch (error) {
+      console.error('Error opening manual:', error)
+      toast.error('Failed to open manual')
+    }
   }
 
   return (
@@ -72,7 +88,10 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
       <div className="flex items-center gap-2 min-h-[2.5rem] p-2 bg-muted rounded-md">
         {selectedManual ? (
           <div className="flex items-center justify-between w-full">
-            <span className="text-primary">
+            <span 
+              className="text-primary cursor-pointer hover:underline"
+              onClick={openManual}
+            >
               {selectedManual.make} - {selectedManual.model}
             </span>
             <Button 
@@ -92,6 +111,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           type="button" 
           variant="outline"
           onClick={() => setIsManualDialogOpen(true)}
+          className="w-full"
         >
           Search Manuals
         </Button>
@@ -99,6 +119,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           type="button"
           variant="outline"
           onClick={handleAddManual}
+          className="w-full"
         >
           Add Manual
         </Button>
