@@ -102,12 +102,13 @@ export function FileUploadFields({
   }, [isManualDialogOpen]);
 
   const handleManualSelect = (manual: Manual) => {
+    console.log('Selecting manual:', manual);
+    setSelectedManual(manual);
     if (onManualSelect) {
       onManualSelect(manual.id);
-      setSelectedManual(manual);
-      toast.success(`Manual selected: ${manual.make} ${manual.model}`);
-      setIsManualDialogOpen(false);
     }
+    toast.success(`Manual selected: ${manual.make} ${manual.model}`);
+    setIsManualDialogOpen(false);
   };
 
   const handleAddManual = async () => {
@@ -144,9 +145,11 @@ export function FileUploadFields({
 
       if (dbError) throw dbError;
 
-      if (manual && onManualSelect) {
-        onManualSelect(manual.id);
+      if (manual) {
         setSelectedManual(manual);
+        if (onManualSelect) {
+          onManualSelect(manual.id);
+        }
       }
 
       toast.success('Manual added successfully');
