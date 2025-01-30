@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 
@@ -20,6 +20,7 @@ interface FileUploadFieldsProps {
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
   onManualSelect?: (manualId: string) => void;
+  manualId?: string | null;
 }
 
 export function FileUploadFields({
@@ -27,7 +28,8 @@ export function FileUploadFields({
   onReceiptFileChange,
   warrantyFilePath,
   receiptFilePath,
-  onManualSelect
+  onManualSelect,
+  manualId
 }: FileUploadFieldsProps) {
   const [isManualDialogOpen, setIsManualDialogOpen] = useState(false)
   const [isAddManualDialogOpen, setIsAddManualDialogOpen] = useState(false)
@@ -38,6 +40,28 @@ export function FileUploadFields({
   const [newManualModel, setNewManualModel] = useState("")
   const [manualFile, setManualFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [selectedManual, setSelectedManual] = useState<Manual | null>(null)
+
+  useEffect(() => {
+    // Fetch selected manual details if manualId is provided
+    const fetchManualDetails = async () => {
+      if (manualId) {
+        const { data, error } = await supabase
+          .from('manuals')
+          .select('*')
+          .eq('id', manualId)
+          .single()
+
+        if (error) {
+          console.error('Error fetching manual details:', error)
+        } else if (data) {
+          setSelectedManual(data)
+        }
+      }
+    }
+
+    fetchManualDetails()
+  }, [manualId])
 
   const getFileName = (path: string | null | undefined) => {
     if (!path) return '';
@@ -68,6 +92,7 @@ export function FileUploadFields({
   const handleManualSelect = (manual: Manual) => {
     if (onManualSelect) {
       onManualSelect(manual.id);
+      setSelectedManual(manual);
       toast.success(`Manual selected: ${manual.make} ${manual.model}`);
       setIsManualDialogOpen(false);
     }
@@ -114,6 +139,7 @@ export function FileUploadFields({
       // If onManualSelect is provided, select the newly added manual
       if (onManualSelect && manual) {
         onManualSelect(manual.id);
+        setSelectedManual(manual);
       }
     } catch (error) {
       console.error('Error adding manual:', error);
@@ -149,10 +175,26 @@ export function FileUploadFields({
       <div className="space-y-2">
         <Label htmlFor="receiptFile">User Manuals (Optional)</Label>
         <div className="flex flex-col gap-2">
-          {receiptFilePath && (
-            <div className="text-sm text-muted-foreground">
-              Current file: {getFileName(receiptFilePath)}
+          {selectedManual ? (
+            <div className="text-sm bg-muted p-2 rounded-md flex justify-between items-center">
+              <span>Selected: {selectedManual.make} - {selectedManual.model}</span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  setSelectedManual(null);
+                  if (onManualSelect) onManualSelect(null);
+                }}
+              >
+                Clear
+              </Button>
             </div>
+          ) : (
+            receiptFilePath && (
+              <div className="text-sm text-muted-foreground">
+                Current file: {getFileName(receiptFilePath)}
+              </div>
+            )
           )}
           <div className="flex gap-2">
             <Input
@@ -161,9 +203,15 @@ export function FileUploadFields({
               onChange={(e) => {
                 const file = e.target.files?.[0] || null;
                 onReceiptFileChange(file);
+                // Clear selected manual when uploading a file
+                if (file && selectedManual) {
+                  setSelectedManual(null);
+                  if (onManualSelect) onManualSelect(null);
+                }
               }}
               accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
               className="bg-background text-foreground file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              disabled={!!selectedManual}
             />
             <Button 
               type="button" 
