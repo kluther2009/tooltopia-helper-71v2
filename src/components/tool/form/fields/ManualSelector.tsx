@@ -59,6 +59,11 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
     toast.success(`Manual selected: ${manual.make} ${manual.model}`)
   }
 
+  const handleAddManual = () => {
+    // Navigate to the add manual page
+    window.location.href = '/add-manual'
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 min-h-[2.5rem] p-2 bg-muted rounded-md">
@@ -79,14 +84,23 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           <span className="text-muted-foreground">No manual selected</span>
         )}
       </div>
-      <Button 
-        type="button" 
-        variant="outline"
-        onClick={() => setIsManualDialogOpen(true)}
-        className="w-full"
-      >
-        Search Manuals
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          type="button" 
+          variant="outline"
+          onClick={() => setIsManualDialogOpen(true)}
+          className="flex-1"
+        >
+          Search Manuals
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleAddManual}
+        >
+          Add Manual
+        </Button>
+      </div>
 
       <Dialog open={isManualDialogOpen} onOpenChange={setIsManualDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
