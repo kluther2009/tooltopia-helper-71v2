@@ -24,6 +24,7 @@ export function useToolForm() {
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [lastMaintenanceDate, setLastMaintenanceDate] = useState("")
   const [maintenancePeriod, setMaintenancePeriod] = useState("")
+  const [manualId, setManualId] = useState<string | null>(null)
   
   const toolNameInputRef = useRef<HTMLInputElement>(null)
   const { checkToolExists } = useToolManagement()
@@ -104,7 +105,8 @@ export function useToolForm() {
       receiptFile,
       lastMaintenanceDate,
       maintenancePeriod,
-      annotationData
+      annotationData,
+      manualId
     });
 
     if (success) {
@@ -148,7 +150,8 @@ export function useToolForm() {
       receiptFile,
       lastMaintenanceDate,
       maintenancePeriod,
-      isUploading
+      isUploading,
+      manualId
     },
     handlers: {
       setToolName,
@@ -168,7 +171,8 @@ export function useToolForm() {
       setLastMaintenanceDate,
       setMaintenancePeriod,
       handleSubmit,
-      handleCancel
+      handleCancel,
+      setManualId
     },
     toolNameInputRef
   };

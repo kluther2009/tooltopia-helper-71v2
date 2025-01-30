@@ -19,6 +19,7 @@ interface ToolSubmissionData {
   lastMaintenanceDate: string
   maintenancePeriod: string
   annotationData?: any
+  manualId?: string | null
 }
 
 export function useToolSubmission() {
@@ -67,7 +68,8 @@ export function useToolSubmission() {
           warranty_file_path: warrantyFilePath,
           receipt_file_path: receiptFilePath,
           last_maintenance_date: data.lastMaintenanceDate || null,
-          maintenance_period_months: data.maintenancePeriod ? parseInt(data.maintenancePeriod) : null
+          maintenance_period_months: data.maintenancePeriod ? parseInt(data.maintenancePeriod) : null,
+          manual_id: data.manualId || null
         })
         .select()
         .single()
