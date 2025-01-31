@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Pencil, FileText } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DeleteToolDialog } from "./DeleteToolDialog";
-import { Badge } from "../ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -13,9 +12,6 @@ import {
 interface ToolCardActionsProps {
   id: string;
   name: string | React.ReactNode;
-  documentCount: number;
-  warrantyFilePath?: string | null;
-  onDocumentClick: () => void;
   onEdit?: () => void;
   manualId?: string | null;
 }
@@ -23,14 +19,10 @@ interface ToolCardActionsProps {
 export function ToolCardActions({
   id,
   name,
-  documentCount,
-  warrantyFilePath,
-  onDocumentClick,
   onEdit,
   manualId,
 }: ToolCardActionsProps) {
   const navigate = useNavigate();
-  const hasDocuments = warrantyFilePath;
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,39 +35,6 @@ export function ToolCardActions({
 
   return (
     <div className="flex items-center gap-1 shrink-0">
-      {hasDocuments && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDocumentClick();
-              }}
-              className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
-            >
-              <FileText 
-                className="h-3 w-3 sm:h-4 sm:w-4" 
-                style={{ 
-                  color: '#64748b',
-                  fill: 'none',
-                  strokeWidth: 2.5
-                }} 
-              />
-              {documentCount > 1 && (
-                <Badge 
-                  className="absolute -top-1 -right-1 h-3 w-3 p-0 flex items-center justify-center text-[10px] bg-blue-500"
-                  variant="secondary"
-                >
-                  {documentCount}
-                </Badge>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>View Warranty Documents</TooltipContent>
-        </Tooltip>
-      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
