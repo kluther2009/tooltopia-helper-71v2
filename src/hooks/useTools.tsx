@@ -10,7 +10,6 @@ export interface Tool {
   purchase_date?: string | null;
   warranty_length?: number | null;
   warranty_file_path?: string | null;
-  receipt_file_path?: string | null;
   sub_location_a?: string | null;
   sub_location_b?: string | null;
   purchase_cost?: number | null;
@@ -55,7 +54,6 @@ export function useTools() {
             purchase_date: tool.purchase_date,
             warranty_length: tool.warranty_length,
             warranty_file_path: tool.warranty_file_path,
-            receipt_file_path: tool.receipt_file_path,
             sub_location_a: tool.sub_location_a,
             sub_location_b: tool.sub_location_b,
             purchase_cost: tool.purchase_cost

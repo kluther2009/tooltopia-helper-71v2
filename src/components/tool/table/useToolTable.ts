@@ -11,7 +11,6 @@ interface Tool {
   purchase_date: string | null;
   warranty_length: number | null;
   warranty_file_path: string | null;
-  receipt_file_path: string | null;
   manual_id: string | null;
 }
 

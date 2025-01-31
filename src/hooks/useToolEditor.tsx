@@ -14,9 +14,7 @@ export interface ToolEditorState {
   warrantyLength: string;
   purchaseCost: string;
   warrantyFile: File | null;
-  receiptFile: File | null;
   warrantyFilePath: string | null;
-  receiptFilePath: string | null;
   loanedTo: string | null;
   loanDate: string | null;
   manualId: string | null;
@@ -36,9 +34,7 @@ export const useToolEditor = (toolId: string | undefined) => {
     warrantyLength: "",
     purchaseCost: "",
     warrantyFile: null,
-    receiptFile: null,
     warrantyFilePath: null,
-    receiptFilePath: null,
     loanedTo: null,
     loanDate: null,
     manualId: null,
@@ -87,9 +83,7 @@ export const useToolEditor = (toolId: string | undefined) => {
             warrantyLength: data.warranty_length?.toString() || '',
             purchaseCost: data.purchase_cost?.toString() || '',
             warrantyFile: null,
-            receiptFile: null,
             warrantyFilePath: data.warranty_file_path,
-            receiptFilePath: data.receipt_file_path,
             loanedTo: data.loaned_to || null,
             loanDate: data.loan_date || null,
             manualId: data.manual_id || null,
@@ -109,7 +103,7 @@ export const useToolEditor = (toolId: string | undefined) => {
     checkAuthAndFetchTool();
   }, [toolId, navigate]);
 
-  const uploadFile = async (file: File, type: 'warranty' | 'receipt'): Promise<string | null> => {
+  const uploadFile = async (file: File, type: 'warranty'): Promise<string | null> => {
     if (!file || !toolId) return null;
 
     try {
@@ -174,19 +168,11 @@ export const useToolEditor = (toolId: string | undefined) => {
             updateData.warranty_file_path = warrantyPath;
           }
         }
-
-        if (state.receiptFile) {
-          const receiptPath = await uploadFile(state.receiptFile, 'receipt');
-          if (receiptPath) {
-            updateData.receipt_file_path = receiptPath;
-          }
-        }
       } else {
         updateData.purchase_date = null;
         updateData.warranty_length = null;
         updateData.purchase_cost = null;
         updateData.warranty_file_path = null;
-        updateData.receipt_file_path = null;
       }
 
       const { error } = await supabase
