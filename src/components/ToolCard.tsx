@@ -13,6 +13,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ToolCardProps {
   id: string;
@@ -51,6 +53,34 @@ export function ToolCard({
     const monthsLeft = warrantyLength - totalMonthsPassed;
     
     return Math.max(0, monthsLeft);
+  };
+
+  const handleManualClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!manualId) return;
+
+    try {
+      const { data: manualData, error: manualError } = await supabase
+        .from('manuals')
+        .select('file_path')
+        .eq('id', manualId)
+        .single();
+
+      if (manualError) throw manualError;
+      
+      if (manualData?.file_path) {
+        const { data } = supabase.storage
+          .from('warranty-files')
+          .getPublicUrl(manualData.file_path);
+        
+        if (data.publicUrl) {
+          window.open(data.publicUrl, '_blank');
+        }
+      }
+    } catch (error) {
+      console.error('Error opening manual:', error);
+      toast.error('Failed to open manual');
+    }
   };
 
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
@@ -110,11 +140,7 @@ export function ToolCard({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // TODO: Implement manual viewing functionality
-                        console.log("View manual with ID:", manualId);
-                      }}
+                      onClick={handleManualClick}
                       className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
                     >
                       <Book 
@@ -127,7 +153,7 @@ export function ToolCard({
                       />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>View User Manual</TooltipContent>
+                  <TooltipContent>View Manual</TooltipContent>
                 </Tooltip>
               )}
             </div>
