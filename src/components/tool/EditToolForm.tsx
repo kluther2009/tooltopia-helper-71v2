@@ -10,6 +10,7 @@ import { ToolLocationFields } from "@/components/ToolLocationFields"
 import { ToolNameField } from "./form/fields/ToolNameField"
 import { StatusField } from "./form/fields/StatusField"
 import { LoanFields } from "./form/fields/LoanFields"
+import { MaintenanceFields } from "./form/MaintenanceFields"
 
 interface EditToolFormProps {
   state: ToolEditorState
@@ -22,6 +23,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const location = useLocation()
   const [annotationData, setAnnotationData] = useState<any>(null)
   const [showLoanFields, setShowLoanFields] = useState(state.status === "loaned")
+  const [showMaintenanceFields, setShowMaintenanceFields] = useState(false)
 
   useEffect(() => {
     const storedAnnotation = localStorage.getItem('pendingAnnotation')
@@ -90,6 +92,24 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
           loanDate={state.loanDate}
           onLoanedToChange={(value) => onStateChange({ loanedTo: value })}
           onLoanDateChange={(value) => onStateChange({ loanDate: value })}
+        />
+      )}
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="show-maintenance-info"
+          checked={showMaintenanceFields}
+          onCheckedChange={setShowMaintenanceFields}
+        />
+        <Label htmlFor="show-maintenance-info">Add maintenance schedule</Label>
+      </div>
+
+      {showMaintenanceFields && (
+        <MaintenanceFields
+          lastMaintenanceDate={state.lastMaintenanceDate || ""}
+          maintenancePeriod={state.maintenancePeriod || ""}
+          onLastMaintenanceDateChange={(value) => onStateChange({ lastMaintenanceDate: value })}
+          onMaintenancePeriodChange={(value) => onStateChange({ maintenancePeriod: value })}
         />
       )}
 
