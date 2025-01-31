@@ -165,6 +165,7 @@ export function ToolCard({
               receiptFilePath={receiptFilePath}
               onDocumentClick={() => setIsDocumentDialogOpen(true)}
               onEdit={onEdit}
+              manualId={manualId}
             />
           </div>
 

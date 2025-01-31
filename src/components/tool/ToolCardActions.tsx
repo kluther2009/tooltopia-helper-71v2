@@ -3,6 +3,8 @@ import { Pencil, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DeleteToolDialog } from "./DeleteToolDialog";
 import { Badge } from "../ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +20,7 @@ interface ToolCardActionsProps {
   receiptFilePath?: string | null;
   onDocumentClick: () => void;
   onEdit?: () => void;
+  manualId?: string | null;
 }
 
 export function ToolCardActions({
@@ -28,6 +31,7 @@ export function ToolCardActions({
   receiptFilePath,
   onDocumentClick,
   onEdit,
+  manualId,
 }: ToolCardActionsProps) {
   const navigate = useNavigate();
   const hasDocuments = warrantyFilePath || receiptFilePath;
@@ -41,6 +45,34 @@ export function ToolCardActions({
     }
   };
 
+  const handleManualClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!manualId) return;
+
+    try {
+      const { data: manualData, error: manualError } = await supabase
+        .from('manuals')
+        .select('file_path')
+        .eq('id', manualId)
+        .single();
+
+      if (manualError) throw manualError;
+      
+      if (manualData?.file_path) {
+        const { data } = supabase.storage
+          .from('warranty-files')
+          .getPublicUrl(manualData.file_path);
+        
+        if (data.publicUrl) {
+          window.open(data.publicUrl, '_blank');
+        }
+      }
+    } catch (error) {
+      console.error('Error opening manual:', error);
+      toast.error('Failed to open manual');
+    }
+  };
+
   return (
     <div className="flex items-center gap-1 shrink-0">
       {hasDocuments && (
@@ -49,10 +81,7 @@ export function ToolCardActions({
             <Button
               variant="ghost"
               size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDocumentClick();
-              }}
+              onClick={handleManualClick}
               className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
             >
               <FileText 
