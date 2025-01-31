@@ -434,7 +434,6 @@ export type Database = {
           name: string
           purchase_cost: number | null
           purchase_date: string | null
-          receipt_file_path: string | null
           status: string
           sub_location_a: string | null
           sub_location_b: string | null
@@ -456,7 +455,6 @@ export type Database = {
           name: string
           purchase_cost?: number | null
           purchase_date?: string | null
-          receipt_file_path?: string | null
           status: string
           sub_location_a?: string | null
           sub_location_b?: string | null
@@ -478,7 +476,6 @@ export type Database = {
           name?: string
           purchase_cost?: number | null
           purchase_date?: string | null
-          receipt_file_path?: string | null
           status?: string
           sub_location_a?: string | null
           sub_location_b?: string | null
