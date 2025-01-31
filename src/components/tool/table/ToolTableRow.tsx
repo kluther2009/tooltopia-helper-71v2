@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { ToolStatusBadge } from "./ToolStatusBadge";
 import { useToolAnnotation } from "./hooks/useToolAnnotation";
 import { AnnotationDialog } from "./annotation/AnnotationDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Tool {
   id: string;
@@ -34,6 +36,33 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
   } = useToolAnnotation(tool.id);
 
   const hasWarrantyDocs = tool.warranty_file_path || tool.receipt_file_path;
+
+  const handleManualClick = async () => {
+    if (!tool.manual_id) return;
+
+    try {
+      const { data: manualData, error: manualError } = await supabase
+        .from('manuals')
+        .select('file_path')
+        .eq('id', tool.manual_id)
+        .single();
+
+      if (manualError) throw manualError;
+      
+      if (manualData?.file_path) {
+        const { data } = supabase.storage
+          .from('warranty-files')
+          .getPublicUrl(manualData.file_path);
+        
+        if (data.publicUrl) {
+          window.open(data.publicUrl, '_blank');
+        }
+      }
+    } catch (error) {
+      console.error('Error opening manual:', error);
+      toast.error('Failed to open manual');
+    }
+  };
 
   return (
     <>
@@ -74,10 +103,7 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                console.log("View manual with ID:", tool.manual_id);
-                // TODO: Implement manual viewing functionality
-              }}
+              onClick={handleManualClick}
               className="hover:bg-muted"
             >
               <Book className="h-4 w-4 text-primary" />
