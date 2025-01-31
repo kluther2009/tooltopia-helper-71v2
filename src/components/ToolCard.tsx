@@ -158,9 +158,6 @@ export function ToolCard({
             <ToolCardActions
               id={id}
               name={name}
-              documentCount={hasWarrantyDocs ? 1 : 0}
-              warrantyFilePath={warrantyFilePath}
-              onDocumentClick={() => setIsDocumentDialogOpen(true)}
               onEdit={onEdit}
               manualId={manualId}
             />
