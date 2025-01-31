@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Pencil, FileText } from "lucide-react";
+import { Pencil, FileText, Book } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { DeleteToolDialog } from "./DeleteToolDialog";
 import { Badge } from "../ui/badge";
@@ -81,7 +81,10 @@ export function ToolCardActions({
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleManualClick}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDocumentClick();
+              }}
               className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
             >
               <FileText 
@@ -102,7 +105,29 @@ export function ToolCardActions({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>View Manuals</TooltipContent>
+          <TooltipContent>View Documents</TooltipContent>
+        </Tooltip>
+      )}
+      {manualId && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleManualClick}
+              className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+            >
+              <Book 
+                className="h-3 w-3 sm:h-4 sm:w-4" 
+                style={{ 
+                  color: '#64748b',
+                  fill: 'none',
+                  strokeWidth: 2.5
+                }} 
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>View Manual</TooltipContent>
         </Tooltip>
       )}
       <Tooltip>
