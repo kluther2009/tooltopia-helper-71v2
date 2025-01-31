@@ -20,6 +20,8 @@ export interface ToolEditorState {
   loanedTo: string | null;
   loanDate: string | null;
   manualId: string | null;
+  lastMaintenanceDate: string | null;
+  maintenancePeriod: string | null;
 }
 
 export const useToolEditor = (toolId: string | undefined) => {
@@ -40,6 +42,8 @@ export const useToolEditor = (toolId: string | undefined) => {
     loanedTo: null,
     loanDate: null,
     manualId: null,
+    lastMaintenanceDate: null,
+    maintenancePeriod: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -89,6 +93,8 @@ export const useToolEditor = (toolId: string | undefined) => {
             loanedTo: data.loaned_to || null,
             loanDate: data.loan_date || null,
             manualId: data.manual_id || null,
+            lastMaintenanceDate: data.last_maintenance_date || null,
+            maintenancePeriod: data.maintenance_period_months?.toString() || null,
           });
         }
       } catch (error) {
@@ -153,6 +159,8 @@ export const useToolEditor = (toolId: string | undefined) => {
         loaned_to: state.loanedTo,
         loan_date: state.loanDate,
         manual_id: state.manualId,
+        last_maintenance_date: state.lastMaintenanceDate,
+        maintenance_period_months: state.maintenancePeriod ? parseInt(state.maintenancePeriod) : null,
       };
 
       if (state.showAdditionalInfo) {
