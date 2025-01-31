@@ -81,7 +81,7 @@ export function ToolCardActions({
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleManualClick}
+              onClick={onDocumentClick}
               className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent relative"
             >
               <FileText 
@@ -102,7 +102,7 @@ export function ToolCardActions({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>View Manuals</TooltipContent>
+          <TooltipContent>View Warranty Documents</TooltipContent>
         </Tooltip>
       )}
       <Tooltip>
