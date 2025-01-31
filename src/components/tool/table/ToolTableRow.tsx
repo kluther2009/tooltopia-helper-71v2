@@ -1,4 +1,4 @@
-import { FileText, Book } from "lucide-react";
+import { FileText, Book, Image } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -81,6 +81,18 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
               className="hover:bg-muted"
             >
               <Book className="h-4 w-4 text-primary" />
+            </Button>
+          )}
+        </TableCell>
+        <TableCell>
+          {hasAnnotation && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsAnnotationDialogOpen(true)}
+              className="hover:bg-muted"
+            >
+              <Image className="h-4 w-4 text-primary" />
             </Button>
           )}
         </TableCell>

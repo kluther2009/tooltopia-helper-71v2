@@ -40,6 +40,7 @@ export function ToolTableHeader({ onSort, sortConfig }: TableHeaderProps) {
         ))}
         <TableHead className="text-card-foreground font-semibold">Warranty</TableHead>
         <TableHead className="text-card-foreground font-semibold">Manual</TableHead>
+        <TableHead className="text-card-foreground font-semibold">Picture</TableHead>
       </TableRow>
     </TableHeader>
   );
