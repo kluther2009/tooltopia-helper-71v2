@@ -17,7 +17,7 @@ interface ToolCardActionsProps {
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
   onDocumentClick: () => void;
-  onEdit?: () => void;  // Added this prop
+  onEdit?: () => void;
 }
 
 export function ToolCardActions({
@@ -27,7 +27,7 @@ export function ToolCardActions({
   warrantyFilePath,
   receiptFilePath,
   onDocumentClick,
-  onEdit,  // Added this prop
+  onEdit,
 }: ToolCardActionsProps) {
   const navigate = useNavigate();
   const hasDocuments = warrantyFilePath || receiptFilePath;
@@ -73,7 +73,7 @@ export function ToolCardActions({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>View Documents</TooltipContent>
+          <TooltipContent>View Manuals</TooltipContent>
         </Tooltip>
       )}
       <Tooltip>
