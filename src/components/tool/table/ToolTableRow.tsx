@@ -18,7 +18,6 @@ interface Tool {
   purchase_date: string | null;
   warranty_length: number | null;
   warranty_file_path: string | null;
-  receipt_file_path: string | null;
   manual_id: string | null;
 }
 
@@ -35,7 +34,7 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
     setIsAnnotationDialogOpen
   } = useToolAnnotation(tool.id);
 
-  const hasWarrantyDocs = tool.warranty_file_path || tool.receipt_file_path;
+  const hasWarrantyDocs = tool.warranty_file_path;
 
   const handleManualClick = async () => {
     if (!tool.manual_id) return;
@@ -88,8 +87,6 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
               onClick={() => {
                 if (tool.warranty_file_path) {
                   onFileClick(tool.warranty_file_path);
-                } else if (tool.receipt_file_path) {
-                  onFileClick(tool.receipt_file_path);
                 }
               }}
               className="hover:bg-muted"
