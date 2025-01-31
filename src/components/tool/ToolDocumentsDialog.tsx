@@ -1,22 +1,24 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import { Button } from "../ui/button";
-import { FileText } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ToolDocumentsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  warrantyFilePath?: string | null;
-  receiptFilePath?: string | null;
+  warrantyFilePath: string | null | undefined;
 }
 
 export function ToolDocumentsDialog({
   open,
   onOpenChange,
   warrantyFilePath,
-  receiptFilePath,
 }: ToolDocumentsDialogProps) {
-  const openDocument = async (filePath: string) => {
+  const handleFileClick = (filePath: string) => {
     const { data } = supabase.storage
       .from('warranty-files')
       .getPublicUrl(filePath);
@@ -30,28 +32,22 @@ export function ToolDocumentsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Documents</DialogTitle>
+          <DialogTitle>Tool Documents</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {warrantyFilePath && (
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => openDocument(warrantyFilePath)}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              View Warranty
-            </Button>
+            <div className="flex justify-between items-center">
+              <span>Warranty Document</span>
+              <Button
+                variant="outline"
+                onClick={() => handleFileClick(warrantyFilePath)}
+              >
+                View
+              </Button>
+            </div>
           )}
-          {receiptFilePath && (
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => openDocument(receiptFilePath)}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              View Receipt
-            </Button>
+          {!warrantyFilePath && (
+            <p className="text-sm text-gray-500">No documents available</p>
           )}
         </div>
       </DialogContent>

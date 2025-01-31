@@ -25,7 +25,6 @@ interface ToolCardProps {
   warrantyLength?: number | null;
   purchaseCost?: number | null;
   warrantyFilePath?: string | null;
-  receiptFilePath?: string | null;
   manualId?: string | null;
   onEdit?: () => void;
 }
@@ -38,7 +37,6 @@ export function ToolCard({
   warrantyLength, 
   purchaseCost,
   warrantyFilePath,
-  receiptFilePath,
   manualId,
   onEdit
 }: ToolCardProps) {
@@ -84,7 +82,7 @@ export function ToolCard({
   };
 
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
-  const hasWarrantyDocs = warrantyFilePath || receiptFilePath;
+  const hasWarrantyDocs = warrantyFilePath;
 
   const renderLocation = () => {
     if (typeof name === 'string') {
@@ -160,9 +158,8 @@ export function ToolCard({
             <ToolCardActions
               id={id}
               name={name}
-              documentCount={hasWarrantyDocs ? (warrantyFilePath ? 1 : 0) + (receiptFilePath ? 1 : 0) : 0}
+              documentCount={hasWarrantyDocs ? 1 : 0}
               warrantyFilePath={warrantyFilePath}
-              receiptFilePath={receiptFilePath}
               onDocumentClick={() => setIsDocumentDialogOpen(true)}
               onEdit={onEdit}
               manualId={manualId}
@@ -180,7 +177,6 @@ export function ToolCard({
         open={isDocumentDialogOpen}
         onOpenChange={setIsDocumentDialogOpen}
         warrantyFilePath={warrantyFilePath}
-        receiptFilePath={receiptFilePath}
       />
     </TooltipProvider>
   );
