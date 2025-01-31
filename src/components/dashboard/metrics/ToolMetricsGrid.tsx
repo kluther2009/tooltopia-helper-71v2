@@ -25,7 +25,7 @@ export function ToolMetricsGrid({ tools }: ToolMetricsGridProps) {
   }).length;
 
   const toolsWithDocuments = tools.filter(tool => {
-    return Boolean(tool.warranty_file_path || tool.receipt_file_path);
+    return Boolean(tool.warranty_file_path);
   }).length;
 
   const metrics = [
