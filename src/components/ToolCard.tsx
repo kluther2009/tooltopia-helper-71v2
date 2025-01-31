@@ -6,6 +6,13 @@ import { TooltipProvider } from "./ui/tooltip";
 import { ToolCardActions } from "./tool/ToolCardActions";
 import { ToolWarrantyInfo } from "./tool/ToolWarrantyInfo";
 import { ToolDocumentsDialog } from "./tool/ToolDocumentsDialog";
+import { FileText, Book } from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ToolCardProps {
   id: string;
@@ -17,6 +24,7 @@ interface ToolCardProps {
   purchaseCost?: number | null;
   warrantyFilePath?: string | null;
   receiptFilePath?: string | null;
+  manualId?: string | null;
   onEdit?: () => void;
 }
 
@@ -29,6 +37,7 @@ export function ToolCard({
   purchaseCost,
   warrantyFilePath,
   receiptFilePath,
+  manualId,
   onEdit
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
@@ -45,8 +54,7 @@ export function ToolCard({
   };
 
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
-  const hasDocuments = warrantyFilePath || receiptFilePath;
-  const documentCount = (warrantyFilePath ? 1 : 0) + (receiptFilePath ? 1 : 0);
+  const hasWarrantyDocs = warrantyFilePath || receiptFilePath;
 
   const renderLocation = () => {
     if (typeof name === 'string') {
@@ -70,10 +78,63 @@ export function ToolCard({
             <div className="flex-1 min-w-0">
               {renderLocation()}
             </div>
+            <div className="flex items-center gap-1">
+              {hasWarrantyDocs && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDocumentDialogOpen(true);
+                      }}
+                      className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+                    >
+                      <FileText 
+                        className="h-3 w-3 sm:h-4 sm:w-4" 
+                        style={{ 
+                          color: '#64748b',
+                          fill: 'none',
+                          strokeWidth: 2.5
+                        }} 
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View Warranty Documents</TooltipContent>
+                </Tooltip>
+              )}
+              {manualId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // TODO: Implement manual viewing functionality
+                        console.log("View manual with ID:", manualId);
+                      }}
+                      className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
+                    >
+                      <Book 
+                        className="h-3 w-3 sm:h-4 sm:w-4" 
+                        style={{ 
+                          color: '#64748b',
+                          fill: 'none',
+                          strokeWidth: 2.5
+                        }} 
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View User Manual</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
             <ToolCardActions
               id={id}
               name={name}
-              documentCount={documentCount}
+              documentCount={hasWarrantyDocs ? (warrantyFilePath ? 1 : 0) + (receiptFilePath ? 1 : 0) : 0}
               warrantyFilePath={warrantyFilePath}
               receiptFilePath={receiptFilePath}
               onDocumentClick={() => setIsDocumentDialogOpen(true)}
