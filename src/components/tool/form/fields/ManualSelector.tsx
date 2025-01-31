@@ -55,28 +55,6 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
     }
   }, [isManualDialogOpen])
 
-  // Fetch selected manual details when manualId changes
-  useEffect(() => {
-    const fetchManualDetails = async () => {
-      if (manualId) {
-        const { data, error } = await supabase
-          .from('manuals')
-          .select('*')
-          .eq('id', manualId)
-          .maybeSingle()
-
-        if (error) {
-          console.error('Error fetching manual details:', error)
-          toast.error('Failed to fetch manual details')
-        } else if (data) {
-          setSelectedManual(data)
-        }
-      }
-    }
-
-    fetchManualDetails()
-  }, [manualId])
-
   const handleManualClick = (manual: Manual) => {
     console.log('Selecting manual:', manual)
     onManualSelect(manual.id)
