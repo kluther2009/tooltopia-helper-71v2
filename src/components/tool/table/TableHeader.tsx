@@ -38,9 +38,8 @@ export function ToolTableHeader({ onSort, sortConfig }: TableHeaderProps) {
             {label} {renderSortIcon(key)}
           </TableHead>
         ))}
-        <TableHead className="text-card-foreground font-semibold">Guides</TableHead>
         <TableHead className="text-card-foreground font-semibold">Warranty</TableHead>
-        <TableHead className="text-card-foreground font-semibold">Picture</TableHead>
+        <TableHead className="text-card-foreground font-semibold">Manual</TableHead>
       </TableRow>
     </TableHeader>
   );

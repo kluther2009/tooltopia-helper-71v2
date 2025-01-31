@@ -1,4 +1,4 @@
-import { FileText, Image } from "lucide-react";
+import { FileText, Book } from "lucide-react";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -17,6 +17,7 @@ interface Tool {
   warranty_length: number | null;
   warranty_file_path: string | null;
   receipt_file_path: string | null;
+  manual_id: string | null;
 }
 
 interface ToolTableRowProps {
@@ -31,6 +32,8 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
     isAnnotationDialogOpen,
     setIsAnnotationDialogOpen
   } = useToolAnnotation(tool.id);
+
+  const hasWarrantyDocs = tool.warranty_file_path || tool.receipt_file_path;
 
   return (
     <>
@@ -49,11 +52,17 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
           {tool.warranty_length ? `${tool.warranty_length} months` : '-'}
         </TableCell>
         <TableCell>
-          {tool.warranty_file_path && (
+          {hasWarrantyDocs && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onFileClick(tool.warranty_file_path!)}
+              onClick={() => {
+                if (tool.warranty_file_path) {
+                  onFileClick(tool.warranty_file_path);
+                } else if (tool.receipt_file_path) {
+                  onFileClick(tool.receipt_file_path);
+                }
+              }}
               className="hover:bg-muted"
             >
               <FileText className="h-4 w-4 text-primary" />
@@ -61,26 +70,17 @@ export function ToolTableRow({ tool, onFileClick }: ToolTableRowProps) {
           )}
         </TableCell>
         <TableCell>
-          {tool.receipt_file_path && (
+          {tool.manual_id && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onFileClick(tool.receipt_file_path!)}
+              onClick={() => {
+                console.log("View manual with ID:", tool.manual_id);
+                // TODO: Implement manual viewing functionality
+              }}
               className="hover:bg-muted"
             >
-              <FileText className="h-4 w-4 text-primary" />
-            </Button>
-          )}
-        </TableCell>
-        <TableCell>
-          {hasAnnotation && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsAnnotationDialogOpen(true)}
-              className="hover:bg-muted"
-            >
-              <Image className="h-4 w-4 text-primary" />
+              <Book className="h-4 w-4 text-primary" />
             </Button>
           )}
         </TableCell>
