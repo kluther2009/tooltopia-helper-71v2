@@ -95,7 +95,7 @@ export default function Index() {
               warrantyLength={tool.warranty_length}
               purchaseCost={tool.purchase_cost}
               warrantyFilePath={tool.warranty_file_path}
-              receiptFilePath={tool.receipt_file_path}
+              manualId={tool.manual_id}
             />
           ))}
           {filteredTools.length === 0 && (
