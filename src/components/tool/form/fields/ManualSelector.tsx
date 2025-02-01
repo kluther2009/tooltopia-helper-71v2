@@ -48,16 +48,22 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           return
         }
 
-        // Build the search conditions without newlines and extra spaces
-        const searchConditions = terms.map(term => 
-          `make.ilike.%${term}%,model.ilike.%${term}%,concat(make,' ',model).ilike.%${term}%`
-        ).join(',')
-
-        const { data, error } = await supabase
+        let query = supabase
           .from('manuals')
           .select('id, make, model, file_path')
-          .or(searchConditions)
-          .limit(10)
+
+        // Add filter conditions for each term
+        terms.forEach(term => {
+          query = query.or(
+            `make.ilike.%${term}%,` +
+            `model.ilike.%${term}%,` +
+            `concat(make,' ',model).ilike.%${term}%`
+          )
+        })
+
+        query = query.limit(10)
+
+        const { data, error } = await query
 
         if (error) throw error
         console.log('Search results:', data)
