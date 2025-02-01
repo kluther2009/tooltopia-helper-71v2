@@ -48,7 +48,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
         const { data, error } = await supabase
           .from('manuals')
           .select('id, make, model, file_path')
-          .ilike('model', `%${searchQuery}%`)
+          .textSearch('make || \' \' || model', searchQuery)
           .limit(10)
 
         if (error) throw error
@@ -146,7 +146,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Search by model (e.g. 'DCD777')"
+              placeholder="Search by make or model (e.g. 'DeWalt DCD777')"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
