@@ -48,20 +48,16 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           return
         }
 
-        // Start with the base query
-        let query = supabase
+        // Build OR conditions for each term
+        const orConditions = terms.map(term => {
+          return `make.ilike.%${term}%,model.ilike.%${term}%,concat(make,' ',model).ilike.%${term}%`
+        }).join(',')
+
+        const { data, error } = await supabase
           .from('manuals')
           .select('id, make, model, file_path')
-
-        // Chain .or() calls for each condition separately
-        terms.forEach(term => {
-          query = query
-            .or(`make.ilike.%${term}%`)
-            .or(`model.ilike.%${term}%`)
-            .or(`concat(make,' ',model).ilike.%${term}%`)
-        })
-
-        const { data, error } = await query.limit(10)
+          .or(orConditions)
+          .limit(10)
 
         if (error) throw error
         console.log('Search results:', data)
