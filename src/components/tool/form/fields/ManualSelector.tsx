@@ -27,33 +27,34 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
   const [isSearching, setIsSearching] = useState(false)
   const navigate = useNavigate()
 
-  const handleManualSearch = async () => {
-    console.log('Searching for manuals with query:', searchQuery)
-    setIsSearching(true)
-    try {
-      const { data, error } = await supabase
-        .from('manuals')
-        .select('id, make, model, file_path')
-        .or(`make.ilike.%${searchQuery}%,model.ilike.%${searchQuery}%`)
-        .limit(10)
-
-      if (error) throw error
-      console.log('Search results:', data)
-      setManuals(data || [])
-    } catch (error) {
-      console.error('Error searching manuals:', error)
-      toast.error('Failed to search manuals')
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  // Refresh manuals list when dialog opens
+  // Update search results whenever searchQuery changes
   useEffect(() => {
+    const handleManualSearch = async () => {
+      console.log('Searching for manuals with query:', searchQuery)
+      setIsSearching(true)
+      try {
+        const { data, error } = await supabase
+          .from('manuals')
+          .select('id, make, model, file_path')
+          .or(`make.ilike.%${searchQuery}%,model.ilike.%${searchQuery}%`)
+          .limit(10)
+
+        if (error) throw error
+        console.log('Search results:', data)
+        setManuals(data || [])
+      } catch (error) {
+        console.error('Error searching manuals:', error)
+        toast.error('Failed to search manuals')
+      } finally {
+        setIsSearching(false)
+      }
+    }
+
+    // Only search if dialog is open
     if (isManualDialogOpen) {
       handleManualSearch()
     }
-  }, [isManualDialogOpen])
+  }, [searchQuery, isManualDialogOpen])
 
   const handleManualClick = (manual: Manual) => {
     console.log('Selecting manual:', manual)
@@ -132,20 +133,12 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
             <DialogTitle>Search Manuals</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search by make or model..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleManualSearch()}
-              />
-              <Button 
-                onClick={handleManualSearch}
-                disabled={isSearching}
-              >
-                {isSearching ? "Searching..." : "Search"}
-              </Button>
-            </div>
+            <Input
+              placeholder="Search by make or model..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              autoFocus
+            />
             <ScrollArea className="h-[300px]">
               <div className="space-y-2">
                 {manuals.map((manual) => (
