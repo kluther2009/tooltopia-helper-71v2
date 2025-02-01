@@ -53,23 +53,14 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           .from('manuals')
           .select('id, make, model, file_path')
 
-        // For each term, create a filter group
-        terms.forEach((term, index) => {
-          const filterGroup = [
-            `make.ilike.%${term}%`,
-            `model.ilike.%${term}%`,
-            `concat(make,' ',model).ilike.%${term}%`
-          ].join(',')
-          
-          // Use .or() for the first term, and chain additional .or() calls for subsequent terms
-          if (index === 0) {
-            query = query.or(filterGroup)
-          } else {
-            query = query.or(filterGroup)
-          }
+        // Chain .or() calls for each condition separately
+        terms.forEach(term => {
+          query = query
+            .or(`make.ilike.%${term}%`)
+            .or(`model.ilike.%${term}%`)
+            .or(`concat(make,' ',model).ilike.%${term}%`)
         })
 
-        // Add limit at the end
         const { data, error } = await query.limit(10)
 
         if (error) throw error
