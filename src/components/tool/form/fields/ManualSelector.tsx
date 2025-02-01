@@ -151,7 +151,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
             />
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="h-[300px] pr-4">
               <div className="space-y-2">
                 {manuals.map((manual) => (
                   <div
