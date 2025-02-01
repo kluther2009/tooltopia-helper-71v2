@@ -27,7 +27,6 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
   const [isSearching, setIsSearching] = useState(false)
   const navigate = useNavigate()
 
-  // Update search results whenever searchQuery changes
   useEffect(() => {
     const handleManualSearch = async () => {
       console.log('Searching for manuals with query:', searchQuery)
@@ -49,12 +48,10 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           return
         }
 
-        // Build the search query for each term
-        const searchConditions = terms.map(term => `
-          make.ilike.%${term}% or 
-          model.ilike.%${term}% or
-          concat(make, ' ', model).ilike.%${term}%
-        `).join(' and ')
+        // Build the search conditions without newlines and extra spaces
+        const searchConditions = terms.map(term => 
+          `make.ilike.%${term}%,model.ilike.%${term}%,concat(make,' ',model).ilike.%${term}%`
+        ).join(',')
 
         const { data, error } = await supabase
           .from('manuals')
