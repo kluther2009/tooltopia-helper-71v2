@@ -33,10 +33,33 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
       console.log('Searching for manuals with query:', searchQuery)
       setIsSearching(true)
       try {
+        // Split the search query into terms
+        const terms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0)
+        
+        if (terms.length === 0) {
+          // If no search terms, return recent manuals
+          const { data, error } = await supabase
+            .from('manuals')
+            .select('id, make, model, file_path')
+            .limit(10)
+            .order('created_at', { ascending: false })
+
+          if (error) throw error
+          setManuals(data || [])
+          return
+        }
+
+        // Build the search query for each term
+        const searchConditions = terms.map(term => `
+          make.ilike.%${term}% or 
+          model.ilike.%${term}% or
+          concat(make, ' ', model).ilike.%${term}%
+        `).join(' and ')
+
         const { data, error } = await supabase
           .from('manuals')
           .select('id, make, model, file_path')
-          .or(`make.ilike.%${searchQuery}%,model.ilike.%${searchQuery}%`)
+          .or(searchConditions)
           .limit(10)
 
         if (error) throw error
@@ -134,7 +157,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Search by make or model..."
+              placeholder="Search by make and model (e.g. 'DeWalt Drill')"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               autoFocus
