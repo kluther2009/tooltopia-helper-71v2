@@ -157,7 +157,7 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
                   <div
                     key={manual.id}
                     onClick={() => handleManualClick(manual)}
-                    className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-[#FEC6A1]/20"
+                    className="flex items-center justify-between p-3 rounded-lg cursor-pointer hover:bg-[#FEC6A1]/50"
                   >
                     <div>
                       <div className="font-medium">{manual.make}</div>
