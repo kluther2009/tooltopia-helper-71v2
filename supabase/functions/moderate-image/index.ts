@@ -29,9 +29,9 @@ serve(async (req) => {
       throw new Error('Azure Content Moderator key not configured')
     }
 
-    // Call Azure Content Moderator API
+    // Call Azure Content Moderator API with your specific endpoint
     const response = await fetch(
-      'https://westeurope.api.cognitive.microsoft.com/contentmoderator/moderate/v1.0/ProcessImage/Evaluate',
+      'https://checkimages.cognitiveservices.azure.com/contentmoderator/moderate/v1.0/ProcessImage/Evaluate',
       {
         method: 'POST',
         headers: {
