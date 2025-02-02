@@ -1,34 +1,43 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const AZURE_ENDPOINT = 'https://checkimages.cognitiveservices.azure.com'
+const AZURE_API_KEY = Deno.env.get('AZURE_CONTENT_MODERATOR_KEY')
+
+// Severity thresholds (0-6 scale, where 6 is most severe)
+const SEVERITY_THRESHOLDS = {
+  Hate: 2,      // Allow very mild content
+  SelfHarm: 0,  // Zero tolerance
+  Sexual: 0,    // Zero tolerance
+  Violence: 2,  // Allow very mild content
+}
+
+interface CategoryAnalysis {
+  category: keyof typeof SEVERITY_THRESHOLDS
+  severity: number
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Set CORS headers
+  const headers = new Headers({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Content-Type': 'application/json',
+  })
+
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers })
   }
 
   try {
     const { imageUrl } = await req.json()
-    
+
     if (!imageUrl) {
-      return new Response(
-        JSON.stringify({ error: 'No image URL provided' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+      throw new Error('No image URL provided')
     }
 
-    console.log('Moderating image:', imageUrl)
-
-    const moderatorKey = Deno.env.get('AZURE_CONTENT_MODERATOR_KEY')
-    if (!moderatorKey) {
-      throw new Error('Azure Content Moderator key not configured')
-    }
-
-    // Fetch the image data
+    // Fetch image data
     const imageResponse = await fetch(imageUrl)
     if (!imageResponse.ok) {
       throw new Error('Failed to fetch image')
@@ -45,51 +54,61 @@ serve(async (req) => {
 
     // Call Azure Content Safety API
     const response = await fetch(
-      'https://checkimages.cognitiveservices.azure.com/contentsafety/image:analyze?api-version=2023-10-01',
+      `${AZURE_ENDPOINT}/contentsafety/image:analyze?api-version=2023-10-01`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': moderatorKey,
+          'Ocp-Apim-Subscription-Key': AZURE_API_KEY!,
         },
         body: JSON.stringify({
           image: {
-            content: base64String
+            content: base64String,
           },
-          categories: ["Hate", "SelfHarm", "Sexual", "Violence"]
         }),
       }
     )
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Azure API error:', errorText)
-      throw new Error(`Azure API returned ${response.status}: ${errorText}`)
+      const errorData = await response.text()
+      console.error('Azure API error:', errorData)
+      throw new Error(`Azure API returned ${response.status}: ${errorData}`)
     }
 
-    const moderationResult = await response.json()
-    console.log('Moderation result:', moderationResult)
+    const analysisResult = await response.json()
+    console.log('Moderation result:', analysisResult)
 
-    // Check if any category has a severity higher than "Low" (0)
-    const isSafe = !moderationResult.categoriesAnalysis?.some(
-      (category: { severity: number }) => category.severity > 0
-    )
+    // Check each category against its threshold
+    const violations: string[] = []
+    analysisResult.categoriesAnalysis.forEach((analysis: CategoryAnalysis) => {
+      const threshold = SEVERITY_THRESHOLDS[analysis.category]
+      if (analysis.severity > threshold) {
+        violations.push(`${analysis.category} content detected (severity: ${analysis.severity})`)
+      }
+    })
+
+    const isSafe = violations.length === 0
+    const details = {
+      categoriesAnalysis: analysisResult.categoriesAnalysis,
+      violations: violations
+    }
 
     return new Response(
       JSON.stringify({
         isSafe,
-        details: moderationResult,
+        details
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers }
     )
+
   } catch (error) {
     console.error('Error in moderate-image function:', error)
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to moderate image',
-        details: error
+      JSON.stringify({
+        error: error.message,
+        details: {}
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { status: 500, headers }
     )
   }
 })

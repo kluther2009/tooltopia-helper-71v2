@@ -52,6 +52,17 @@ export function LocationPhotoManager() {
       })
 
       if (error) throw error
+
+      if (!data.isSafe) {
+        const violations = data.details.violations.join('\n')
+        toast.error(
+          <div className="space-y-2">
+            <p>Image contains inappropriate content:</p>
+            <p className="text-sm text-red-500">{violations}</p>
+          </div>
+        )
+      }
+
       return data.isSafe
     } catch (error) {
       console.error('Moderation error:', error)
