@@ -28,7 +28,7 @@ serve(async (req) => {
       throw new Error('Azure Content Moderator key not configured')
     }
 
-    // Call Azure Content Safety API instead of Content Moderator
+    // Call Azure Content Safety API
     const response = await fetch(
       'https://checkimages.cognitiveservices.azure.com/contentsafety/image:analyze?api-version=2023-10-01',
       {
@@ -47,8 +47,9 @@ serve(async (req) => {
     )
 
     if (!response.ok) {
-      console.error('Azure API error:', await response.text())
-      throw new Error('Failed to moderate image')
+      const errorText = await response.text()
+      console.error('Azure API error:', errorText)
+      throw new Error(`Azure API returned ${response.status}: ${errorText}`)
     }
 
     const moderationResult = await response.json()
@@ -70,7 +71,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in moderate-image function:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Failed to moderate image',
+        details: error
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
