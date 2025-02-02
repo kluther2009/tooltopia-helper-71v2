@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
+
 export default function AddManual() {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
@@ -14,6 +16,17 @@ export default function AddManual() {
   const navigate = useNavigate();
   const location = useLocation();
   const returnPath = location.state?.returnTo || "/";
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] || null;
+    if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
+      toast.error("File size exceeds 25MB limit");
+      e.target.value = ''; // Reset input
+      setFile(null);
+      return;
+    }
+    setFile(selectedFile);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,12 +101,12 @@ export default function AddManual() {
           
           <div>
             <label htmlFor="manual-file" className="block text-sm font-medium mb-1">
-              Manual File *
+              Manual File * (Max 25MB)
             </label>
             <Input
               id="manual-file"
               type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={handleFileChange}
               accept=".pdf,.doc,.docx"
               required
             />

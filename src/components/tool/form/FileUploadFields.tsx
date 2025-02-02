@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input"
 import { ManualSelector } from "./fields/ManualSelector"
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import { toast } from "sonner"
 
 interface Manual {
   id: string
@@ -17,6 +18,8 @@ interface FileUploadFieldsProps {
   onManualSelect?: (manualId: string | null) => void
   manualId?: string | null
 }
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
 
 export function FileUploadFields({
   onWarrantyFileChange,
@@ -51,6 +54,17 @@ export function FileUploadFields({
     return path.split('/').pop() || ''
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file && file.size > MAX_FILE_SIZE) {
+      toast.error("File size exceeds 25MB limit");
+      e.target.value = ''; // Reset input
+      onWarrantyFileChange(null);
+      return;
+    }
+    onWarrantyFileChange(file);
+  };
+
   return (
     <>
       <div className="space-y-2">
@@ -64,13 +78,13 @@ export function FileUploadFields({
           <Input
             type="file"
             id="warrantyFile"
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null
-              onWarrantyFileChange(file)
-            }}
+            onChange={handleFileChange}
             accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
             className="bg-background text-foreground file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
           />
+          <div className="text-sm text-muted-foreground">
+            Maximum file size: 25MB
+          </div>
         </div>
       </div>
 

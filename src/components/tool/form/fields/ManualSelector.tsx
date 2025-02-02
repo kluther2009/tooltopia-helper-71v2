@@ -27,13 +27,14 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
   const [isSearching, setIsSearching] = useState(false)
   const navigate = useNavigate()
 
+  const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
+
   useEffect(() => {
     const handleManualSearch = async () => {
       console.log('Searching for manuals with query:', searchQuery)
       setIsSearching(true)
       try {
         if (searchQuery.trim().length === 0) {
-          // If no search terms, return recent manuals
           const { data, error } = await supabase
             .from('manuals')
             .select('id, make, model, file_path')
@@ -62,7 +63,6 @@ export function ManualSelector({ selectedManual, onManualSelect, manualId }: Man
       }
     }
 
-    // Only search if dialog is open
     if (isManualDialogOpen) {
       handleManualSearch()
     }
