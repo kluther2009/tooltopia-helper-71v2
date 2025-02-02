@@ -34,14 +34,16 @@ serve(async (req) => {
       throw new Error('Failed to fetch image')
     }
 
-    // Convert image to base64
+    // Convert image to base64 using TextEncoder
     const imageArrayBuffer = await imageResponse.arrayBuffer()
-    const base64String = btoa(
-      new Uint8Array(imageArrayBuffer)
-        .reduce((data, byte) => data + String.fromCharCode(byte), '')
-    )
+    const bytes = new Uint8Array(imageArrayBuffer)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    const base64String = btoa(binary)
 
-    // Call Azure Content Safety API with correct request format
+    // Call Azure Content Safety API
     const response = await fetch(
       'https://checkimages.cognitiveservices.azure.com/contentsafety/image:analyze?api-version=2023-10-01',
       {
