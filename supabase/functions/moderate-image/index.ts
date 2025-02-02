@@ -28,9 +28,9 @@ serve(async (req) => {
       throw new Error('Azure Content Moderator key not configured')
     }
 
-    // Call Azure Content Moderator API
+    // Call Azure Content Safety API instead of Content Moderator
     const response = await fetch(
-      'https://checkimages.cognitiveservices.azure.com/contentmoderator/moderate/v1.0/ProcessImage/Evaluate',
+      'https://checkimages.cognitiveservices.azure.com/contentsafety/image:analyze?api-version=2023-10-01',
       {
         method: 'POST',
         headers: {
@@ -38,8 +38,10 @@ serve(async (req) => {
           'Ocp-Apim-Subscription-Key': moderatorKey,
         },
         body: JSON.stringify({
-          DataRepresentation: 'URL',
-          Value: imageUrl,
+          image: {
+            url: imageUrl
+          },
+          categories: ["Hate", "SelfHarm", "Sexual", "Violence"]
         }),
       }
     )
@@ -52,10 +54,11 @@ serve(async (req) => {
     const moderationResult = await response.json()
     console.log('Moderation result:', moderationResult)
 
-    // Determine if the image is safe based on Azure's response
-    const isAdult = moderationResult.IsImageAdultClassified
-    const isRacy = moderationResult.IsImageRacyClassified
-    const isSafe = !isAdult && !isRacy
+    // Check if any category has a severity higher than "Low"
+    const isSafe = !moderationResult.categoriesAnalysis?.some(
+      (category: { severity: string }) => 
+      ['Medium', 'High'].includes(category.severity)
+    )
 
     return new Response(
       JSON.stringify({
