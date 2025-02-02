@@ -28,7 +28,15 @@ serve(async (req) => {
       throw new Error('Azure Content Moderator key not configured')
     }
 
-    // Call Azure Content Safety API
+    // First, fetch the image data
+    const imageResponse = await fetch(imageUrl)
+    if (!imageResponse.ok) {
+      throw new Error('Failed to fetch image')
+    }
+    const imageBuffer = await imageResponse.arrayBuffer()
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+
+    // Call Azure Content Safety API with correct request format
     const response = await fetch(
       'https://checkimages.cognitiveservices.azure.com/contentsafety/image:analyze?api-version=2023-10-01',
       {
@@ -39,7 +47,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           image: {
-            url: imageUrl
+            content: base64Image
           },
           categories: ["Hate", "SelfHarm", "Sexual", "Violence"]
         }),
