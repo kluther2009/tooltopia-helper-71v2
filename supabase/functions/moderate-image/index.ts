@@ -28,13 +28,18 @@ serve(async (req) => {
       throw new Error('Azure Content Moderator key not configured')
     }
 
-    // First, fetch the image data
+    // Fetch the image data
     const imageResponse = await fetch(imageUrl)
     if (!imageResponse.ok) {
       throw new Error('Failed to fetch image')
     }
-    const imageBuffer = await imageResponse.arrayBuffer()
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+
+    // Convert image to base64
+    const imageArrayBuffer = await imageResponse.arrayBuffer()
+    const base64String = btoa(
+      new Uint8Array(imageArrayBuffer)
+        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+    )
 
     // Call Azure Content Safety API with correct request format
     const response = await fetch(
@@ -47,7 +52,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           image: {
-            content: base64Image
+            content: base64String
           },
           categories: ["Hate", "SelfHarm", "Sexual", "Violence"]
         }),
@@ -63,10 +68,9 @@ serve(async (req) => {
     const moderationResult = await response.json()
     console.log('Moderation result:', moderationResult)
 
-    // Check if any category has a severity higher than "Low"
+    // Check if any category has a severity higher than "Low" (0)
     const isSafe = !moderationResult.categoriesAnalysis?.some(
-      (category: { severity: string }) => 
-      ['Medium', 'High'].includes(category.severity)
+      (category: { severity: number }) => category.severity > 0
     )
 
     return new Response(
