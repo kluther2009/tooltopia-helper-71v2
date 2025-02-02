@@ -45,6 +45,20 @@ export function LocationPhotoManager() {
     setPhotos(data)
   }
 
+  const moderateImage = async (url: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('moderate-image', {
+        body: { imageUrl: url }
+      })
+
+      if (error) throw error
+      return data.isSafe
+    } catch (error) {
+      console.error('Moderation error:', error)
+      throw new Error('Failed to moderate image')
+    }
+  }
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -64,20 +78,47 @@ export function LocationPhotoManager() {
     setIsUploading(true)
 
     try {
+      // First upload to temporary location for moderation
       const fileExt = pendingFile.name.split('.').pop()
-      const filePath = `${crypto.randomUUID()}.${fileExt}`
+      const tempPath = `temp/${crypto.randomUUID()}.${fileExt}`
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('location-photos')
-        .upload(filePath, pendingFile)
+        .upload(tempPath, pendingFile)
 
       if (uploadError) throw uploadError
+
+      // Get the public URL for moderation
+      const { data: { publicUrl } } = supabase.storage
+        .from('location-photos')
+        .getPublicUrl(tempPath)
+
+      // Check if image is safe
+      const isSafe = await moderateImage(publicUrl)
+
+      if (!isSafe) {
+        // Clean up temporary file
+        await supabase.storage
+          .from('location-photos')
+          .remove([tempPath])
+        
+        toast.error('Image contains inappropriate content')
+        return
+      }
+
+      // Move to final location
+      const finalPath = `${crypto.randomUUID()}.${fileExt}`
+      const { error: moveError } = await supabase.storage
+        .from('location-photos')
+        .move(tempPath, finalPath)
+
+      if (moveError) throw moveError
 
       const { error: dbError } = await supabase
         .from('location_photos')
         .insert({
           location: location.trim(),
-          file_path: filePath,
+          file_path: finalPath,
           user_id: userId
         })
 
