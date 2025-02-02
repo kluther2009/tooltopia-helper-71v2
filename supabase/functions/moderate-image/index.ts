@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,7 +28,7 @@ serve(async (req) => {
       throw new Error('Azure Content Moderator key not configured')
     }
 
-    // Call Azure Content Moderator API with your specific endpoint
+    // Call Azure Content Moderator API
     const response = await fetch(
       'https://checkimages.cognitiveservices.azure.com/contentmoderator/moderate/v1.0/ProcessImage/Evaluate',
       {
