@@ -20,6 +20,7 @@ interface FileUploadFieldsProps {
 }
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB in bytes
+const ALLOWED_WARRANTY_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
 
 export function FileUploadFields({
   onWarrantyFileChange,
@@ -56,11 +57,19 @@ export function FileUploadFields({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    if (file && file.size > MAX_FILE_SIZE) {
-      toast.error("File size exceeds 25MB limit");
-      e.target.value = ''; // Reset input
-      onWarrantyFileChange(null);
-      return;
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("File size exceeds 25MB limit");
+        e.target.value = ''; // Reset input
+        onWarrantyFileChange(null);
+        return;
+      }
+      if (!ALLOWED_WARRANTY_TYPES.includes(file.type)) {
+        toast.error("Only PDF and image files (JPG, JPEG, PNG) are allowed");
+        e.target.value = ''; // Reset input
+        onWarrantyFileChange(null);
+        return;
+      }
     }
     onWarrantyFileChange(file);
   };
@@ -79,11 +88,11 @@ export function FileUploadFields({
             type="file"
             id="warrantyFile"
             onChange={handleFileChange}
-            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+            accept=".pdf,.jpg,.jpeg,.png"
             className="bg-background text-foreground file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
           />
           <div className="text-sm text-muted-foreground">
-            Maximum file size: 25MB
+            Accepted formats: PDF, JPG, JPEG, PNG (Maximum file size: 25MB)
           </div>
         </div>
       </div>
