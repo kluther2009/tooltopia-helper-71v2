@@ -11,6 +11,8 @@ import { LocationPhoto } from "@/types/photos"
 import { CameraDialog } from "./photos/CameraDialog"
 import { LocationInputDialog } from "./photos/LocationInputDialog"
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+
 export function LocationPhotoManager() {
   const [photos, setPhotos] = useState<LocationPhoto[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<LocationPhoto | null>(null)
@@ -45,6 +47,14 @@ export function LocationPhotoManager() {
     setPhotos(data)
   }
 
+  const validateFileSize = (file: File): boolean => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File size exceeds 5MB limit')
+      return false
+    }
+    return true
+  }
+
   const moderateImage = async (url: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('moderate-image', {
@@ -73,6 +83,11 @@ export function LocationPhotoManager() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    if (!validateFileSize(file)) {
+      event.target.value = ''
+      return
+    }
 
     setPendingFile(file)
     setIsLocationDialogOpen(true)
@@ -171,6 +186,9 @@ export function LocationPhotoManager() {
   }
 
   const handleCameraCapture = (file: File) => {
+    if (!validateFileSize(file)) {
+      return
+    }
     setPendingFile(file)
     setIsLocationDialogOpen(true)
     setLocationInput("")
