@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
+
 interface ProjectPhotosDialogProps {
   projectId: string
   open: boolean
@@ -27,9 +29,22 @@ export function ProjectPhotosDialog({
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
 
+  const validateFileSize = (file: File): boolean => {
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File size exceeds 5MB limit')
+      return false
+    }
+    return true
+  }
+
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    if (!validateFileSize(file)) {
+      event.target.value = ''
+      return
+    }
 
     try {
       console.log('Starting photo upload for project:', projectId)
@@ -76,6 +91,10 @@ export function ProjectPhotosDialog({
   }
 
   const handleCameraCapture = async (file: File) => {
+    if (!validateFileSize(file)) {
+      return
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
