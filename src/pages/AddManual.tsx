@@ -19,11 +19,19 @@ export default function AddManual() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
-    if (selectedFile && selectedFile.size > MAX_FILE_SIZE) {
-      toast.error("File size exceeds 25MB limit");
-      e.target.value = ''; // Reset input
-      setFile(null);
-      return;
+    if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        toast.error("File size exceeds 25MB limit");
+        e.target.value = ''; // Reset input
+        setFile(null);
+        return;
+      }
+      if (selectedFile.type !== 'application/pdf') {
+        toast.error("Only PDF files are allowed");
+        e.target.value = ''; // Reset input
+        setFile(null);
+        return;
+      }
     }
     setFile(selectedFile);
   };
@@ -101,13 +109,13 @@ export default function AddManual() {
           
           <div>
             <label htmlFor="manual-file" className="block text-sm font-medium mb-1">
-              Manual File * (Max 25MB)
+              Manual File * (PDF only, Max 25MB)
             </label>
             <Input
               id="manual-file"
               type="file"
               onChange={handleFileChange}
-              accept=".pdf,.doc,.docx"
+              accept=".pdf"
               required
             />
           </div>
