@@ -48,7 +48,7 @@ export function usePhotoManager() {
     return true
   }
 
-  const moderateImage = async (url: string) => {
+  const moderateImage = async (url: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke('moderate-image', {
         body: { imageUrl: url }
