@@ -13,14 +13,14 @@ export function ToolGuruDialog() {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-full sm:w-[80vw] lg:w-[50vw] p-0 border-l border-border bg-[#1A1F2C]"
+        className="w-[100vw] sm:w-[80vw] lg:w-[50vw] p-0 border-l-0 border-t-0 border-b-0 overflow-hidden"
       >
-        <Card className="h-full flex flex-col bg-[#1A1F2C] border-0">
+        <Card className="h-[100vh] flex flex-col bg-[#1A1F2C] border-0 rounded-none">
           <SheetHeader className="p-4 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl font-bold text-white">ToolGuru</SheetTitle>
               <SheetClose asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="text-white hover:text-white/80">
                   <X className="h-4 w-4" />
                 </Button>
               </SheetClose>

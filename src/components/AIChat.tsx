@@ -158,14 +158,14 @@ export function AIChat() {
 
       <form 
         onSubmit={handleSubmit}
-        className="border-t border-border p-4 space-y-4"
+        className="border-t border-border p-4 space-y-4 bg-background/5"
       >
         <div className="flex gap-2">
           <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Ask ToolGuru anything..."
-            className="min-h-[80px] resize-none flex-1 bg-background"
+            className="min-h-[80px] resize-none flex-1 bg-background/10 border-border"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -179,7 +179,7 @@ export function AIChat() {
               variant="outline"
               size="icon"
               onClick={isListening ? stopListening : startListening}
-              className={isListening ? "bg-red-100" : ""}
+              className={isListening ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
             >
               {isListening ? (
                 <MicOff className="h-4 w-4" />
