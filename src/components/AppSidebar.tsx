@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useLocation } from "react-router-dom";
 import { useLogout } from "@/hooks/useLogout";
-import { ToolGuruDialog } from "./ToolGuruDialog";
 import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { sidebarRoutes } from "./sidebar/SidebarRoutes";
 import { SidebarMenuItem } from "./sidebar/SidebarMenuItem";
@@ -72,8 +71,6 @@ export function AppSidebar() {
           )}
         </Button>
       </div>
-
-      <ToolGuruDialog />
     </aside>
   );
 }
