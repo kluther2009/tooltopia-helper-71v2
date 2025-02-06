@@ -1,7 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { HelpButton } from "./HelpButton";
-import { ToolGuruDialog } from "./ToolGuruDialog";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +16,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </main>
         <HelpButton />
-        <ToolGuruDialog />
       </div>
     </SidebarProvider>
   );
