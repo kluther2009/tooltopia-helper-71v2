@@ -1,4 +1,3 @@
-
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { AIChat } from "./AIChat"
 import { Card } from "@/components/ui/card"
@@ -13,7 +12,7 @@ export function ToolGuruDialog() {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-[100vw] sm:w-[600px] p-0 border-0 overflow-hidden [&_[data-close-button]]:hidden"
+        className="w-[calc(100vw-var(--sidebar-width,0px))] p-0 border-0 overflow-hidden [&_[data-close-button]]:hidden"
       >
         <Card className="h-[100vh] flex flex-col bg-[#1A1F2C] border-0 rounded-none">
           <SheetHeader className="p-4 border-b border-border flex-shrink-0">
