@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { LocationPhoto } from "@/types/photos"
@@ -58,12 +57,7 @@ export function usePhotoManager() {
 
       if (!data.isSafe) {
         const violations = data.details.violations.join('\n')
-        toast.error(
-          <div className="space-y-2">
-            <p>Image contains inappropriate content:</p>
-            <p className="text-sm text-red-500">{violations}</p>
-          </div>
-        )
+        toast.error(`Image contains inappropriate content:\n${violations}`)
       }
 
       return data.isSafe
