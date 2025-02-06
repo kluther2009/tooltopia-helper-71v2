@@ -1,8 +1,9 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 
@@ -70,6 +71,19 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
     }
   };
 
+  const navigatePhotos = (direction: 'prev' | 'next') => {
+    if (!photos || !selectedPhoto) return;
+    
+    const currentIndex = photos.findIndex(photo => photo.id === selectedPhoto.id);
+    if (currentIndex === -1) return;
+
+    const newIndex = direction === 'next' 
+      ? (currentIndex + 1) % photos.length 
+      : (currentIndex - 1 + photos.length) % photos.length;
+
+    setSelectedPhoto(photos[newIndex]);
+  };
+
   if (isLoading) {
     return <div>Loading photos...</div>;
   }
@@ -94,11 +108,33 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
-          <img
-            src={`${supabase.storage.from("project-photos").getPublicUrl(selectedPhoto.file_path).data.publicUrl}`}
-            alt="Selected project photo"
-            className="w-full h-auto max-h-[70vh] object-contain mx-auto"
-          />
+          <div className="relative group">
+            <img
+              src={`${supabase.storage.from("project-photos").getPublicUrl(selectedPhoto.file_path).data.publicUrl}`}
+              alt="Selected project photo"
+              className="w-full h-auto max-h-[70vh] object-contain mx-auto"
+            />
+            {photos && photos.length > 1 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => navigatePhotos('prev')}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => navigatePhotos('next')}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
           {selectedPhoto.description && (
             <p className="mt-4 text-sm text-gray-500">{selectedPhoto.description}</p>
           )}
