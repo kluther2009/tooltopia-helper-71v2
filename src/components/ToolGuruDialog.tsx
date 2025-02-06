@@ -1,6 +1,9 @@
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { AIChat } from "./AIChat"
 import { Card } from "@/components/ui/card"
+import { X } from "lucide-react"
+import { Button } from "./ui/button"
 
 export function ToolGuruDialog() {
   return (
@@ -8,12 +11,24 @@ export function ToolGuruDialog() {
       <SheetTrigger asChild>
         <button className="hidden" id="toolGuruTrigger">Open ToolGuru</button>
       </SheetTrigger>
-      <SheetContent className="w-[90vw] sm:max-w-[500px] bg-[#1A1F2C] border-[#7E69AB] p-0">
-        <Card className="h-full bg-[#1A1F2C] border-0">
-          <SheetHeader className="p-6 pb-0">
-            <SheetTitle className="text-xl font-bold text-white">ToolGuru</SheetTitle>
+      <SheetContent 
+        side="right" 
+        className="w-full sm:w-[80vw] lg:w-[50vw] p-0 border-l border-border bg-[#1A1F2C]"
+      >
+        <Card className="h-full flex flex-col bg-[#1A1F2C] border-0">
+          <SheetHeader className="p-4 border-b border-border flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-xl font-bold text-white">ToolGuru</SheetTitle>
+              <Sheet.Close asChild>
+                <Button variant="ghost" size="icon">
+                  <X className="h-4 w-4" />
+                </Button>
+              </Sheet.Close>
+            </div>
           </SheetHeader>
-          <AIChat />
+          <div className="flex-1 overflow-hidden">
+            <AIChat />
+          </div>
         </Card>
       </SheetContent>
     </Sheet>
