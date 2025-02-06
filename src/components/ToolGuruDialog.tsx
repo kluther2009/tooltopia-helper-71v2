@@ -12,7 +12,7 @@ export function ToolGuruDialog() {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="w-[calc(100vw-240px)] p-0 border-0 overflow-hidden [&_[data-close-button]]:hidden"
+        className="!w-[75%] sm:!w-[75%] p-0 border-0 overflow-hidden"
       >
         <Card className="h-[100vh] flex flex-col bg-[#1A1F2C] border-0 rounded-none">
           <SheetHeader className="p-4 border-b border-border flex-shrink-0">
