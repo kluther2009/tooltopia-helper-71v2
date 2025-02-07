@@ -89,7 +89,7 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {selectedPhoto ? (
         <div className="relative">
           <div className="flex justify-between items-start mb-4">
@@ -112,7 +112,7 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
             <img
               src={`${supabase.storage.from("project-photos").getPublicUrl(selectedPhoto.file_path).data.publicUrl}`}
               alt="Selected project photo"
-              className="w-full h-auto max-h-[70vh] object-contain mx-auto"
+              className="w-full h-auto max-h-[85vh] object-contain mx-auto rounded-lg shadow-lg"
             />
             {photos && photos.length > 1 && (
               <>
@@ -147,7 +147,7 @@ export function ProjectPhotosViewer({ projectId, open, onOpenChange }: ProjectPh
                 <img
                   src={`${supabase.storage.from("project-photos").getPublicUrl(photo.file_path).data.publicUrl}`}
                   alt="Project photo"
-                  className="object-cover w-full h-full cursor-pointer"
+                  className="object-cover w-full h-full cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setSelectedPhoto(photo)}
                 />
               </div>
