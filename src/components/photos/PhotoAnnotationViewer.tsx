@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LocationPhoto } from "@/types/photos"
 import { supabase } from "@/integrations/supabase/client"
@@ -6,6 +7,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Annotation } from "./canvas/types"
 import { toast } from "sonner"
+import { usePhotoLocation } from "@/hooks/usePhotoLocation"
 
 interface PhotoAnnotationViewerProps {
   photo: LocationPhoto | null
@@ -16,6 +18,7 @@ interface PhotoAnnotationViewerProps {
 export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotationViewerProps) {
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const navigate = useNavigate()
+  const photoLocation = usePhotoLocation(photo?.id || '', isOpen)
 
   useEffect(() => {
     if (photo?.id && isOpen) {
@@ -118,7 +121,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     }}>
       <DialogContent className="max-w-7xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader>
-          <DialogTitle>Photo Annotations</DialogTitle>
+          <DialogTitle>Photo Annotations: {photoLocation}</DialogTitle>
         </DialogHeader>
         <div className="relative w-full h-[80vh]">
           <AnnotationCanvas
