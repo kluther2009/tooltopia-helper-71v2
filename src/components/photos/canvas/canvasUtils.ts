@@ -82,49 +82,57 @@ export const drawAnnotation = (
   const width = coordinates.width * imageMetrics.scale;
   const height = coordinates.height * imageMetrics.scale;
 
-  // If tool has been moved, draw grey overlay
+  // If tool has been moved, draw grey overlay and indicators
   if (moved) {
     // Draw semi-transparent grey background
-    ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.75)';
     ctx.fillRect(x, y, width, height);
     
-    // Draw "Tool Relocated" text
-    ctx.font = '14px Arial';
+    // Draw tool name with "RELOCATED" text
+    ctx.font = 'bold 14px Arial';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.fillText(
-      'Tool Relocated',
+      `${tool.name} - RELOCATED`,
       x + width / 2,
       y + height / 2
     );
+
+    // Draw dashed border
+    ctx.strokeStyle = '#808080';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]);
+    ctx.strokeRect(x, y, width, height);
+    ctx.setLineDash([]); // Reset line dash
+  } else {
+    // Draw rectangle border for active tool
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+
+    // Draw tool name with background
+    ctx.font = '14px Arial';
+    const textMetrics = ctx.measureText(tool.name);
+    const padding = 4;
+    const textHeight = 16;
+    
+    // Draw background rectangle for text
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(
+      x,
+      y - textHeight - padding * 2,
+      textMetrics.width + padding * 2,
+      textHeight + padding * 2
+    );
+
+    // Draw text
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(
+      tool.name,
+      x + padding,
+      y - padding
+    );
   }
-
-  // Draw rectangle border
-  ctx.strokeStyle = moved ? '#808080' : '#00ff00';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x, y, width, height);
-
-  // Draw tool name with background
-  ctx.font = '14px Arial';
-  const textMetrics = ctx.measureText(tool.name);
-  const padding = 4;
-  const textHeight = 16;
-  
-  // Draw background rectangle for text
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.fillRect(
-    x,
-    y - textHeight - padding * 2,
-    textMetrics.width + padding * 2,
-    textHeight + padding * 2
-  );
-
-  // Draw text
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'left';
-  ctx.fillText(
-    tool.name,
-    x + padding,
-    y - padding
-  );
 };
+
