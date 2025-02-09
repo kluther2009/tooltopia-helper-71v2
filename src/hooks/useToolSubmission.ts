@@ -1,9 +1,10 @@
+
 import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
-async function uploadFile(file: File, toolId: string, type: 'warranty' | 'receipt'): Promise<string | null> {
+async function uploadFile(file: File, toolId: string, type: 'warranty'): Promise<string | null> {
   try {
     const fileExt = file.name.split('.').pop()
     const filePath = `${toolId}/${type}.${fileExt}`
@@ -41,7 +42,6 @@ export function useToolSubmission() {
     warrantyLength,
     purchaseCost,
     warrantyFile,
-    receiptFile,
     annotationData
   }: {
     toolName: string
@@ -54,7 +54,6 @@ export function useToolSubmission() {
     warrantyLength: string
     purchaseCost: string
     warrantyFile: File | null
-    receiptFile: File | null
     annotationData: any
   }) => {
     setIsUploading(true)
@@ -101,25 +100,14 @@ export function useToolSubmission() {
       console.log('Tool created successfully:', newTool)
 
       // Handle file uploads if additional info is provided
-      if (showAdditionalInfo) {
-        let warrantyPath = null
-        let receiptPath = null
-
-        if (warrantyFile) {
-          warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
-        }
-
-        if (receiptFile) {
-          receiptPath = await uploadFile(receiptFile, newTool.id, 'receipt')
-        }
-
-        // Update tool with file paths if any files were uploaded
-        if (warrantyPath || receiptPath) {
+      if (showAdditionalInfo && warrantyFile) {
+        const warrantyPath = await uploadFile(warrantyFile, newTool.id, 'warranty')
+        
+        if (warrantyPath) {
           const { error: updateError } = await supabase
             .from('tools')
             .update({
-              warranty_file_path: warrantyPath,
-              receipt_file_path: receiptPath
+              warranty_file_path: warrantyPath
             })
             .eq('id', newTool.id)
 

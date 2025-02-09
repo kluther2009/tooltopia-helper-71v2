@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
@@ -15,7 +16,6 @@ interface ToolSubmissionData {
   warrantyLength: string
   purchaseCost: string
   warrantyFile: File | null
-  receiptFile: File | null
   lastMaintenanceDate: string
   maintenancePeriod: string
   annotationData?: any
@@ -42,14 +42,6 @@ export function useToolSubmission() {
         warrantyFilePath = warrantyResult.path
       }
 
-      // Upload receipt file if exists
-      let receiptFilePath = null
-      if (data.receiptFile) {
-        const receiptResult = await uploadFile(data.receiptFile, 'receipt')
-        if (!receiptResult.success) return false
-        receiptFilePath = receiptResult.path
-      }
-
       // Create the tool
       const { data: newTool, error: toolError } = await supabase
         .from('tools')
@@ -66,7 +58,6 @@ export function useToolSubmission() {
           warranty_length: data.showAdditionalInfo && data.warrantyLength ? parseInt(data.warrantyLength) : null,
           purchase_cost: data.showAdditionalInfo && data.purchaseCost ? parseFloat(data.purchaseCost) : null,
           warranty_file_path: warrantyFilePath,
-          receipt_file_path: receiptFilePath,
           last_maintenance_date: data.lastMaintenanceDate || null,
           maintenance_period_months: data.maintenancePeriod ? parseInt(data.maintenancePeriod) : null,
           manual_id: data.manualId || null
@@ -109,7 +100,7 @@ export function useToolSubmission() {
     }
   }
 
-  const uploadFile = async (file: File, type: 'warranty' | 'receipt') => {
+  const uploadFile = async (file: File, type: 'warranty') => {
     const timestamp = new Date().getTime()
     const fileExt = file.name.split('.').pop()
     const filePath = `${timestamp}_${type}.${fileExt}`
