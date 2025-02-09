@@ -88,12 +88,12 @@ export const drawAnnotation = (
     ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
     ctx.fillRect(x, y, width, height);
     
-    // Draw "Tool Moved" text
+    // Draw "Tool Relocated" text
     ctx.font = '14px Arial';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.fillText(
-      'Tool Moved',
+      'Tool Relocated',
       x + width / 2,
       y + height / 2
     );

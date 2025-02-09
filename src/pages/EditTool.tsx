@@ -52,7 +52,7 @@ export default function EditTool() {
     };
 
     fetchTemporaryAnnotation();
-  }, [setState, isToolLoaded]); // Add isToolLoaded to dependencies
+  }, [setState, isToolLoaded]);
 
   if (isLoading) {
     return (
@@ -77,19 +77,24 @@ export default function EditTool() {
           return;
         }
 
-        // Delete all existing annotations for this tool
-        const { error: deleteError } = await supabase
+        // Mark existing annotations for this tool as moved
+        const { data: existingAnnotations, error: fetchError } = await supabase
           .from('tool_annotations')
-          .delete()
+          .select('id')
           .eq('tool_id', id);
 
-        if (deleteError) {
-          console.error('[EditTool] Error deleting existing annotations:', deleteError);
-          toast.error('Failed to update tool annotation');
-          return;
-        }
+        if (fetchError) {
+          console.error('[EditTool] Error fetching existing annotations:', fetchError);
+        } else if (existingAnnotations && existingAnnotations.length > 0) {
+          const { error: updateError } = await supabase
+            .from('tool_annotations')
+            .update({ moved: true })
+            .eq('tool_id', id);
 
-        console.log('[EditTool] Deleted existing annotations for tool');
+          if (updateError) {
+            console.error('[EditTool] Error updating existing annotations:', updateError);
+          }
+        }
 
         // Create new annotation
         const { error: insertError } = await supabase
@@ -98,7 +103,8 @@ export default function EditTool() {
             photo_id: annotationData.photo_id,
             tool_id: id,
             coordinates: annotationData.coordinates,
-            user_id: user.id
+            user_id: user.id,
+            moved: false
           });
 
         if (insertError) {
@@ -110,13 +116,13 @@ export default function EditTool() {
         console.log('[EditTool] Successfully created new annotation');
         
         // Clean up temporary annotation
-        const { error: deleteError2 } = await supabase
+        const { error: deleteError } = await supabase
           .from('temporary_annotations')
           .delete()
           .eq('id', annotationData.id);
 
-        if (deleteError2) {
-          console.error('[EditTool] Error deleting temporary annotation:', deleteError2);
+        if (deleteError) {
+          console.error('[EditTool] Error deleting temporary annotation:', deleteError);
         }
 
         toast.success('Tool and annotation updated successfully');

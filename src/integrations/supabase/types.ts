@@ -370,6 +370,7 @@ export type Database = {
           coordinates: Json
           created_at: string
           id: string
+          moved: boolean | null
           photo_id: string
           tool_id: string | null
           tool_reference_id: number | null
@@ -380,6 +381,7 @@ export type Database = {
           coordinates: Json
           created_at?: string
           id?: string
+          moved?: boolean | null
           photo_id: string
           tool_id?: string | null
           tool_reference_id?: number | null
@@ -390,6 +392,7 @@ export type Database = {
           coordinates?: Json
           created_at?: string
           id?: string
+          moved?: boolean | null
           photo_id?: string
           tool_id?: string | null
           tool_reference_id?: number | null
