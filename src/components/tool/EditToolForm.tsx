@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -23,7 +24,9 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const location = useLocation()
   const [annotationData, setAnnotationData] = useState<any>(null)
   const [showLoanFields, setShowLoanFields] = useState(state.status === "loaned")
-  const [showMaintenanceFields, setShowMaintenanceFields] = useState(false)
+  const [showMaintenanceFields, setShowMaintenanceFields] = useState(
+    !!(state.lastMaintenanceDate || state.maintenancePeriod)
+  )
 
   useEffect(() => {
     const storedAnnotation = localStorage.getItem('pendingAnnotation')
@@ -58,6 +61,16 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
   const handleManualSelect = (manualId: string | null) => {
     console.log('[EditToolForm] Manual selected:', manualId)
     onStateChange({ manualId })
+  }
+
+  const handleMaintenanceToggle = (checked: boolean) => {
+    setShowMaintenanceFields(checked)
+    if (!checked) {
+      onStateChange({ 
+        lastMaintenanceDate: null, 
+        maintenancePeriod: null 
+      })
+    }
   }
 
   return (
@@ -99,7 +112,7 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
         <Switch
           id="show-maintenance-info"
           checked={showMaintenanceFields}
-          onCheckedChange={setShowMaintenanceFields}
+          onCheckedChange={handleMaintenanceToggle}
         />
         <Label htmlFor="show-maintenance-info">Add maintenance schedule</Label>
       </div>
