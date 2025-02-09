@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,11 +43,13 @@ export const useToolEditor = (toolId: string | undefined) => {
     maintenancePeriod: null,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isToolLoaded, setIsToolLoaded] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuthAndFetchTool = async () => {
       try {
+        setIsToolLoaded(false);
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError || !session) {
@@ -61,7 +64,7 @@ export const useToolEditor = (toolId: string | undefined) => {
           .from('tools')
           .select('*')
           .eq('id', toolId)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error fetching tool:', error);
@@ -90,6 +93,7 @@ export const useToolEditor = (toolId: string | undefined) => {
             lastMaintenanceDate: data.last_maintenance_date || null,
             maintenancePeriod: data.maintenance_period_months?.toString() || null,
           });
+          setIsToolLoaded(true);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -195,6 +199,7 @@ export const useToolEditor = (toolId: string | undefined) => {
     state,
     setState,
     isLoading,
+    isToolLoaded,
     updateTool,
   };
 };

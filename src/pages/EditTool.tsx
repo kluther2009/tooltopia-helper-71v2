@@ -11,7 +11,7 @@ export default function EditTool() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { state, setState, isLoading, updateTool } = useToolEditor(id);
+  const { state, setState, isLoading, updateTool, isToolLoaded } = useToolEditor(id);
   const [annotationData, setAnnotationData] = useState<any>(null);
 
   useEffect(() => {
@@ -34,12 +34,15 @@ export default function EditTool() {
           console.log('[EditTool] Found temporary annotation:', tempAnnotation);
           setAnnotationData(tempAnnotation);
           
-          // Update the state with the new location from the annotation
-          setState(prev => ({
-            ...prev,
-            primaryLocation: tempAnnotation.location || prev.primaryLocation,
-            subLocation: tempAnnotation.sub_location || prev.subLocation
-          }));
+          // Only update locations if tool data has been loaded
+          if (isToolLoaded) {
+            console.log('[EditTool] Updating locations from temporary annotation');
+            setState(prev => ({
+              ...prev,
+              primaryLocation: tempAnnotation.location || prev.primaryLocation,
+              subLocation: tempAnnotation.sub_location || prev.subLocation
+            }));
+          }
         } else {
           console.log('[EditTool] No temporary annotation found');
         }
@@ -49,7 +52,7 @@ export default function EditTool() {
     };
 
     fetchTemporaryAnnotation();
-  }, [setState]);
+  }, [setState, isToolLoaded]); // Add isToolLoaded to dependencies
 
   if (isLoading) {
     return (
