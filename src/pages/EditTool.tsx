@@ -33,6 +33,13 @@ export default function EditTool() {
         if (tempAnnotation) {
           console.log('[EditTool] Found temporary annotation:', tempAnnotation);
           setAnnotationData(tempAnnotation);
+          
+          // Update the state with the new location from the annotation
+          setState(prev => ({
+            ...prev,
+            primaryLocation: tempAnnotation.location || prev.primaryLocation,
+            subLocation: tempAnnotation.sub_location || prev.subLocation
+          }));
         } else {
           console.log('[EditTool] No temporary annotation found');
         }
@@ -42,7 +49,7 @@ export default function EditTool() {
     };
 
     fetchTemporaryAnnotation();
-  }, []);
+  }, [setState]);
 
   if (isLoading) {
     return (
@@ -67,7 +74,7 @@ export default function EditTool() {
           return;
         }
 
-        // First, delete all existing annotations for this tool
+        // Delete all existing annotations for this tool
         const { error: deleteError } = await supabase
           .from('tool_annotations')
           .delete()
