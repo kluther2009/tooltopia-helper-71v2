@@ -34,7 +34,6 @@ export default function EditTool() {
           console.log('[EditTool] Found temporary annotation:', tempAnnotation);
           setAnnotationData(tempAnnotation);
           
-          // Only update locations if tool data has been loaded
           if (isToolLoaded) {
             console.log('[EditTool] Updating locations from temporary annotation');
             setState(prev => ({
@@ -77,26 +76,21 @@ export default function EditTool() {
           return;
         }
 
-        // Mark existing annotations for this tool as moved
-        const { data: existingAnnotations, error: fetchError } = await supabase
+        // Mark existing annotations for this tool as moved BEFORE creating the new one
+        console.log('[EditTool] Marking existing annotations as moved');
+        const { error: updateError } = await supabase
           .from('tool_annotations')
-          .select('id')
+          .update({ moved: true })
           .eq('tool_id', id);
 
-        if (fetchError) {
-          console.error('[EditTool] Error fetching existing annotations:', fetchError);
-        } else if (existingAnnotations && existingAnnotations.length > 0) {
-          const { error: updateError } = await supabase
-            .from('tool_annotations')
-            .update({ moved: true })
-            .eq('tool_id', id);
-
-          if (updateError) {
-            console.error('[EditTool] Error updating existing annotations:', updateError);
-          }
+        if (updateError) {
+          console.error('[EditTool] Error updating existing annotations:', updateError);
+          toast.error('Failed to update existing annotations');
+          return;
         }
 
         // Create new annotation
+        console.log('[EditTool] Creating new annotation');
         const { error: insertError } = await supabase
           .from('tool_annotations')
           .insert({
@@ -133,7 +127,6 @@ export default function EditTool() {
     }
 
     if (success) {
-      // Navigate back to the previous page using location state
       const previousPath = location.state?.from || '/tool-overview';
       navigate(previousPath);
     }
