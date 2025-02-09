@@ -74,6 +74,7 @@ export const drawAnnotation = (
     return;
   }
 
+  console.log('Drawing annotation:', annotation);
   const { coordinates, tool, moved } = annotation;
   
   // Convert stored coordinates back to canvas space
@@ -82,28 +83,39 @@ export const drawAnnotation = (
   const width = coordinates.width * imageMetrics.scale;
   const height = coordinates.height * imageMetrics.scale;
 
-  // If tool has been moved, draw grey overlay and indicators
+  // If tool has been moved, draw with moved styling
   if (moved) {
-    // Draw semi-transparent grey background
-    ctx.fillStyle = 'rgba(128, 128, 128, 0.75)';
+    // Draw semi-transparent grey overlay
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
     ctx.fillRect(x, y, width, height);
     
-    // Draw tool name with "RELOCATED" text
-    ctx.font = 'bold 14px Arial';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText(
-      `${tool.name} - RELOCATED`,
-      x + width / 2,
-      y + height / 2
-    );
-
     // Draw dashed border
     ctx.strokeStyle = '#808080';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 3]);
     ctx.strokeRect(x, y, width, height);
     ctx.setLineDash([]); // Reset line dash
+    
+    // Draw "MOVED" text with tool name
+    const movedText = `${tool.name} (MOVED)`;
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    
+    // Add dark background for text
+    const textMetrics = ctx.measureText(movedText);
+    const textPadding = 4;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(
+      x + width/2 - textMetrics.width/2 - textPadding,
+      y + height/2 - 10,
+      textMetrics.width + textPadding * 2,
+      20
+    );
+    
+    // Draw text
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(movedText, x + width/2, y + height/2 + 5);
   } else {
     // Draw rectangle border for active tool
     ctx.strokeStyle = '#00ff00';
@@ -135,4 +147,3 @@ export const drawAnnotation = (
     );
   }
 };
-

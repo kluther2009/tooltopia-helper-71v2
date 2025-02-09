@@ -36,6 +36,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         .select(`
           id,
           coordinates,
+          moved,
           tool_id,
           tool:tools (
             id,
@@ -57,7 +58,8 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
             ? JSON.parse(item.coordinates) 
             : item.coordinates,
           tool_id: item.tool_id,
-          tool: item.tool
+          tool: item.tool,
+          moved: item.moved
         }))
         
         console.log('Transformed annotations:', transformedAnnotations)
