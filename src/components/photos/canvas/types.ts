@@ -1,3 +1,4 @@
+
 export interface Annotation {
   id: string;
   coordinates: {
@@ -11,6 +12,7 @@ export interface Annotation {
     id: string;
     name: string;
   };
+  moved?: boolean;
 }
 
 export interface CanvasCoordinates {
