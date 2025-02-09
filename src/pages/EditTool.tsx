@@ -34,7 +34,6 @@ export default function EditTool() {
           console.log('[EditTool] Found temporary annotation:', tempAnnotation);
           setAnnotationData(tempAnnotation);
           
-          // Update the state with the new location from the annotation
           setState(prev => ({
             ...prev,
             primaryLocation: tempAnnotation.location || prev.primaryLocation,
@@ -74,7 +73,35 @@ export default function EditTool() {
           return;
         }
 
-        // Delete all existing annotations for this tool
+        // First, fetch the current tool's annotation to check if it's being moved
+        const { data: currentAnnotation, error: fetchError } = await supabase
+          .from('tool_annotations')
+          .select('photo_id')
+          .eq('tool_id', id)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error('[EditTool] Error fetching current annotation:', fetchError);
+        }
+
+        console.log('[EditTool] Current annotation:', currentAnnotation);
+        console.log('[EditTool] New annotation data:', annotationData);
+
+        // If the photo_id is different, mark the old annotation as moved
+        if (currentAnnotation && currentAnnotation.photo_id !== annotationData.photo_id) {
+          console.log('[EditTool] Tool is being moved to a new photo');
+          const { error: updateError } = await supabase
+            .from('tool_annotations')
+            .update({ moved: true })
+            .eq('tool_id', id)
+            .eq('photo_id', currentAnnotation.photo_id);
+
+          if (updateError) {
+            console.error('[EditTool] Error updating old annotation:', updateError);
+          }
+        }
+
+        // Delete any other annotations for this tool
         const { error: deleteError } = await supabase
           .from('tool_annotations')
           .delete()
@@ -95,7 +122,8 @@ export default function EditTool() {
             photo_id: annotationData.photo_id,
             tool_id: id,
             coordinates: annotationData.coordinates,
-            user_id: user.id
+            user_id: user.id,
+            moved: false // New annotation is not moved
           });
 
         if (insertError) {

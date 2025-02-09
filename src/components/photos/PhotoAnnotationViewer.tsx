@@ -30,13 +30,14 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
     if (!photo?.id) return
 
     try {
-      console.log('Fetching annotations for photo:', photo.id)
+      console.log('[PhotoAnnotationViewer] Fetching annotations for photo:', photo.id)
       const { data, error } = await supabase
         .from('tool_annotations')
         .select(`
           id,
           coordinates,
           tool_id,
+          moved,
           tool:tools (
             id,
             name
@@ -45,26 +46,27 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         .eq('photo_id', photo.id)
 
       if (error) {
-        console.error('Error fetching annotations:', error)
+        console.error('[PhotoAnnotationViewer] Error fetching annotations:', error)
         return
       }
 
       if (data) {
-        console.log('Raw annotation data:', data)
+        console.log('[PhotoAnnotationViewer] Raw annotation data:', data)
         const transformedAnnotations = data.map(item => ({
           id: item.id,
           coordinates: typeof item.coordinates === 'string' 
             ? JSON.parse(item.coordinates) 
             : item.coordinates,
           tool_id: item.tool_id,
-          tool: item.tool
+          tool: item.tool,
+          moved: item.moved
         }))
         
-        console.log('Transformed annotations:', transformedAnnotations)
+        console.log('[PhotoAnnotationViewer] Transformed annotations:', transformedAnnotations)
         setAnnotations(transformedAnnotations)
       }
     } catch (error) {
-      console.error('Error in fetchAnnotations:', error)
+      console.error('[PhotoAnnotationViewer] Error in fetchAnnotations:', error)
     }
   }
 
@@ -95,12 +97,12 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         .single()
 
       if (tempError) {
-        console.error('Error saving temporary annotation:', tempError)
+        console.error('[PhotoAnnotationViewer] Error saving temporary annotation:', tempError)
         toast.error('Failed to save annotation')
         return
       }
 
-      console.log('Temporary annotation saved:', tempAnnotation)
+      console.log('[PhotoAnnotationViewer] Temporary annotation saved:', tempAnnotation)
       
       // Close the dialog before navigating
       onClose()
@@ -108,7 +110,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       // Navigate to add tool page
       navigate('/add-tool')
     } catch (error) {
-      console.error('Error in handleRectangleDrawn:', error)
+      console.error('[PhotoAnnotationViewer] Error in handleRectangleDrawn:', error)
       toast.error('Failed to save annotation')
     }
   }
