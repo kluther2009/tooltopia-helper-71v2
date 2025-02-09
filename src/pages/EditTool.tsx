@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { EditToolForm } from "@/components/tool/EditToolForm"
@@ -58,7 +59,7 @@ export default function EditTool() {
     const success = await updateTool();
     
     if (success && annotationData) {
-      console.log('[EditTool] Tool updated, creating annotation');
+      console.log('[EditTool] Tool updated, handling annotation');
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -66,57 +67,46 @@ export default function EditTool() {
           return;
         }
 
-        // First check if an annotation already exists
-        const { data: existingAnnotation } = await supabase
+        // First, delete all existing annotations for this tool
+        const { error: deleteError } = await supabase
           .from('tool_annotations')
-          .select('id')
-          .eq('photo_id', annotationData.photo_id)
-          .eq('tool_id', id)
-          .maybeSingle();
+          .delete()
+          .eq('tool_id', id);
 
-        if (existingAnnotation) {
-          // Update existing annotation
-          const { error: updateError } = await supabase
-            .from('tool_annotations')
-            .update({
-              coordinates: annotationData.coordinates,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingAnnotation.id);
-
-          if (updateError) {
-            console.error('[EditTool] Error updating annotation:', updateError);
-            toast.error('Failed to update tool annotation');
-            return;
-          }
-        } else {
-          // Create new annotation
-          const { error: insertError } = await supabase
-            .from('tool_annotations')
-            .insert({
-              photo_id: annotationData.photo_id,
-              tool_id: id,
-              coordinates: annotationData.coordinates,
-              user_id: user.id
-            });
-
-          if (insertError) {
-            console.error('[EditTool] Error creating annotation:', insertError);
-            toast.error('Failed to create tool annotation');
-            return;
-          }
+        if (deleteError) {
+          console.error('[EditTool] Error deleting existing annotations:', deleteError);
+          toast.error('Failed to update tool annotation');
+          return;
         }
 
-        console.log('[EditTool] Annotation saved successfully');
+        console.log('[EditTool] Deleted existing annotations for tool');
+
+        // Create new annotation
+        const { error: insertError } = await supabase
+          .from('tool_annotations')
+          .insert({
+            photo_id: annotationData.photo_id,
+            tool_id: id,
+            coordinates: annotationData.coordinates,
+            user_id: user.id
+          });
+
+        if (insertError) {
+          console.error('[EditTool] Error creating annotation:', insertError);
+          toast.error('Failed to create tool annotation');
+          return;
+        }
+
+        console.log('[EditTool] Successfully created new annotation');
         
         // Clean up temporary annotation
-        const { error: deleteError } = await supabase
+        const { error: deleteError2 } = await supabase
           .from('temporary_annotations')
           .delete()
           .eq('id', annotationData.id);
 
-        if (deleteError) {
-          console.error('[EditTool] Error deleting temporary annotation:', deleteError);
+        if (deleteError2) {
+          console.error('[EditTool] Error deleting temporary annotation:', deleteError2);
         }
 
         toast.success('Tool and annotation updated successfully');
