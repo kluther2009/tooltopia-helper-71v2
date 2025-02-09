@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { useToolSubmission } from "@/components/tool/hooks/useToolSubmission"
@@ -21,7 +22,6 @@ export function useToolForm() {
   const [warrantyLength, setWarrantyLength] = useState("")
   const [purchaseCost, setPurchaseCost] = useState("")
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null)
-  const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [lastMaintenanceDate, setLastMaintenanceDate] = useState("")
   const [maintenancePeriod, setMaintenancePeriod] = useState("")
   const [manualId, setManualId] = useState<string | null>(null)
@@ -102,7 +102,6 @@ export function useToolForm() {
       warrantyLength,
       purchaseCost,
       warrantyFile,
-      receiptFile,
       lastMaintenanceDate,
       maintenancePeriod,
       annotationData,
@@ -147,7 +146,6 @@ export function useToolForm() {
       warrantyLength,
       purchaseCost,
       warrantyFile,
-      receiptFile,
       lastMaintenanceDate,
       maintenancePeriod,
       isUploading,
@@ -167,7 +165,6 @@ export function useToolForm() {
       setWarrantyLength,
       setPurchaseCost,
       setWarrantyFile,
-      setReceiptFile,
       setLastMaintenanceDate,
       setMaintenancePeriod,
       handleSubmit,
