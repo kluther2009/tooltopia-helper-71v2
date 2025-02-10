@@ -32,7 +32,7 @@ export function ToolGuruDialog() {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className={`!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] sm:!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] p-0 border-0 overflow-hidden right-0`}
+        className={`!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] sm:!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] p-0 border-0 overflow-hidden right-0 [&_[data-radix-collection-item]]:hidden`}
         style={{ 
           width: `calc(100vw - ${isCollapsed ? '3.5rem' : '13rem'})`, 
           maxWidth: `calc(100vw - ${isCollapsed ? '3.5rem' : '13rem'})` 
@@ -45,7 +45,7 @@ export function ToolGuruDialog() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-white hover:text-white/80"
+                className="text-white hover:bg-[#2A2F3C] rounded-md"
                 onClick={() => {
                   const trigger = document.getElementById('toolGuruTrigger') as HTMLButtonElement;
                   trigger?.click();
