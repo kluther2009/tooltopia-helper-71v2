@@ -1,4 +1,3 @@
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -118,7 +117,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
         </ScrollArea>
       </div>
       
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4">
+      <div className="fixed bottom-0 left-14 right-14 sm:left-52 sm:right-4 border-t bg-background p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
             <Textarea
@@ -167,4 +166,3 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
     </div>
   )
 }
-
