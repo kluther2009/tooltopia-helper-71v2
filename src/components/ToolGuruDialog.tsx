@@ -12,6 +12,20 @@ export function ToolGuruDialog() {
   const isCollapsed = state === "collapsed";
 
   useEffect(() => {
+    // Debug logging for close buttons
+    const closeButtons = document.querySelectorAll('[data-state="open"] button');
+    closeButtons.forEach((button, index) => {
+      console.log('Found close button:', {
+        index,
+        classList: button.classList,
+        parentElement: button.parentElement?.tagName,
+        parentClasses: button.parentElement?.classList,
+        innerHTML: button.innerHTML,
+        attributes: Array.from(button.attributes).map(attr => `${attr.name}=${attr.value}`),
+        role: button.getAttribute('role'),
+      });
+    });
+
     // Debug logging for sheet content styles
     const sheetContent = document.querySelector('[data-state="open"] > .fixed');
     if (sheetContent) {
