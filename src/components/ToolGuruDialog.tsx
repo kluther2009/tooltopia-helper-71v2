@@ -5,8 +5,12 @@ import { Card } from "@/components/ui/card"
 import { X } from "lucide-react"
 import { Button } from "./ui/button"
 import { useEffect } from "react"
+import { useSidebar } from "@/components/ui/sidebar"
 
 export function ToolGuruDialog() {
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   useEffect(() => {
     // Debug logging for sheet content styles
     const sheetContent = document.querySelector('[data-state="open"] > .fixed');
@@ -28,8 +32,11 @@ export function ToolGuruDialog() {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className="!w-[100vw] sm:!w-[100vw] p-0 border-0 overflow-hidden"
-        style={{ width: '100vw', maxWidth: '100vw' }}
+        className={`!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] sm:!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] p-0 border-0 overflow-hidden right-0`}
+        style={{ 
+          width: `calc(100vw - ${isCollapsed ? '3.5rem' : '13rem'})`, 
+          maxWidth: `calc(100vw - ${isCollapsed ? '3.5rem' : '13rem'})` 
+        }}
       >
         <Card className="h-[100vh] flex flex-col bg-[#1A1F2C] border-0 rounded-none">
           <SheetHeader className="p-4 border-b border-border flex-shrink-0">
