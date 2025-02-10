@@ -95,7 +95,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
         </Select>
       </div>
 
-      <ScrollArea className="flex-1 px-4">
+      <ScrollArea className="flex-1 px-4 mb-4">
         {[...conversation].reverse().map((entry, index) => (
           <div key={index} className="space-y-2 mb-4">
             <div className="bg-muted/50 p-4 rounded-md">
@@ -116,7 +116,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
         )}
       </ScrollArea>
       
-      <div className="border-t mt-auto p-4">
+      <div className="sticky bottom-0 border-t bg-background p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
             <Textarea
