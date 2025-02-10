@@ -82,7 +82,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <div className="flex justify-end p-4">
         <Select value={selectedModel} onValueChange={(value: 'claude' | 'openai') => setSelectedModel(value)}>
           <SelectTrigger className="w-[180px]">
@@ -95,28 +95,30 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
         </Select>
       </div>
 
-      <ScrollArea className="flex-1 px-4 mb-4">
-        {[...conversation].reverse().map((entry, index) => (
-          <div key={index} className="space-y-2 mb-4">
-            <div className="bg-muted/50 p-4 rounded-md">
-              <p className="font-medium text-sm">Question {conversation.length - index}:</p>
-              <p className="text-sm">{entry.message}</p>
+      <div className="flex-1 overflow-auto mb-[200px]">
+        <ScrollArea className="h-full px-4">
+          {[...conversation].reverse().map((entry, index) => (
+            <div key={index} className="space-y-2 mb-4">
+              <div className="bg-muted/50 p-4 rounded-md">
+                <p className="font-medium text-sm">Question {conversation.length - index}:</p>
+                <p className="text-sm">{entry.message}</p>
+              </div>
+              <div className="bg-muted p-4 rounded-md whitespace-pre-wrap text-sm">
+                <p className="font-medium text-sm">Answer:</p>
+                {entry.response}
+              </div>
             </div>
-            <div className="bg-muted p-4 rounded-md whitespace-pre-wrap text-sm">
-              <p className="font-medium text-sm">Answer:</p>
-              {entry.response}
-            </div>
-          </div>
-        ))}
+          ))}
 
-        {conversation.length === 3 && (
-          <div className="text-center text-sm text-muted-foreground mb-4">
-            Maximum questions reached. Click "Start New Conversation" to begin a new session.
-          </div>
-        )}
-      </ScrollArea>
+          {conversation.length === 3 && (
+            <div className="text-center text-sm text-muted-foreground mb-4">
+              Maximum questions reached. Click "Start New Conversation" to begin a new session.
+            </div>
+          )}
+        </ScrollArea>
+      </div>
       
-      <div className="sticky bottom-0 border-t bg-background p-4">
+      <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex gap-2">
             <Textarea
@@ -165,3 +167,4 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
     </div>
   )
 }
+
