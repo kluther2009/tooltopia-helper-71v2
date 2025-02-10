@@ -95,7 +95,7 @@ export function ProjectHelper({ projectId }: ProjectHelperProps) {
         </Select>
       </div>
 
-      <div className="flex-1 overflow-auto mb-[200px]">
+      <div className="flex-1 overflow-auto mb-[200px] pb-16">
         <ScrollArea className="h-full px-4">
           {[...conversation].reverse().map((entry, index) => (
             <div key={index} className="space-y-2 mb-4">
