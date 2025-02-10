@@ -46,7 +46,7 @@ export function ToolGuruDialog() {
       </SheetTrigger>
       <SheetContent 
         side="right" 
-        className={`!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] sm:!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] p-0 border-0 overflow-hidden right-0 [&_[data-radix-collection-item]]:hidden`}
+        className={`!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] sm:!w-[calc(100vw-${isCollapsed ? '3.5rem' : '13rem'})] p-0 border-0 overflow-hidden right-0 [&_[data-radix-collection-item]]:hidden [&>[data-state=open]_.absolute.right-4]:hidden`}
         style={{ 
           width: `calc(100vw - ${isCollapsed ? '3.5rem' : '13rem'})`, 
           maxWidth: `calc(100vw - ${isCollapsed ? '3.5rem' : '13rem'})` 
