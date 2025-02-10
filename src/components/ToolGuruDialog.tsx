@@ -4,8 +4,23 @@ import { AIChat } from "./AIChat"
 import { Card } from "@/components/ui/card"
 import { X } from "lucide-react"
 import { Button } from "./ui/button"
+import { useEffect } from "react"
 
 export function ToolGuruDialog() {
+  useEffect(() => {
+    // Debug logging for sheet content styles
+    const sheetContent = document.querySelector('[data-state="open"] > .fixed');
+    if (sheetContent) {
+      console.log('ToolGuru Sheet Content Styles:', {
+        width: sheetContent.clientWidth,
+        windowWidth: window.innerWidth,
+        computedStyles: window.getComputedStyle(sheetContent),
+        classList: sheetContent.classList,
+        inlineStyles: sheetContent.getAttribute('style')
+      });
+    }
+  }, []);
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -14,6 +29,7 @@ export function ToolGuruDialog() {
       <SheetContent 
         side="right" 
         className="!w-[100vw] sm:!w-[100vw] p-0 border-0 overflow-hidden"
+        style={{ width: '100vw', maxWidth: '100vw' }}
       >
         <Card className="h-[100vh] flex flex-col bg-[#1A1F2C] border-0 rounded-none">
           <SheetHeader className="p-4 border-b border-border flex-shrink-0">
