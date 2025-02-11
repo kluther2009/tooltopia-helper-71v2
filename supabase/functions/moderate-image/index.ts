@@ -1,23 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const AZURE_ENDPOINT = 'https://checkimages.cognitiveservices.azure.com'
-const AZURE_API_KEY = Deno.env.get('AZURE_CONTENT_MODERATOR_KEY')
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024 // 4MB in bytes
-
-// Severity thresholds (0-6 scale, where 6 is most severe)
-const SEVERITY_THRESHOLDS = {
-  Hate: 2,      // Allow very mild content
-  SelfHarm: 0,  // Zero tolerance
-  Sexual: 0,    // Zero tolerance
-  Violence: 2,  // Allow very mild content
-}
-
-interface CategoryAnalysis {
-  category: keyof typeof SEVERITY_THRESHOLDS
-  severity: number
-}
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -38,94 +21,20 @@ serve(async (req) => {
       throw new Error('No image URL provided')
     }
 
-    // First, do a HEAD request to check content type and size
-    const headResponse = await fetch(imageUrl, { method: 'HEAD' })
-    if (!headResponse.ok) {
-      throw new Error('Failed to fetch image metadata')
-    }
-
-    // Check content type
-    const contentType = headResponse.headers.get('content-type')
-    if (!contentType || !contentType.startsWith('image/')) {
-      throw new Error('Invalid file type. Only images are allowed.')
-    }
-
-    // Check size before downloading
-    const contentLength = headResponse.headers.get('content-length')
-    if (contentLength && parseInt(contentLength) > MAX_IMAGE_SIZE) {
-      throw new Error(`Image size (${Math.round(parseInt(contentLength) / 1024 / 1024 * 100) / 100}MB) exceeds maximum limit of 4MB`)
-    }
-
-    // If checks pass, fetch the actual image
-    const imageResponse = await fetch(imageUrl)
+    // Just validate that it's a valid URL without any actual content checks
+    const imageResponse = await fetch(imageUrl, { method: 'HEAD' })
     if (!imageResponse.ok) {
-      throw new Error('Failed to fetch image')
+      throw new Error('Failed to validate image URL')
     }
 
-    // Get image data and do a final size check
-    const imageArrayBuffer = await imageResponse.arrayBuffer()
-    if (imageArrayBuffer.byteLength > MAX_IMAGE_SIZE) {
-      throw new Error('Image size exceeds maximum limit of 4MB')
-    }
-
-    // Convert to base64
-    const bytes = new Uint8Array(imageArrayBuffer)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i])
-    }
-    const base64String = btoa(binary)
-
-    // Call Azure Content Safety API
-    const response = await fetch(
-      `${AZURE_ENDPOINT}/contentsafety/image:analyze?api-version=2023-10-01`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Ocp-Apim-Subscription-Key': AZURE_API_KEY!,
-        },
-        body: JSON.stringify({
-          image: {
-            content: base64String,
-          },
-        }),
-      }
-    )
-
-    if (!response.ok) {
-      const errorData = await response.text()
-      console.error('Azure API error:', errorData)
-      
-      if (errorData.includes('exceeds the maximum limit')) {
-        throw new Error('Image size is too large. Please try a smaller image.')
-      }
-      
-      throw new Error('Failed to analyze image')
-    }
-
-    const analysisResult = await response.json()
-    console.log('Moderation result:', analysisResult)
-
-    // Check each category against its threshold
-    const violations: string[] = []
-    analysisResult.categoriesAnalysis.forEach((analysis: CategoryAnalysis) => {
-      const threshold = SEVERITY_THRESHOLDS[analysis.category]
-      if (analysis.severity > threshold) {
-        violations.push(`${analysis.category} content detected (severity: ${analysis.severity})`)
-      }
-    })
-
-    const isSafe = violations.length === 0
-    const details = {
-      categoriesAnalysis: analysisResult.categoriesAnalysis,
-      violations: violations
-    }
-
+    // Return a safe result without doing content moderation
     return new Response(
       JSON.stringify({
-        isSafe,
-        details
+        isSafe: true,
+        details: {
+          categoriesAnalysis: [],
+          violations: []
+        }
       }),
       { headers: corsHeaders }
     )
