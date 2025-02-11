@@ -38,19 +38,31 @@ serve(async (req) => {
       throw new Error('No image URL provided')
     }
 
-    // Fetch image data
+    // First, do a HEAD request to check content type and size
+    const headResponse = await fetch(imageUrl, { method: 'HEAD' })
+    if (!headResponse.ok) {
+      throw new Error('Failed to fetch image metadata')
+    }
+
+    // Check content type
+    const contentType = headResponse.headers.get('content-type')
+    if (!contentType || !contentType.startsWith('image/')) {
+      throw new Error('Invalid file type. Only images are allowed.')
+    }
+
+    // Check size before downloading
+    const contentLength = headResponse.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > MAX_IMAGE_SIZE) {
+      throw new Error(`Image size (${Math.round(parseInt(contentLength) / 1024 / 1024 * 100) / 100}MB) exceeds maximum limit of 4MB`)
+    }
+
+    // If checks pass, fetch the actual image
     const imageResponse = await fetch(imageUrl)
     if (!imageResponse.ok) {
       throw new Error('Failed to fetch image')
     }
 
-    // Check content type
-    const contentType = imageResponse.headers.get('content-type')
-    if (!contentType || !contentType.startsWith('image/')) {
-      throw new Error('Invalid file type. Only images are allowed.')
-    }
-
-    // Get image data and check size
+    // Get image data and do a final size check
     const imageArrayBuffer = await imageResponse.arrayBuffer()
     if (imageArrayBuffer.byteLength > MAX_IMAGE_SIZE) {
       throw new Error('Image size exceeds maximum limit of 4MB')
