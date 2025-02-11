@@ -25,37 +25,6 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 }
 
-async function compressImage(imageArrayBuffer: ArrayBuffer): Promise<Uint8Array> {
-  // Convert to base64 for size check
-  const bytes = new Uint8Array(imageArrayBuffer)
-  if (bytes.length <= MAX_IMAGE_SIZE) {
-    return bytes
-  }
-
-  // If image is too large, create a new ImageBitmap with reduced quality
-  const blob = new Blob([imageArrayBuffer])
-  const imageBitmap = await createImageBitmap(blob)
-  
-  // Create a canvas to draw and compress the image
-  const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    throw new Error('Failed to create canvas context')
-  }
-
-  // Draw image on canvas
-  ctx.drawImage(imageBitmap, 0, 0)
-
-  // Convert to blob with reduced quality
-  const compressedBlob = await canvas.convertToBlob({
-    type: 'image/jpeg',
-    quality: 0.7
-  })
-
-  // Convert blob to array buffer
-  return new Uint8Array(await compressedBlob.arrayBuffer())
-}
-
 serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -75,19 +44,23 @@ serve(async (req) => {
       throw new Error('Failed to fetch image')
     }
 
-    // Get image data and check size
-    const imageArrayBuffer = await imageResponse.arrayBuffer()
-    if (imageArrayBuffer.byteLength > MAX_IMAGE_SIZE * 2) { // If more than 8MB, reject immediately
-      throw new Error('Image size exceeds maximum limit of 8MB')
+    // Check content type
+    const contentType = imageResponse.headers.get('content-type')
+    if (!contentType || !contentType.startsWith('image/')) {
+      throw new Error('Invalid file type. Only images are allowed.')
     }
 
-    // Compress image if needed
-    const processedImageBytes = await compressImage(imageArrayBuffer)
-    
+    // Get image data and check size
+    const imageArrayBuffer = await imageResponse.arrayBuffer()
+    if (imageArrayBuffer.byteLength > MAX_IMAGE_SIZE) {
+      throw new Error('Image size exceeds maximum limit of 4MB')
+    }
+
     // Convert to base64
+    const bytes = new Uint8Array(imageArrayBuffer)
     let binary = ''
-    for (let i = 0; i < processedImageBytes.length; i++) {
-      binary += String.fromCharCode(processedImageBytes[i])
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i])
     }
     const base64String = btoa(binary)
 
@@ -112,9 +85,8 @@ serve(async (req) => {
       const errorData = await response.text()
       console.error('Azure API error:', errorData)
       
-      // Parse the error message to make it more user-friendly
       if (errorData.includes('exceeds the maximum limit')) {
-        throw new Error('Image size is too large. Please try a smaller image or reduce the image quality.')
+        throw new Error('Image size is too large. Please try a smaller image.')
       }
       
       throw new Error('Failed to analyze image')
