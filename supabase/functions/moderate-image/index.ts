@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const AZURE_ENDPOINT = 'https://checkimages.cognitiveservices.azure.com'
@@ -16,18 +17,17 @@ interface CategoryAnalysis {
   severity: number
 }
 
-serve(async (req) => {
-  // Set CORS headers
-  const headers = new Headers({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Content-Type': 'application/json',
-  })
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Type': 'application/json',
+}
 
+serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -98,7 +98,7 @@ serve(async (req) => {
         isSafe,
         details
       }),
-      { headers }
+      { headers: corsHeaders }
     )
 
   } catch (error) {
@@ -108,7 +108,7 @@ serve(async (req) => {
         error: error.message,
         details: {}
       }),
-      { status: 500, headers }
+      { status: 500, headers: corsHeaders }
     )
   }
 })
