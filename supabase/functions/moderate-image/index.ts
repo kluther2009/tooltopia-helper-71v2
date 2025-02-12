@@ -21,7 +21,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
     binary += String.fromCharCode.apply(null, chunk);
   }
   
-  return btoa(binary);
+  return binary;
 }
 
 serve(async (req) => {
@@ -49,11 +49,12 @@ serve(async (req) => {
     const imageBuffer = await imageResponse.arrayBuffer()
     console.log('Image size:', imageBuffer.byteLength / 1024 / 1024, 'MB')
     
-    // Convert to base64 using chunked processing
-    const base64Image = arrayBufferToBase64(imageBuffer)
+    // Convert to base64
+    const binaryString = arrayBufferToBase64(imageBuffer)
+    const base64Image = btoa(binaryString)
     console.log('Successfully converted image to base64')
 
-    // Call Azure Content Safety API
+    // Call Azure Content Safety API with properly formatted request
     const azureResponse = await fetch(
       `${AZURE_ENDPOINT}/contentsafety/image:analyze?api-version=2023-10-01`,
       {
@@ -66,7 +67,8 @@ serve(async (req) => {
           image: {
             content: base64Image
           },
-          categories: ['Hate', 'Sexual', 'Violence']
+          categories: ['Hate', 'Sexual', 'Violence'],
+          enabled: true
         }),
       }
     )
@@ -74,6 +76,8 @@ serve(async (req) => {
     if (!azureResponse.ok) {
       const errorText = await azureResponse.text()
       console.error('Azure API error response:', errorText)
+      console.error('Azure API status:', azureResponse.status)
+      console.error('Azure API status text:', azureResponse.statusText)
       throw new Error(`Azure API error: ${azureResponse.status} ${azureResponse.statusText}`)
     }
 
