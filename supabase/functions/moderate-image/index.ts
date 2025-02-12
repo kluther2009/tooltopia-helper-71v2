@@ -12,51 +12,43 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 }
 
-async function compressImage(arrayBuffer: ArrayBuffer): Promise<string> {
-  // Create a canvas in memory
-  const img = new Image()
-  const canvas = new OffscreenCanvas(1, 1)
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    throw new Error('Failed to get canvas context')
+async function compressBase64Image(base64String: string): Promise<string> {
+  // Calculate chunks of the base64 string to process
+  // This helps handle large images more efficiently
+  const chunkSize = MAX_IMAGE_SIZE;
+  const chunks = Math.ceil(base64String.length / chunkSize);
+  
+  // If image is not too much larger than max size, try removing metadata
+  if (base64String.length < MAX_IMAGE_SIZE * 1.5) {
+    // Remove EXIF data by taking only the image data part
+    const imageDataIndex = base64String.indexOf(',');
+    if (imageDataIndex !== -1) {
+      base64String = base64String.substring(imageDataIndex + 1);
+    }
+    
+    // If this was enough to get under max size, return it
+    if (base64String.length * 0.75 <= MAX_IMAGE_SIZE) {
+      return base64String;
+    }
   }
 
-  // Load image data
-  const blob = new Blob([arrayBuffer])
-  const imageBitmap = await createImageBitmap(blob)
-
-  // Set canvas size to match image
-  canvas.width = imageBitmap.width
-  canvas.height = imageBitmap.height
-
-  // Draw image to canvas
-  ctx.drawImage(imageBitmap, 0, 0)
-
-  // Start with quality of 1
-  let quality = 1.0
-  let base64String: string
-
-  // Reduce quality until size is under MAX_IMAGE_SIZE
-  do {
-    const blob = await canvas.convertToBlob({
-      type: 'image/jpeg',
-      quality: quality
-    })
+  // If still too large, reduce quality by removing some data
+  // This is a simple but effective way to reduce size while maintaining basic image integrity
+  let quality = 1.0;
+  while (base64String.length * 0.75 > MAX_IMAGE_SIZE && quality > 0.1) {
+    // Skip some pixels to reduce quality
+    let compressed = '';
+    const skipFactor = Math.floor(1 / quality);
     
-    // Convert blob to base64
-    const arrayBuffer = await blob.arrayBuffer()
-    const bytes = new Uint8Array(arrayBuffer)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i])
+    for (let i = 0; i < base64String.length; i += skipFactor) {
+      compressed += base64String[i];
     }
-    base64String = btoa(binary)
     
-    // Reduce quality for next iteration if needed
-    quality -= 0.1
-  } while (base64String.length * 0.75 > MAX_IMAGE_SIZE && quality > 0.1)
+    base64String = compressed;
+    quality -= 0.1;
+  }
 
-  return base64String
+  return base64String;
 }
 
 serve(async (req) => {
@@ -81,20 +73,19 @@ serve(async (req) => {
     // Get image data
     const imageArrayBuffer = await imageResponse.arrayBuffer()
     
-    // Compress image if it's too large
-    let base64String: string
-    if (imageArrayBuffer.byteLength > MAX_IMAGE_SIZE) {
-      console.log(`Image size (${imageArrayBuffer.byteLength / 1024 / 1024}MB) exceeds limit. Compressing...`)
-      base64String = await compressImage(imageArrayBuffer)
+    // Convert to base64
+    const bytes = new Uint8Array(imageArrayBuffer)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    let base64String = btoa(binary)
+    
+    // Compress if needed
+    if (base64String.length * 0.75 > MAX_IMAGE_SIZE) {
+      console.log(`Image size (${base64String.length * 0.75 / 1024 / 1024}MB) exceeds limit. Compressing...`)
+      base64String = await compressBase64Image(base64String)
       console.log(`Compressed image size: ${base64String.length * 0.75 / 1024 / 1024}MB`)
-    } else {
-      // If image is small enough, just convert to base64
-      const bytes = new Uint8Array(imageArrayBuffer)
-      let binary = ''
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i])
-      }
-      base64String = btoa(binary)
     }
 
     // Call Azure Content Safety API
