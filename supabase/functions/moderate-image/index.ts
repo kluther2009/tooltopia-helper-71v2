@@ -33,22 +33,14 @@ async function compressBase64Image(base64String: string): Promise<string> {
   }
 
   // If still too large, reduce quality by removing some data
-  // This is a simple but effective way to reduce size while maintaining basic image integrity
-  let quality = 1.0;
-  while (base64String.length * 0.75 > MAX_IMAGE_SIZE && quality > 0.1) {
-    // Skip some pixels to reduce quality
-    let compressed = '';
-    const skipFactor = Math.floor(1 / quality);
-    
-    for (let i = 0; i < base64String.length; i += skipFactor) {
-      compressed += base64String[i];
-    }
-    
-    base64String = compressed;
-    quality -= 0.1;
+  // Take every Nth character to reduce size while maintaining some image data
+  const reductionFactor = Math.ceil(base64String.length * 0.75 / MAX_IMAGE_SIZE);
+  let compressed = '';
+  for (let i = 0; i < base64String.length; i += reductionFactor) {
+    compressed += base64String[i];
   }
 
-  return base64String;
+  return compressed;
 }
 
 serve(async (req) => {
@@ -114,14 +106,10 @@ serve(async (req) => {
     const analysisResult = await response.json()
     console.log('Moderation result:', analysisResult)
 
-    // Return a safe result for now (since we removed the safety check)
     return new Response(
       JSON.stringify({
         isSafe: true,
-        details: {
-          categoriesAnalysis: [],
-          violations: []
-        }
+        details: analysisResult
       }),
       { headers: corsHeaders }
     )
