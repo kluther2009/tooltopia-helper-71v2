@@ -3,6 +3,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const AZURE_ENDPOINT = 'https://checkimages.cognitiveservices.azure.com'
 const AZURE_API_KEY = Deno.env.get('AZURE_CONTENT_MODERATOR_KEY')
+const MAX_SIZE = 4 * 1024 * 1024 // 4MB limit for Azure
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,13 +49,30 @@ serve(async (req) => {
     // Get image data as arrayBuffer
     const imageBuffer = await imageResponse.arrayBuffer()
     console.log('Image size:', imageBuffer.byteLength / 1024 / 1024, 'MB')
+
+    // Check size limit
+    if (imageBuffer.byteLength > MAX_SIZE) {
+      throw new Error('Image size exceeds Azure\'s 4MB limit')
+    }
     
     // Convert to base64
     const binaryString = arrayBufferToBase64(imageBuffer)
     const base64Image = btoa(binaryString)
     console.log('Successfully converted image to base64')
 
-    // Call Azure Content Safety API with properly formatted request
+    // Log request body for debugging
+    const requestBody = {
+      image: {
+        content: base64Image
+      },
+      categories: ['Hate', 'Sexual', 'Violence']
+    }
+    console.log('Sending request to Azure with body structure:', {
+      ...requestBody,
+      image: { content: 'base64_content_truncated' }
+    })
+
+    // Call Azure Content Safety API
     const azureResponse = await fetch(
       `${AZURE_ENDPOINT}/contentsafety/image:analyze?api-version=2023-10-01`,
       {
@@ -63,25 +81,24 @@ serve(async (req) => {
           'Content-Type': 'application/json',
           'Ocp-Apim-Subscription-Key': AZURE_API_KEY!,
         },
-        body: JSON.stringify({
-          image: {
-            content: base64Image
-          },
-          categories: ['Hate', 'Sexual', 'Violence'],
-          enabled: true
-        }),
+        body: JSON.stringify(requestBody),
       }
     )
 
+    const responseText = await azureResponse.text()
+    console.log('Raw Azure response:', responseText)
+
     if (!azureResponse.ok) {
-      const errorText = await azureResponse.text()
-      console.error('Azure API error response:', errorText)
-      console.error('Azure API status:', azureResponse.status)
-      console.error('Azure API status text:', azureResponse.statusText)
-      throw new Error(`Azure API error: ${azureResponse.status} ${azureResponse.statusText}`)
+      console.error('Azure API error details:', {
+        status: azureResponse.status,
+        statusText: azureResponse.statusText,
+        response: responseText,
+        headers: Object.fromEntries(azureResponse.headers.entries())
+      })
+      throw new Error(`Azure API error: ${azureResponse.status} ${azureResponse.statusText} - ${responseText}`)
     }
 
-    const analysisResult = await azureResponse.json()
+    const analysisResult = JSON.parse(responseText)
     console.log('Azure API response:', analysisResult)
 
     // Check for violations
