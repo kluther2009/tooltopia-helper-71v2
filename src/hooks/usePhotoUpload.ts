@@ -3,8 +3,81 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_MODERATION_SIZE = 4 * 1024 * 1024; // 4MB for Azure moderation
+
 export function usePhotoUpload(location: string, subLocation: string) {
   const [isUploading, setIsUploading] = useState(false);
+
+  const compressImage = async (file: File): Promise<File> => {
+    console.log('Starting compression. Original file size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+    
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const img = new Image();
+        img.src = reader.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions while maintaining aspect ratio
+          const maxDimension = 1200;
+          if (width > height && width > maxDimension) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else if (height > maxDimension) {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Start with high quality
+          let quality = 0.9;
+          let output = canvas.toDataURL('image/jpeg', quality);
+          let byteSize = Math.ceil((output.length * 3) / 4); // base64 size to byte size
+
+          console.log('Initial compressed size:', (byteSize / 1024 / 1024).toFixed(2), 'MB with quality:', quality);
+
+          // Reduce quality until file is under MAX_MODERATION_SIZE
+          while (byteSize > MAX_MODERATION_SIZE && quality > 0.1) {
+            quality -= 0.1;
+            output = canvas.toDataURL('image/jpeg', quality);
+            byteSize = Math.ceil((output.length * 3) / 4);
+            console.log('Trying quality:', quality.toFixed(1), 'new size:', (byteSize / 1024 / 1024).toFixed(2), 'MB');
+          }
+
+          // Convert base64 to File
+          const byteString = atob(output.split(',')[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: 'image/jpeg' });
+          const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+
+          console.log('Final compressed size:', (compressedFile.size / 1024 / 1024).toFixed(2), 'MB');
+          console.log('Compression ratio:', ((compressedFile.size / file.size) * 100).toFixed(1) + '%');
+          
+          resolve(compressedFile);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
 
   const moderateImage = async (url: string) => {
     try {
@@ -38,20 +111,28 @@ export function usePhotoUpload(location: string, subLocation: string) {
       type: file.type
     });
 
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("File size exceeds 5MB limit");
+      return;
+    }
+
     setIsUploading(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Compress image before upload
+      const compressedFile = await compressImage(file);
+
       // Upload to temporary location first
       const fileExt = file.name.split('.').pop();
       const tempPath = `temp/${crypto.randomUUID()}.${fileExt}`;
 
-      console.log('Uploading to temporary path:', tempPath);
+      console.log('Uploading compressed file to temporary path:', tempPath);
       const { error: uploadError } = await supabase.storage
         .from('location-photos')
-        .upload(tempPath, file);
+        .upload(tempPath, compressedFile);
 
       if (uploadError) throw uploadError;
 
