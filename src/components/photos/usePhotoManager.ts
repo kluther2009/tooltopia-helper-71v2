@@ -50,6 +50,7 @@ export function usePhotoManager() {
   }
 
   const compressImage = async (file: File): Promise<File> => {
+    console.log('Original file size:', file.size / 1024 / 1024, 'MB')
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.readAsDataURL(file)
@@ -103,7 +104,11 @@ export function usePhotoManager() {
           }
           const blob = new Blob([ab], { type: 'image/jpeg' })
           const compressedFile = new File([blob], file.name, { type: 'image/jpeg' })
-
+          
+          console.log('Compressed file size:', compressedFile.size / 1024 / 1024, 'MB')
+          console.log('Compression ratio:', (compressedFile.size / file.size * 100).toFixed(2) + '%')
+          console.log('Final quality setting:', quality)
+          
           resolve(compressedFile)
         }
         img.onerror = () => reject(new Error('Failed to load image'))
