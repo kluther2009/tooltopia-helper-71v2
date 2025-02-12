@@ -11,6 +11,19 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunk_size = 8192; // Process 8KB at a time
+  
+  for (let i = 0; i < bytes.length; i += chunk_size) {
+    const chunk = bytes.slice(i, i + chunk_size);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  
+  return btoa(binary);
+}
+
 serve(async (req) => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -34,11 +47,11 @@ serve(async (req) => {
 
     // Get image data as arrayBuffer
     const imageBuffer = await imageResponse.arrayBuffer()
-    const base64Image = btoa(
-      String.fromCharCode(...new Uint8Array(imageBuffer))
-    )
-
-    console.log('Image converted to base64')
+    console.log('Image size:', imageBuffer.byteLength / 1024 / 1024, 'MB')
+    
+    // Convert to base64 using chunked processing
+    const base64Image = arrayBufferToBase64(imageBuffer)
+    console.log('Successfully converted image to base64')
 
     // Call Azure Content Safety API
     const azureResponse = await fetch(
