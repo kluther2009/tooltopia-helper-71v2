@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { LocationPhoto } from "@/types/photos"
 import { toast } from "sonner"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
+const MAX_MODERATION_SIZE = 4 * 1024 * 1024 // 4MB for content moderation
 
 export function usePhotoManager() {
   const [photos, setPhotos] = useState<LocationPhoto[]>([])
@@ -47,6 +49,69 @@ export function usePhotoManager() {
     return true
   }
 
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        const img = new Image()
+        img.src = reader.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          // Calculate new dimensions while maintaining aspect ratio
+          const maxDimension = 1200 // Max width/height
+          if (width > height && width > maxDimension) {
+            height = (height * maxDimension) / width
+            width = maxDimension
+          } else if (height > maxDimension) {
+            width = (width * maxDimension) / height
+            height = maxDimension
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+
+          // Start with high quality
+          let quality = 0.9
+          let output = canvas.toDataURL('image/jpeg', quality)
+          let byteSize = Math.ceil((output.length * 3) / 4) // base64 size to byte size
+
+          // Reduce quality until file is under MAX_MODERATION_SIZE
+          while (byteSize > MAX_MODERATION_SIZE && quality > 0.1) {
+            quality -= 0.1
+            output = canvas.toDataURL('image/jpeg', quality)
+            byteSize = Math.ceil((output.length * 3) / 4)
+          }
+
+          // Convert base64 to File
+          const byteString = atob(output.split(',')[1])
+          const ab = new ArrayBuffer(byteString.length)
+          const ia = new Uint8Array(ab)
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i)
+          }
+          const blob = new Blob([ab], { type: 'image/jpeg' })
+          const compressedFile = new File([blob], file.name, { type: 'image/jpeg' })
+
+          resolve(compressedFile)
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+    })
+  }
+
   const moderateImage = async (url: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke('moderate-image', {
@@ -67,7 +132,7 @@ export function usePhotoManager() {
     }
   }
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -76,9 +141,20 @@ export function usePhotoManager() {
       return
     }
 
-    setPendingFile(file)
-    setIsLocationDialogOpen(true)
-    setLocationInput("")
+    try {
+      // Compress image before setting it as pending
+      const compressedFile = await compressImage(file)
+      console.log('Original size:', file.size / 1024 / 1024, 'MB')
+      console.log('Compressed size:', compressedFile.size / 1024 / 1024, 'MB')
+      
+      setPendingFile(compressedFile)
+      setIsLocationDialogOpen(true)
+      setLocationInput("")
+    } catch (error) {
+      console.error('Compression error:', error)
+      toast.error('Failed to process image')
+      event.target.value = ''
+    }
   }
 
   const handleUploadConfirm = async (location: string) => {
@@ -167,13 +243,19 @@ export function usePhotoManager() {
     }
   }
 
-  const handleCameraCapture = (file: File) => {
+  const handleCameraCapture = async (file: File) => {
     if (!validateFileSize(file)) {
       return
     }
-    setPendingFile(file)
-    setIsLocationDialogOpen(true)
-    setLocationInput("")
+    try {
+      const compressedFile = await compressImage(file)
+      setPendingFile(compressedFile)
+      setIsLocationDialogOpen(true)
+      setLocationInput("")
+    } catch (error) {
+      console.error('Compression error:', error)
+      toast.error('Failed to process camera image')
+    }
   }
 
   return {
