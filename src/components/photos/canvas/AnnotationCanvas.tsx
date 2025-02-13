@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { Annotation, CanvasCoordinates } from "./types";
 import { drawImageOnCanvas, drawAnnotation, drawRectangle, setupCanvas } from "./canvasUtils";
@@ -8,20 +7,12 @@ interface AnnotationCanvasProps {
   imageUrl: string;
   onRectangleDrawn?: (coordinates: CanvasCoordinates) => void;
   existingAnnotations?: Annotation[];
-  mode?: 'draw' | 'select' | 'drop';
-  onAnnotationSelect?: (annotationId: string, isShiftKey: boolean) => void;
-  selectedAnnotations?: string[];
-  onAnnotationDrop?: (newCoordinates: Record<string, CanvasCoordinates>) => void;
 }
 
 export function AnnotationCanvas({ 
   imageUrl, 
   onRectangleDrawn, 
-  existingAnnotations = [],
-  mode = 'draw',
-  onAnnotationSelect,
-  selectedAnnotations = [],
-  onAnnotationDrop
+  existingAnnotations = [] 
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -41,7 +32,6 @@ export function AnnotationCanvas({
     setIsDrawing
   } = useCanvasInteraction({
     canvasRef,
-    mode,
     onRectangleDrawn: (coords) => {
       console.log('Rectangle drawn with coordinates:', coords);
       if (onRectangleDrawn) {
@@ -49,8 +39,6 @@ export function AnnotationCanvas({
         onRectangleDrawn(coords);
       }
     },
-    onAnnotationSelect,
-    onAnnotationDrop,
     imageMetrics
   });
 
@@ -71,7 +59,7 @@ export function AnnotationCanvas({
     if (imageRef.current && existingAnnotations) {
       drawCanvas();
     }
-  }, [existingAnnotations, selectedAnnotations]);
+  }, [existingAnnotations]);
 
   // Handle window resize
   useEffect(() => {
@@ -100,28 +88,16 @@ export function AnnotationCanvas({
       console.log('Drawing annotations:', existingAnnotations);
       existingAnnotations.forEach(annotation => {
         if (annotation.tool?.name) {
-          drawAnnotation(ctx, annotation, metrics, selectedAnnotations.includes(annotation.id));
+          drawAnnotation(ctx, annotation, metrics);
         }
       });
-    }
-  };
-
-  const getCursorStyle = () => {
-    switch (mode) {
-      case 'select':
-        return 'pointer';
-      case 'drop':
-        return 'copy';
-      default:
-        return 'crosshair';
     }
   };
 
   return (
     <canvas
       ref={canvasRef}
-      className={`w-full h-full touch-none`}
-      style={{ cursor: getCursorStyle() }}
+      className={`w-full h-full ${isReadOnly ? '' : 'cursor-crosshair'} touch-none`}
       onMouseDown={handleStart}
       onMouseMove={(e) => {
         const moveResult = handleMove(e);

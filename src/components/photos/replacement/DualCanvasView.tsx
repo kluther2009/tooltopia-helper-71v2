@@ -38,19 +38,7 @@ export function DualCanvasView({ oldPhoto, newPhoto, onClose }: DualCanvasViewPr
         .eq('photo_id', oldPhoto.id)
 
       if (error) throw error
-      
-      // Transform the data to ensure coordinates are properly typed
-      const transformedData: Annotation[] = data?.map(item => ({
-        id: item.id,
-        coordinates: typeof item.coordinates === 'string' 
-          ? JSON.parse(item.coordinates) 
-          : item.coordinates,
-        tool_id: item.tool_id,
-        tool: item.tool,
-        moved: false
-      })) || []
-
-      setAnnotations(transformedData)
+      setAnnotations(data || [])
     } catch (error) {
       console.error('Error fetching annotations:', error)
       toast.error('Failed to load annotations')
@@ -129,7 +117,6 @@ export function DualCanvasView({ oldPhoto, newPhoto, onClose }: DualCanvasViewPr
             existingAnnotations={annotations}
             onAnnotationSelect={handleAnnotationSelect}
             selectedAnnotations={selectedAnnotations}
-            mode="select"
           />
         </div>
 
@@ -137,8 +124,7 @@ export function DualCanvasView({ oldPhoto, newPhoto, onClose }: DualCanvasViewPr
           <h3 className="p-2 bg-gray-100 font-medium">New Photo</h3>
           <AnnotationCanvas
             imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`}
-            existingAnnotations={[]}
-            mode="drop"
+            isDropTarget={true}
             onAnnotationDrop={handleTransferAnnotations}
           />
         </div>

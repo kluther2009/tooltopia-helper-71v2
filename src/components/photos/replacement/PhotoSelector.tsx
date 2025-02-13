@@ -49,7 +49,7 @@ export function PhotoSelector({ title, onPhotoSelect, excludePhotoId }: PhotoSel
       <PhotoGrid
         photos={photos}
         onPhotoClick={onPhotoSelect}
-        onDeleteClick={() => {}} // Required prop but not used in this context
+        isLoading={isLoading}
       />
     </div>
   )
