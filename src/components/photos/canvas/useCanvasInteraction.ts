@@ -1,3 +1,4 @@
+
 import { useState, RefObject } from 'react';
 import { CanvasCoordinates } from './types';
 import { getTouchCoordinates, isIOSDevice } from './utils/touchUtils';
@@ -5,18 +6,24 @@ import { useMouseCoordinates } from './hooks/useMouseCoordinates';
 
 interface UseCanvasInteractionProps {
   canvasRef: RefObject<HTMLCanvasElement>;
+  mode: 'draw' | 'select' | 'drop';
   onRectangleDrawn?: (coordinates: CanvasCoordinates) => void;
+  onAnnotationSelect?: (annotationId: string, isShiftKey: boolean) => void;
+  onAnnotationDrop?: (newCoordinates: Record<string, CanvasCoordinates>) => void;
   imageMetrics?: { scale: number; x: number; y: number } | null;
 }
 
 export const useCanvasInteraction = ({ 
   canvasRef, 
+  mode,
   onRectangleDrawn,
+  onAnnotationSelect,
+  onAnnotationDrop,
   imageMetrics 
 }: UseCanvasInteractionProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
-  const isReadOnly = !onRectangleDrawn;
+  const isReadOnly = mode !== 'draw';
   const { getMouseCoordinates } = useMouseCoordinates(canvasRef);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
@@ -31,7 +38,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isReadOnly) return;
+    if (mode === 'draw' && !onRectangleDrawn) return;
     
     const coords = getCoordinates(e);
     if (!coords) return;
@@ -49,7 +56,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
+    if (!isDrawing || !startPos || !canvasRef.current) return;
 
     if ('touches' in e) {
       e.preventDefault();
@@ -62,7 +69,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleEnd = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
-    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current || !imageMetrics) return;
+    if (!isDrawing || !startPos || !canvasRef.current || !imageMetrics) return;
 
     if ('touches' in e) {
       e.preventDefault();
@@ -93,7 +100,18 @@ export const useCanvasInteraction = ({
 
     setIsDrawing(false);
     setStartPos(null);
-    onRectangleDrawn?.(relativeCoordinates);
+
+    switch (mode) {
+      case 'draw':
+        onRectangleDrawn?.(relativeCoordinates);
+        break;
+      case 'select':
+        onAnnotationSelect?.('some-id', e.shiftKey);
+        break;
+      case 'drop':
+        onAnnotationDrop?.({ 'some-id': relativeCoordinates });
+        break;
+    }
   };
     
   return {
