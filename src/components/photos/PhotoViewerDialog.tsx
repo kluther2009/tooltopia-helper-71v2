@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LocationPhoto } from "@/types/photos";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +9,17 @@ interface PhotoViewerDialogProps {
   photo: LocationPhoto | null;
   isOpen: boolean;
   onClose: () => void;
+  onPhotoSelect?: (photo: LocationPhoto) => void;
+  selectionMode?: boolean;
 }
 
-export function PhotoViewerDialog({ photo, isOpen, onClose }: PhotoViewerDialogProps) {
+export function PhotoViewerDialog({ 
+  photo, 
+  isOpen, 
+  onClose,
+  onPhotoSelect,
+  selectionMode = false 
+}: PhotoViewerDialogProps) {
   const [annotations, setAnnotations] = useState<any[]>([]);
 
   useEffect(() => {
@@ -39,7 +48,13 @@ export function PhotoViewerDialog({ photo, isOpen, onClose }: PhotoViewerDialogP
     }
   };
 
-  if (!photo) return null;
+  if (!photo && !selectionMode) return null;
+
+  const handlePhotoClick = () => {
+    if (selectionMode && photo && onPhotoSelect) {
+      onPhotoSelect(photo);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
@@ -47,20 +62,24 @@ export function PhotoViewerDialog({ photo, isOpen, onClose }: PhotoViewerDialogP
     }}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{photo.location}</DialogTitle>
+          <DialogTitle>{photo?.location || "Select a Photo"}</DialogTitle>
         </DialogHeader>
-        <div className="relative aspect-video">
-          <AnnotationCanvas
-            imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
-            existingAnnotations={annotations}
-          />
+        <div className="relative aspect-video" onClick={handlePhotoClick}>
+          {photo && (
+            <AnnotationCanvas
+              imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
+              existingAnnotations={annotations}
+            />
+          )}
         </div>
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">{photo.location}</h3>
-          <p className="text-sm text-gray-500">
-            Uploaded on: {new Date(photo.created_at).toLocaleDateString()}
-          </p>
-        </div>
+        {photo && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold">{photo.location}</h3>
+            <p className="text-sm text-gray-500">
+              Uploaded on: {new Date(photo.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

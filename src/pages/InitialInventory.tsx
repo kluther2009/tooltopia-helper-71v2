@@ -5,6 +5,7 @@ import { InitialInventoryViewer } from "@/components/photos/InitialInventoryView
 import { PhotoUploadForm } from "@/components/photos/upload/PhotoUploadForm";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { ReplacePhotoDialog } from "@/components/photos/ReplacePhotoDialog";
 
 export default function InitialInventory() {
   const [showReplacement, setShowReplacement] = useState(false);
@@ -35,6 +36,11 @@ export default function InitialInventory() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <ReplacePhotoDialog 
+        isOpen={showReplacement}
+        onClose={() => setShowReplacement(false)}
+      />
     </Card>
   );
 }
