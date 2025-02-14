@@ -6,6 +6,8 @@ import { PhotoViewerDialog } from "./PhotoViewerDialog";
 import { LocationPhoto } from "@/types/photos";
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
 import { supabase } from "@/integrations/supabase/client";
+import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos";
+import { PhotoGrid } from "./PhotoGrid";
 
 interface ReplacePhotoDialogProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
   const [showPhotoSelector, setShowPhotoSelector] = useState(true);
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null);
   const [annotations, setAnnotations] = useState<any[]>([]);
+  const { photos, isLoading } = useInitialInventoryPhotos();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,28 +52,39 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     setShowPhotoSelector(false);
   };
 
+  const handleClose = () => {
+    setOldPhoto(null);
+    setNewPhotoFile(null);
+    setShowPhotoSelector(true);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        setOldPhoto(null);
-        setNewPhotoFile(null);
-        setShowPhotoSelector(true);
-        onClose();
-      }
-    }}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-7xl">
         <DialogHeader>
           <DialogTitle>Replace Photo</DialogTitle>
         </DialogHeader>
 
         {showPhotoSelector ? (
-          <PhotoViewerDialog
-            isOpen={true}
-            onClose={() => {}}
-            photo={null}
-            onPhotoSelect={handlePhotoSelected}
-            selectionMode={true}
-          />
+          <div className="space-y-4">
+            <div className="min-h-[300px]">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>Loading photos...</p>
+                </div>
+              ) : photos.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p>No photos available. Please upload some photos first.</p>
+                </div>
+              ) : (
+                <PhotoGrid 
+                  photos={photos} 
+                  onPhotoClick={handlePhotoSelected}
+                />
+              )}
+            </div>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
