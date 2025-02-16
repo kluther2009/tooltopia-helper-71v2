@@ -76,7 +76,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                 </div>
               ) : (
                 <PhotoGrid 
-                  photos={photos.filter(p => p.id !== oldPhoto?.id)} // Exclude the old photo when selecting new
+                  photos={photos.filter(p => p.id !== oldPhoto?.id)}
                   onPhotoClick={step === 'select-old' ? handleOldPhotoSelected : handleNewPhotoSelected}
                   onDeleteClick={handleDeletePhoto}
                 />
@@ -88,8 +88,8 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
       case 'compare':
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="relative aspect-video">
+            <div className="grid grid-cols-2 gap-4 h-[calc(100vh-12rem)]">
+              <div className="relative h-full">
                 {oldPhoto && (
                   <div className="relative h-full">
                     <AnnotationCanvas
@@ -102,13 +102,13 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                   </div>
                 )}
               </div>
-              <div className="relative aspect-video">
+              <div className="relative h-full">
                 {newPhoto && (
                   <div className="relative h-full">
                     <img
                       src={`${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`}
                       alt="New photo"
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain bg-black/5"
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
                       New Photo
@@ -132,7 +132,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh]">
+      <DialogContent className="max-w-[95vw] w-full max-h-[95vh]">
         <DialogHeader>
           <DialogTitle>Replace Photo</DialogTitle>
         </DialogHeader>
