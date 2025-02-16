@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { Annotation, CanvasCoordinates } from "./types";
 import { drawImageOnCanvas, drawAnnotation, drawRectangle, setupCanvas } from "./canvasUtils";
@@ -156,12 +157,14 @@ export function AnnotationCanvas({
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
 
+      // Calculate position relative to canvas
       const canvasX = mousePos.x - rect.left;
       const canvasY = mousePos.y - rect.top;
 
       ctx.save();
       ctx.globalAlpha = 0.6;
 
+      // Draw the dragged annotation preview
       const originalCoords = draggedAnnotation.coordinates;
       const scaledWidth = originalCoords.width * imageMetrics.scale;
       const scaledHeight = originalCoords.height * imageMetrics.scale;
@@ -175,6 +178,7 @@ export function AnnotationCanvas({
         scaledHeight
       );
 
+      // Draw the tool name
       if (draggedAnnotation.tool?.name) {
         ctx.font = '14px Arial';
         const padding = 4;
@@ -244,6 +248,7 @@ export function AnnotationCanvas({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
+      // Calculate new coordinates relative to the image
       const newCoords = {
         x: (x - imageMetrics.x) / imageMetrics.scale,
         y: (y - imageMetrics.y) / imageMetrics.scale,
@@ -263,14 +268,10 @@ export function AnnotationCanvas({
   const handleDeleteSelected = () => {
     if (!onAnnotationDelete) return;
     
-    const toDelete = selectedAnnotations.length > 0 ? selectedAnnotations : 
-                    selectedAnnotation ? [selectedAnnotation] : [];
-    
-    toDelete.forEach(annotation => {
+    selectedAnnotations.forEach(annotation => {
       onAnnotationDelete(annotation);
     });
 
-    setSelectedAnnotation(null);
     setSelectedAnnotations([]);
   };
 
