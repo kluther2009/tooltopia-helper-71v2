@@ -2,7 +2,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { PhotoViewerDialog } from "./PhotoViewerDialog";
 import { LocationPhoto } from "@/types/photos";
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,17 +15,10 @@ interface ReplacePhotoDialogProps {
 
 export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps) {
   const [oldPhoto, setOldPhoto] = useState<LocationPhoto | null>(null);
-  const [showPhotoSelector, setShowPhotoSelector] = useState(true);
-  const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null);
+  const [newPhoto, setNewPhoto] = useState<LocationPhoto | null>(null);
+  const [step, setStep] = useState<'select-old' | 'select-new' | 'compare'>('select-old');
   const [annotations, setAnnotations] = useState<any[]>([]);
-  const { photos, isLoading } = useInitialInventoryPhotos();
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNewPhotoFile(file);
-    }
-  };
+  const { photos, isLoading, handleDeletePhoto } = useInitialInventoryPhotos();
 
   const fetchAnnotations = async (photoId: string) => {
     const { data, error } = await supabase
@@ -46,29 +38,34 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     }
   };
 
-  const handlePhotoSelected = async (photo: LocationPhoto) => {
+  const handleOldPhotoSelected = async (photo: LocationPhoto) => {
     setOldPhoto(photo);
     await fetchAnnotations(photo.id);
-    setShowPhotoSelector(false);
+    setStep('select-new');
+  };
+
+  const handleNewPhotoSelected = (photo: LocationPhoto) => {
+    setNewPhoto(photo);
+    setStep('compare');
   };
 
   const handleClose = () => {
     setOldPhoto(null);
-    setNewPhotoFile(null);
-    setShowPhotoSelector(true);
+    setNewPhoto(null);
+    setStep('select-old');
     onClose();
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-7xl">
-        <DialogHeader>
-          <DialogTitle>Replace Photo</DialogTitle>
-        </DialogHeader>
-
-        {showPhotoSelector ? (
+  const renderContent = () => {
+    switch (step) {
+      case 'select-old':
+      case 'select-new':
+        return (
           <div className="space-y-4">
-            <div className="min-h-[300px]">
+            <h2 className="text-lg font-semibold">
+              {step === 'select-old' ? 'Select Old Photo to Replace' : 'Select New Photo'}
+            </h2>
+            <div className="min-h-[500px]">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading photos...</p>
@@ -79,50 +76,67 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                 </div>
               ) : (
                 <PhotoGrid 
-                  photos={photos} 
-                  onPhotoClick={handlePhotoSelected}
+                  photos={photos.filter(p => p.id !== oldPhoto?.id)} // Exclude the old photo when selecting new
+                  onPhotoClick={step === 'select-old' ? handleOldPhotoSelected : handleNewPhotoSelected}
+                  onDeleteClick={handleDeletePhoto}
                 />
               )}
             </div>
           </div>
-        ) : (
+        );
+      
+      case 'compare':
+        return (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="relative aspect-video">
                 {oldPhoto && (
-                  <AnnotationCanvas
-                    imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(oldPhoto.file_path).data.publicUrl}`}
-                    existingAnnotations={annotations}
-                  />
+                  <div className="relative h-full">
+                    <AnnotationCanvas
+                      imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(oldPhoto.file_path).data.publicUrl}`}
+                      existingAnnotations={annotations}
+                    />
+                    <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
+                      Old Photo
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="relative aspect-video">
-                {!newPhotoFile ? (
-                  <div className="flex items-center justify-center h-full border-2 border-dashed border-gray-300 rounded-lg">
-                    <div className="text-center">
-                      <Button variant="outline" onClick={() => document.getElementById('new-photo-upload')?.click()}>
-                        Select New Photo
-                      </Button>
-                      <input
-                        id="new-photo-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileSelect}
-                      />
+                {newPhoto && (
+                  <div className="relative h-full">
+                    <img
+                      src={`${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`}
+                      alt="New photo"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
+                      New Photo
                     </div>
                   </div>
-                ) : (
-                  <img
-                    src={URL.createObjectURL(newPhotoFile)}
-                    alt="New photo"
-                    className="w-full h-full object-contain"
-                  />
                 )}
               </div>
             </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setStep('select-new')}>
+                Select Different Photo
+              </Button>
+              <Button>
+                Confirm Replacement
+              </Button>
+            </div>
           </div>
-        )}
+        );
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-7xl max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Replace Photo</DialogTitle>
+        </DialogHeader>
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
