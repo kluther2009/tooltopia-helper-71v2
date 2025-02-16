@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -85,11 +84,27 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     }
   };
 
+  const handleAnnotationDelete = async (annotation: any) => {
+    try {
+      const { error } = await supabase
+        .from('tool_annotations')
+        .delete()
+        .eq('id', annotation.id);
+
+      if (error) throw error;
+
+      setAnnotations(annotations.filter(a => a.id !== annotation.id));
+      toast.success('Annotation deleted successfully');
+    } catch (error) {
+      console.error('Error deleting annotation:', error);
+      toast.error('Failed to delete annotation');
+    }
+  };
+
   const handleConfirmReplacement = async () => {
     if (!oldPhoto || !newPhoto) return;
 
     try {
-      // First, update all transferred annotations
       for (const annotation of transferredAnnotations) {
         const { error } = await supabase
           .from('tool_annotations')
@@ -151,6 +166,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                       imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(oldPhoto.file_path).data.publicUrl}`}
                       existingAnnotations={annotations}
                       onAnnotationDragEnd={handleAnnotationDrop}
+                      onAnnotationDelete={handleAnnotationDelete}
                       isDraggable
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">

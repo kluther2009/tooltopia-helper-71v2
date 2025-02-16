@@ -1,3 +1,4 @@
+
 import { useState, RefObject } from 'react';
 import { CanvasCoordinates } from './types';
 import { getTouchCoordinates, isIOSDevice } from './utils/touchUtils';
@@ -104,6 +105,7 @@ export const useCanvasInteraction = ({
     handleMove,
     handleEnd,
     setIsDrawing,
-    isIOSDevice
+    isIOSDevice,
+    getMouseCoordinates
   };
 };
