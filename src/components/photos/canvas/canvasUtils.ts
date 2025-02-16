@@ -45,7 +45,9 @@ export const drawImageOnCanvas = (
     x,
     y,
     scaledWidth,
-    scaledHeight
+    scaledHeight,
+    originalWidth: image.width,  // Add original dimensions
+    originalHeight: image.height
   };
 };
 
@@ -67,42 +69,36 @@ export const drawRectangle = (
 export const drawAnnotation = (
   ctx: CanvasRenderingContext2D,
   annotation: Annotation,
-  imageMetrics: { scale: number; x: number; y: number }
+  imageMetrics: { scale: number; x: number; y: number; originalWidth: number; originalHeight: number }
 ) => {
   if (!annotation.coordinates || !annotation.tool?.name) {
     console.log('Missing coordinates or tool name for annotation:', annotation);
     return;
   }
 
-  console.log('Drawing annotation:', annotation);
   const { coordinates, tool, moved } = annotation;
   
-  // Convert stored coordinates back to canvas space
+  // Calculate the ratio of original dimensions to maintain consistent size
   const x = coordinates.x * imageMetrics.scale + imageMetrics.x;
   const y = coordinates.y * imageMetrics.scale + imageMetrics.y;
   const width = coordinates.width * imageMetrics.scale;
   const height = coordinates.height * imageMetrics.scale;
 
-  // If tool has been moved, draw with moved styling
   if (moved) {
-    // Draw semi-transparent grey overlay
     ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
     ctx.fillRect(x, y, width, height);
     
-    // Draw dashed border
     ctx.strokeStyle = '#808080';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 3]);
     ctx.strokeRect(x, y, width, height);
-    ctx.setLineDash([]); // Reset line dash
+    ctx.setLineDash([]);
     
-    // Draw "MOVED" text with tool name
     const movedText = `${tool.name} (MOVED)`;
     ctx.font = 'bold 14px Arial';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     
-    // Add dark background for text
     const textMetrics = ctx.measureText(movedText);
     const textPadding = 4;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -113,22 +109,18 @@ export const drawAnnotation = (
       20
     );
     
-    // Draw text
     ctx.fillStyle = '#ffffff';
     ctx.fillText(movedText, x + width/2, y + height/2 + 5);
   } else {
-    // Draw rectangle border for active tool
     ctx.strokeStyle = '#00ff00';
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, width, height);
 
-    // Draw tool name with background
     ctx.font = '14px Arial';
     const textMetrics = ctx.measureText(tool.name);
     const padding = 4;
     const textHeight = 16;
     
-    // Draw background rectangle for text
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(
       x,
@@ -137,7 +129,6 @@ export const drawAnnotation = (
       textHeight + padding * 2
     );
 
-    // Draw text
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
     ctx.fillText(
