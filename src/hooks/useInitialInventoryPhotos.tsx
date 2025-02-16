@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { LocationPhoto } from "@/types/photos"
@@ -50,31 +51,57 @@ export function useInitialInventoryPhotos() {
 
   const handleDeletePhoto = async (photo: LocationPhoto) => {
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError) {
-        console.error("Session error:", sessionError)
-        navigate("/login")
-        return
+      // 1. First, clean up any temporary annotation transfers
+      const { error: tempCleanupError } = await supabase
+        .from('temp_annotation_transfers')
+        .delete()
+        .eq('new_photo_id', photo.id);
+
+      if (tempCleanupError) {
+        console.error('Error cleaning up temporary transfers:', tempCleanupError);
       }
 
-      if (!session) {
-        navigate("/login")
-        return
-      }
-
-      const { error: storageError } = await supabase.storage
-        .from('location-photos')
-        .remove([photo.file_path])
-
-      if (storageError) throw storageError
-
+      // 2. Delete the photo record from the database
       const { error: dbError } = await supabase
         .from('location_photos')
         .delete()
-        .eq('id', photo.id)
+        .eq('id', photo.id);
 
-      if (dbError) throw dbError
+      if (dbError) throw dbError;
+
+      // 3. Delete from storage with retries
+      const maxRetries = 3;
+      let retryCount = 0;
+      let storageError = null;
+
+      while (retryCount < maxRetries) {
+        try {
+          const { error: deleteError } = await supabase.storage
+            .from('location-photos')
+            .remove([photo.file_path]);
+
+          if (!deleteError) {
+            // Success, exit retry loop
+            storageError = null;
+            break;
+          }
+
+          storageError = deleteError;
+          retryCount++;
+          
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+        } catch (error) {
+          storageError = error;
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+        }
+      }
+
+      if (storageError) {
+        console.error('Failed to delete file from storage after retries:', storageError);
+        // Continue anyway since the database record is deleted
+      }
 
       setPhotos(photos.filter(p => p.id !== photo.id))
       toast.success('Photo deleted successfully')
