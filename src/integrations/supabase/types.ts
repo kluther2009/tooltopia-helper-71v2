@@ -300,6 +300,45 @@ export type Database = {
         }
         Relationships: []
       }
+      temp_annotation_transfers: {
+        Row: {
+          coordinates: Json
+          created_at: string
+          id: string
+          new_photo_id: string | null
+          original_annotation_id: string | null
+        }
+        Insert: {
+          coordinates: Json
+          created_at?: string
+          id?: string
+          new_photo_id?: string | null
+          original_annotation_id?: string | null
+        }
+        Update: {
+          coordinates?: Json
+          created_at?: string
+          id?: string
+          new_photo_id?: string | null
+          original_annotation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temp_annotation_transfers_new_photo_id_fkey"
+            columns: ["new_photo_id"]
+            isOneToOne: false
+            referencedRelation: "location_photos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "temp_annotation_transfers_original_annotation_id_fkey"
+            columns: ["original_annotation_id"]
+            isOneToOne: false
+            referencedRelation: "tool_annotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       temp_audio_files: {
         Row: {
           created_at: string | null

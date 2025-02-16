@@ -7,6 +7,7 @@ import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
 import { supabase } from "@/integrations/supabase/client";
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos";
 import { PhotoGrid } from "./PhotoGrid";
+import { toast } from "sonner";
 
 interface ReplacePhotoDialogProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
   const [newPhoto, setNewPhoto] = useState<LocationPhoto | null>(null);
   const [step, setStep] = useState<'select-old' | 'select-new' | 'compare'>('select-old');
   const [annotations, setAnnotations] = useState<any[]>([]);
+  const [transferredAnnotations, setTransferredAnnotations] = useState<any[]>([]);
   const { photos, isLoading, handleDeletePhoto } = useInitialInventoryPhotos();
 
   const fetchAnnotations = async (photoId: string) => {
@@ -53,7 +55,60 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     setOldPhoto(null);
     setNewPhoto(null);
     setStep('select-old');
+    setTransferredAnnotations([]);
     onClose();
+  };
+
+  const handleAnnotationDrop = async (annotation: any, newCoordinates: any) => {
+    if (!newPhoto) return;
+
+    try {
+      const { error } = await supabase
+        .from('temp_annotation_transfers')
+        .insert({
+          original_annotation_id: annotation.id,
+          new_photo_id: newPhoto.id,
+          coordinates: newCoordinates
+        });
+
+      if (error) throw error;
+
+      setTransferredAnnotations([...transferredAnnotations, {
+        ...annotation,
+        coordinates: newCoordinates
+      }]);
+
+      toast.success('Annotation transferred successfully');
+    } catch (error) {
+      console.error('Error transferring annotation:', error);
+      toast.error('Failed to transfer annotation');
+    }
+  };
+
+  const handleConfirmReplacement = async () => {
+    if (!oldPhoto || !newPhoto) return;
+
+    try {
+      // First, update all transferred annotations
+      for (const annotation of transferredAnnotations) {
+        const { error } = await supabase
+          .from('tool_annotations')
+          .update({
+            photo_id: newPhoto.id,
+            coordinates: annotation.coordinates,
+            moved: true
+          })
+          .eq('id', annotation.id);
+
+        if (error) throw error;
+      }
+
+      toast.success('Photo replacement completed successfully');
+      handleClose();
+    } catch (error) {
+      console.error('Error confirming replacement:', error);
+      toast.error('Failed to complete photo replacement');
+    }
   };
 
   const renderContent = () => {
@@ -95,9 +150,11 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                     <AnnotationCanvas
                       imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(oldPhoto.file_path).data.publicUrl}`}
                       existingAnnotations={annotations}
+                      onAnnotationDragEnd={handleAnnotationDrop}
+                      isDraggable
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
-                      Old Photo
+                      Old Photo (Drag annotations to transfer)
                     </div>
                   </div>
                 )}
@@ -105,13 +162,13 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
               <div className="relative h-full">
                 {newPhoto && (
                   <div className="relative h-full">
-                    <img
-                      src={`${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`}
-                      alt="New photo"
-                      className="w-full h-full object-contain bg-black/5"
+                    <AnnotationCanvas
+                      imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`}
+                      existingAnnotations={transferredAnnotations}
+                      isDropTarget
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
-                      New Photo
+                      New Photo (Drop annotations here)
                     </div>
                   </div>
                 )}
@@ -121,7 +178,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
               <Button variant="outline" onClick={() => setStep('select-new')}>
                 Select Different Photo
               </Button>
-              <Button>
+              <Button onClick={handleConfirmReplacement} disabled={transferredAnnotations.length === 0}>
                 Confirm Replacement
               </Button>
             </div>
