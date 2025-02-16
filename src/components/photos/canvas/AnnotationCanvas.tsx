@@ -41,6 +41,8 @@ export function AnnotationCanvas({
   const [selectedAnnotations, setSelectedAnnotations] = useState<Annotation[]>([]);
   
   const {
+    isDrawing,
+    startPos,
     isReadOnly,
     handleStart,
     handleMove,
@@ -49,11 +51,7 @@ export function AnnotationCanvas({
     getMouseCoordinates
   } = useCanvasInteraction({
     canvasRef,
-    onRectangleDrawn: (coords) => {
-      if (onRectangleDrawn) {
-        onRectangleDrawn(coords);
-      }
-    },
+    onRectangleDrawn: isDraggable ? undefined : onRectangleDrawn,
     imageMetrics
   });
 
@@ -241,11 +239,22 @@ export function AnnotationCanvas({
     setSelectedAnnotations([]);
   };
 
+  const getCursorStyle = () => {
+    if (isDraggable) {
+      return draggedAnnotation ? 'grabbing' : 'grab';
+    }
+    if (isDropTarget) {
+      return 'copy';
+    }
+    return isReadOnly ? 'default' : 'crosshair';
+  };
+
   return (
     <div className="relative h-full">
       <canvas
         ref={canvasRef}
-        className={`w-full h-full ${isReadOnly ? '' : 'cursor-crosshair'} touch-none`}
+        className={`w-full h-full touch-none`}
+        style={{ cursor: getCursorStyle() }}
         onMouseDown={isDraggable ? handleAnnotationDrag : handleStart}
         onDragStart={(e) => {
           if (draggedAnnotation) {
