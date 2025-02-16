@@ -1,7 +1,6 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { LocationPhoto } from "@/types/photos";
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,8 +19,6 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
   const [step, setStep] = useState<'select-old' | 'select-new' | 'compare'>('select-old');
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [transferredAnnotations, setTransferredAnnotations] = useState<any[]>([]);
-  const [draggedAnnotation, setDraggedAnnotation] = useState<any | null>(null);
-  const dragPositionRef = useRef<{ x: number; y: number } | null>(null);
   const { photos, isLoading, handleDeletePhoto } = useInitialInventoryPhotos();
 
   const fetchAnnotations = async (photoId: string) => {
@@ -58,27 +55,13 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     setNewPhoto(null);
     setStep('select-old');
     setTransferredAnnotations([]);
-    setDraggedAnnotation(null);
     onClose();
-  };
-
-  const handleAnnotationDragStart = (annotation: any) => {
-    setDraggedAnnotation(annotation);
   };
 
   const handleAnnotationDrop = async (annotation: any, newCoordinates: any) => {
     if (!newPhoto) return;
 
     try {
-      // Remove from source annotations if it was transferred
-      setAnnotations(prev => prev.filter(a => a.id !== annotation.id));
-      
-      // Add to transferred annotations with new coordinates
-      setTransferredAnnotations(prev => [...prev, {
-        ...annotation,
-        coordinates: newCoordinates
-      }]);
-
       const { error } = await supabase
         .from('temp_annotation_transfers')
         .insert({
@@ -88,12 +71,16 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
         });
 
       if (error) throw error;
+
+      setTransferredAnnotations([...transferredAnnotations, {
+        ...annotation,
+        coordinates: newCoordinates
+      }]);
+
       toast.success('Annotation transferred successfully');
     } catch (error) {
       console.error('Error transferring annotation:', error);
       toast.error('Failed to transfer annotation');
-    } finally {
-      setDraggedAnnotation(null);
     }
   };
 
@@ -188,7 +175,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                   </div>
                 )}
               </div>
-              <div className="relative h-full border-2 border-dashed border-gray-300 rounded-lg">
+              <div className="relative h-full">
                 {newPhoto && (
                   <div className="relative h-full">
                     <AnnotationCanvas
