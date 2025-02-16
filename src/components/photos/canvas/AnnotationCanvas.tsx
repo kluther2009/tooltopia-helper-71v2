@@ -26,7 +26,6 @@ export function AnnotationCanvas({
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const [imageMetrics, setImageMetrics] = useState<{
     scale: number;
     x: number;
@@ -36,14 +35,12 @@ export function AnnotationCanvas({
   } | null>(null);
   const [draggedAnnotation, setDraggedAnnotation] = useState<Annotation | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
-  const [selectedAnnotations, setSelectedAnnotations] = useState<Annotation[]>([]);
+  const [resizing, setResizing] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState<'se' | 'sw' | 'ne' | 'nw' | null>(null);
   const [selectAll, setSelectAll] = useState(false);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [selectedAnnotations, setSelectedAnnotations] = useState<Annotation[]>([]);
   
   const {
-    isDrawing,
-    startPos,
     isReadOnly,
     handleStart,
     handleMove,
@@ -52,7 +49,11 @@ export function AnnotationCanvas({
     getMouseCoordinates
   } = useCanvasInteraction({
     canvasRef,
-    onRectangleDrawn: isDraggable ? undefined : onRectangleDrawn,
+    onRectangleDrawn: (coords) => {
+      if (onRectangleDrawn) {
+        onRectangleDrawn(coords);
+      }
+    },
     imageMetrics
   });
 
@@ -127,114 +128,38 @@ export function AnnotationCanvas({
     );
   };
 
-  const isOverAnnotation = (x: number, y: number, annotation: Annotation) => {
-    if (!imageMetrics) return false;
-    const scaledCoords = {
-      x: annotation.coordinates.x * imageMetrics.scale + imageMetrics.x,
-      y: annotation.coordinates.y * imageMetrics.scale + imageMetrics.y,
-      width: annotation.coordinates.width * imageMetrics.scale,
-      height: annotation.coordinates.height * imageMetrics.scale
-    };
-
-    return (
-      x >= scaledCoords.x &&
-      x <= scaledCoords.x + scaledCoords.width &&
-      y >= scaledCoords.y &&
-      y <= scaledCoords.y + scaledCoords.height
-    );
-  };
-
-  const drawDraggingAnnotations = () => {
-    if (!canvasRef.current || !mousePos || !dragStartPosRef.current || !imageMetrics) return;
-    const ctx = canvasRef.current.getContext('2d');
-    if (!ctx) return;
-
-    drawCanvas();
-
-    const offsetX = mousePos.x - dragStartPosRef.current.x;
-    const offsetY = mousePos.y - dragStartPosRef.current.y;
-
-    ctx.save();
-    ctx.globalAlpha = 0.6;
-
-    const annotations = selectedAnnotations.length > 0 ? selectedAnnotations : 
-                       draggedAnnotation ? [draggedAnnotation] : [];
-
-    annotations.forEach(annotation => {
-      const originalCoords = {
-        x: annotation.coordinates.x * imageMetrics.scale + imageMetrics.x,
-        y: annotation.coordinates.y * imageMetrics.scale + imageMetrics.y,
-        width: annotation.coordinates.width * imageMetrics.scale,
-        height: annotation.coordinates.height * imageMetrics.scale
-      };
-
-      ctx.strokeStyle = '#00ff00';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(
-        originalCoords.x + offsetX,
-        originalCoords.y + offsetY,
-        originalCoords.width,
-        originalCoords.height
-      );
-
-      if (annotation.tool?.name) {
-        ctx.font = '14px Arial';
-        const padding = 4;
-        const textHeight = 16;
-        const textMetrics = ctx.measureText(annotation.tool.name);
-        
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(
-          originalCoords.x + offsetX,
-          originalCoords.y + offsetY - textHeight - padding * 2,
-          textMetrics.width + padding * 2,
-          textHeight + padding * 2
-        );
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(
-          annotation.tool.name,
-          originalCoords.x + offsetX + padding,
-          originalCoords.y + offsetY - padding
-        );
-      }
-    });
-
-    ctx.restore();
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDraggable || !imageMetrics) return;
-
-    const coords = getMouseCoordinates(e.clientX, e.clientY);
-    if (!coords) return;
-
-    setMousePos(coords);
-
-    if (isDragging) {
-      drawDraggingAnnotations();
-      return;
-    }
-
-    const overAnnotation = existingAnnotations.some(annotation => 
-      isOverAnnotation(coords.x, coords.y, annotation)
-    );
-
-    e.currentTarget.style.cursor = overAnnotation ? 'grab' : (isDropTarget ? 'copy' : 'default');
-  };
-
   const handleAnnotationDrag = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDraggable || !imageMetrics) return;
 
     const coords = getMouseCoordinates(e.clientX, e.clientY);
     if (!coords) return;
 
-    dragStartPosRef.current = coords;
-    setMousePos(coords);
+    if (selectedAnnotation) {
+      for (const handle of ['se', 'sw', 'ne', 'nw'] as const) {
+        if (isResizeHandle(selectedAnnotation, coords.x, coords.y, handle)) {
+          setResizing(true);
+          setResizeHandle(handle);
+          e.preventDefault();
+          return;
+        }
+      }
+    }
 
-    const clickedAnnotation = existingAnnotations.find(annotation => 
-      isOverAnnotation(coords.x, coords.y, annotation)
-    );
+    const clickedAnnotation = existingAnnotations.find(annotation => {
+      const scaledCoords = {
+        x: annotation.coordinates.x * imageMetrics.scale + imageMetrics.x,
+        y: annotation.coordinates.y * imageMetrics.scale + imageMetrics.y,
+        width: annotation.coordinates.width * imageMetrics.scale,
+        height: annotation.coordinates.height * imageMetrics.scale
+      };
+
+      return (
+        coords.x >= scaledCoords.x &&
+        coords.x <= scaledCoords.x + scaledCoords.width &&
+        coords.y >= scaledCoords.y &&
+        coords.y <= scaledCoords.y + scaledCoords.height
+      );
+    });
 
     if (clickedAnnotation) {
       if (e.shiftKey) {
@@ -250,9 +175,7 @@ export function AnnotationCanvas({
           setSelectedAnnotations([clickedAnnotation]);
         }
       }
-      setIsDragging(true);
       e.preventDefault();
-      e.currentTarget.style.cursor = 'grabbing';
     } else {
       if (!e.shiftKey) {
         setSelectedAnnotation(null);
@@ -261,29 +184,42 @@ export function AnnotationCanvas({
     }
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDragging && isDropTarget && mousePos && dragStartPosRef.current && imageMetrics) {
-      const offsetX = mousePos.x - dragStartPosRef.current.x;
-      const offsetY = mousePos.y - dragStartPosRef.current.y;
+  const handleDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
+    if (!isDropTarget || !imageMetrics || !onAnnotationDragEnd) return;
+    
+    e.preventDefault();
+    const coords = getMouseCoordinates(e.clientX, e.clientY);
+    if (!coords) return;
 
-      const annotations = selectedAnnotations.length > 0 ? selectedAnnotations : 
-                         draggedAnnotation ? [draggedAnnotation] : [];
+    if (selectedAnnotations.length > 0 && draggedAnnotation) {
+      const draggedIdx = selectedAnnotations.findIndex(a => a.id === draggedAnnotation.id);
+      if (draggedIdx !== -1) {
+        const offsetX = coords.x - (draggedAnnotation.coordinates.x * imageMetrics.scale + imageMetrics.x);
+        const offsetY = coords.y - (draggedAnnotation.coordinates.y * imageMetrics.scale + imageMetrics.y);
 
-      annotations.forEach(annotation => {
-        const newCoords = {
-          x: annotation.coordinates.x + (offsetX / imageMetrics.scale),
-          y: annotation.coordinates.y + (offsetY / imageMetrics.scale),
-          width: annotation.coordinates.width,
-          height: annotation.coordinates.height
-        };
-        onAnnotationDragEnd?.(annotation, newCoords);
-      });
+        selectedAnnotations.forEach(annotation => {
+          const newCoords = {
+            x: ((annotation.coordinates.x * imageMetrics.scale + imageMetrics.x + offsetX) - imageMetrics.x) / imageMetrics.scale,
+            y: ((annotation.coordinates.y * imageMetrics.scale + imageMetrics.y + offsetY) - imageMetrics.y) / imageMetrics.scale,
+            width: annotation.coordinates.width,
+            height: annotation.coordinates.height
+          };
+          onAnnotationDragEnd(annotation, newCoords);
+        });
+      }
+    } else if (draggedAnnotation) {
+      const newCoordinates = {
+        x: (coords.x - imageMetrics.x) / imageMetrics.scale,
+        y: (coords.y - imageMetrics.y) / imageMetrics.scale,
+        width: draggedAnnotation.coordinates.width,
+        height: draggedAnnotation.coordinates.height
+      };
+      onAnnotationDragEnd(draggedAnnotation, newCoordinates);
     }
 
-    setIsDragging(false);
     setDraggedAnnotation(null);
-    dragStartPosRef.current = null;
-    drawCanvas();
+    setSelectedAnnotation(null);
+    setSelectedAnnotations([]);
   };
 
   const handleSelectAll = () => {
@@ -309,22 +245,51 @@ export function AnnotationCanvas({
     <div className="relative h-full">
       <canvas
         ref={canvasRef}
-        className="w-full h-full touch-none"
-        style={{ cursor: isDragging ? 'grabbing' : 'default' }}
+        className={`w-full h-full ${isReadOnly ? '' : 'cursor-crosshair'} touch-none`}
         onMouseDown={isDraggable ? handleAnnotationDrag : handleStart}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={() => {
-          setIsDragging(false);
-          setDraggedAnnotation(null);
-          dragStartPosRef.current = null;
-          drawCanvas();
+        onDragStart={(e) => {
+          if (draggedAnnotation) {
+            e.dataTransfer.setData('text/plain', 'annotation');
+          }
         }}
         onDragOver={(e) => {
           if (isDropTarget) {
             e.preventDefault();
           }
         }}
+        onDrop={handleDrop}
+        draggable={!!draggedAnnotation}
+        onMouseMove={(e) => {
+          if (!isDraggable) {
+            const moveResult = handleMove(e);
+            if (moveResult) {
+              drawCanvas();
+              const ctx = canvasRef.current?.getContext('2d');
+              if (ctx) {
+                drawRectangle(ctx, moveResult.startPos, moveResult.currentPos);
+              }
+            }
+          }
+        }}
+        onMouseUp={handleEnd}
+        onMouseLeave={() => {
+          setIsDrawing(false);
+          setDraggedAnnotation(null);
+        }}
+        onTouchStart={handleStart}
+        onTouchMove={(e) => {
+          e.preventDefault();
+          const moveResult = handleMove(e);
+          if (moveResult) {
+            drawCanvas();
+            const ctx = canvasRef.current?.getContext('2d');
+            if (ctx) {
+              drawRectangle(ctx, moveResult.startPos, moveResult.currentPos);
+            }
+          }
+        }}
+        onTouchEnd={handleEnd}
+        onTouchCancel={() => setIsDrawing(false)}
       />
       {isDraggable && existingAnnotations.length > 0 && (
         <div className="absolute top-2 right-2 flex gap-2">
