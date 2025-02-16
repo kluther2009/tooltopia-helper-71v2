@@ -169,8 +169,8 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
           .from('tool_annotations')
           .update({
             photo_id: newPhoto.id,
-            coordinates: annotation.coordinates,
-            moved: true
+            coordinates: annotation.coordinates
+            // Removed moved: true flag here
           })
           .eq('id', annotation.id);
 
