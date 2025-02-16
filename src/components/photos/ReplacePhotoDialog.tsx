@@ -92,13 +92,36 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     if (!newPhoto) return;
 
     try {
+      // Get dimensions of both old and new photos
+      const oldImg = new Image();
+      const newImg = new Image();
+      
+      oldImg.src = `${supabase.storage.from('location-photos').getPublicUrl(oldPhoto?.file_path || '').data.publicUrl}`;
+      newImg.src = `${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`;
+
+      await Promise.all([
+        new Promise(resolve => oldImg.onload = resolve),
+        new Promise(resolve => newImg.onload = resolve)
+      ]);
+
+      // Calculate scale ratio between the two images
+      const scaleRatio = newImg.width / oldImg.width;
+
+      // Adjust coordinates and dimensions based on the ratio
+      const scaledCoordinates = {
+        x: newCoordinates.x,
+        y: newCoordinates.y,
+        width: annotation.coordinates.width * scaleRatio,  // Scale width by ratio
+        height: annotation.coordinates.height * scaleRatio  // Scale height by ratio
+      };
+
       // Remove from source annotations
       setAnnotations(prev => prev.filter(a => a.id !== annotation.id));
       
-      // Add to transferred annotations with new coordinates
+      // Add to transferred annotations with scaled coordinates
       setTransferredAnnotations(prev => [...prev, {
         ...annotation,
-        coordinates: newCoordinates
+        coordinates: scaledCoordinates
       }]);
 
       const { error } = await supabase
@@ -106,7 +129,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
         .insert({
           original_annotation_id: annotation.id,
           new_photo_id: newPhoto.id,
-          coordinates: newCoordinates
+          coordinates: scaledCoordinates
         });
 
       if (error) throw error;
