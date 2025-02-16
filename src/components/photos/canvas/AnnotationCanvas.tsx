@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from "react";
 import { Annotation, CanvasCoordinates } from "./types";
 import { drawImageOnCanvas, drawAnnotation, drawRectangle } from "./canvasUtils";
@@ -78,13 +79,13 @@ export function AnnotationCanvas({
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !imageRef.current) return;
 
-    // Setup canvas
+    // Setup canvas with device pixel ratio
     const dpr = window.devicePixelRatio || 1;
     canvas.width = canvas.clientWidth * dpr;
     canvas.height = canvas.clientHeight * dpr;
     ctx.scale(dpr, dpr);
 
-    // Draw image
+    // Draw image and get metrics
     const metrics = drawImageOnCanvas(ctx, imageRef.current, canvas);
     setImageMetrics(metrics);
 
@@ -95,7 +96,7 @@ export function AnnotationCanvas({
       }
     });
 
-    // Draw drag preview if applicable
+    // Draw drag preview
     if (draggedAnnotation && dragPreviewPos && canvas.contains(document.elementFromPoint(dragPreviewPos.x, dragPreviewPos.y))) {
       const rect = canvas.getBoundingClientRect();
       const x = (dragPreviewPos.x - rect.left) * (canvas.width / rect.width / dpr);
@@ -106,7 +107,7 @@ export function AnnotationCanvas({
       ctx.strokeStyle = '#00ff00';
       ctx.lineWidth = 2;
 
-      // Calculate the original dimensions in pixels
+      // Use original dimensions for preview
       const originalWidth = draggedAnnotation.coordinates.width * metrics.scale;
       const originalHeight = draggedAnnotation.coordinates.height * metrics.scale;
 
@@ -117,7 +118,6 @@ export function AnnotationCanvas({
         originalHeight
       );
 
-      // Draw tool name
       if (draggedAnnotation.tool?.name) {
         ctx.font = '14px Arial';
         const padding = 4;
@@ -203,13 +203,20 @@ export function AnnotationCanvas({
       const coords = getMouseCoordinates(e.clientX, e.clientY);
       if (!coords) return;
 
-      // Calculate the relative size based on the original dimensions
+      // Calculate pixel size in the original image space
+      const originalPixelWidth = draggedAnnotation.coordinates.width;
+      const originalPixelHeight = draggedAnnotation.coordinates.height;
+
+      // Calculate center position for the drop
+      const centerX = (coords.x - imageMetrics.x) / imageMetrics.scale;
+      const centerY = (coords.y - imageMetrics.y) / imageMetrics.scale;
+
+      // Position the annotation maintaining its original pixel dimensions
       const newCoords = {
-        x: (coords.x - imageMetrics.x) / imageMetrics.scale,
-        y: (coords.y - imageMetrics.y) / imageMetrics.scale,
-        // Keep the original dimensions instead of recalculating
-        width: draggedAnnotation.coordinates.width,
-        height: draggedAnnotation.coordinates.height
+        x: centerX - (originalPixelWidth / 2),
+        y: centerY - (originalPixelHeight / 2),
+        width: originalPixelWidth,
+        height: originalPixelHeight
       };
 
       onAnnotationDragEnd?.(draggedAnnotation, newCoords);
