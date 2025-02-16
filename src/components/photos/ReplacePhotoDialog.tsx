@@ -164,17 +164,28 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     if (!oldPhoto || !newPhoto) return;
 
     try {
+      // First, update all annotations
       for (const annotation of transferredAnnotations) {
-        const { error } = await supabase
+        const { error: annotationError } = await supabase
           .from('tool_annotations')
           .update({
             photo_id: newPhoto.id,
             coordinates: annotation.coordinates
-            // Removed moved: true flag here
           })
           .eq('id', annotation.id);
 
-        if (error) throw error;
+        if (annotationError) throw annotationError;
+      }
+
+      // Then, clean up temporary transfer records
+      const { error: cleanupError } = await supabase
+        .from('temp_annotation_transfers')
+        .delete()
+        .eq('new_photo_id', newPhoto.id);
+
+      if (cleanupError) {
+        console.error('Error cleaning up temporary transfers:', cleanupError);
+        // Continue with success message even if cleanup fails
       }
 
       toast.success('Photo replacement completed successfully');
