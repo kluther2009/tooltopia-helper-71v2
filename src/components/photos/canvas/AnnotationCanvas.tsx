@@ -13,6 +13,10 @@ interface AnnotationCanvasProps {
   isDropTarget?: boolean;
   onAnnotationDragEnd?: (annotation: Annotation, newCoordinates: CanvasCoordinates) => void;
   onAnnotationDelete?: (annotation: Annotation) => void;
+  onAnnotationDragStart?: (annotation: Annotation, startPos: { x: number; y: number }) => void;
+  draggedAnnotation?: Annotation | null;
+  mousePos?: { x: number; y: number } | null;
+  dragStartPos?: { x: number; y: number } | null;
 }
 
 export function AnnotationCanvas({ 
@@ -22,11 +26,14 @@ export function AnnotationCanvas({
   isDraggable = false,
   isDropTarget = false,
   onAnnotationDragEnd,
-  onAnnotationDelete
+  onAnnotationDelete,
+  onAnnotationDragStart,
+  draggedAnnotation,
+  mousePos,
+  dragStartPos
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
   const [imageMetrics, setImageMetrics] = useState<{
     scale: number;
     x: number;
@@ -34,13 +41,9 @@ export function AnnotationCanvas({
     scaledWidth: number;
     scaledHeight: number;
   } | null>(null);
-  const [draggedAnnotation, setDraggedAnnotation] = useState<Annotation | null>(null);
-  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [selectedAnnotations, setSelectedAnnotations] = useState<Annotation[]>([]);
   const [selectAll, setSelectAll] = useState(false);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  
+
   const {
     isDrawing,
     startPos,
@@ -144,146 +147,112 @@ export function AnnotationCanvas({
     );
   };
 
-  const drawDraggingAnnotations = () => {
-    if (!canvasRef.current || !mousePos || !dragStartPosRef.current || !imageMetrics) return;
-    const ctx = canvasRef.current.getContext('2d');
-    if (!ctx) return;
+  useEffect(() => {
+    if (draggedAnnotation && mousePos && dragStartPos && imageMetrics) {
+      drawCanvas();
+      const ctx = canvasRef.current?.getContext('2d');
+      if (!ctx) return;
 
-    drawCanvas();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
 
-    const offsetX = mousePos.x - dragStartPosRef.current.x;
-    const offsetY = mousePos.y - dragStartPosRef.current.y;
+      const canvasX = mousePos.x - rect.left;
+      const canvasY = mousePos.y - rect.top;
 
-    ctx.save();
-    ctx.globalAlpha = 0.6;
+      ctx.save();
+      ctx.globalAlpha = 0.6;
 
-    const annotations = selectedAnnotations.length > 0 ? selectedAnnotations : 
-                       draggedAnnotation ? [draggedAnnotation] : [];
-
-    annotations.forEach(annotation => {
-      const originalCoords = {
-        x: annotation.coordinates.x * imageMetrics.scale + imageMetrics.x,
-        y: annotation.coordinates.y * imageMetrics.scale + imageMetrics.y,
-        width: annotation.coordinates.width * imageMetrics.scale,
-        height: annotation.coordinates.height * imageMetrics.scale
-      };
+      const originalCoords = draggedAnnotation.coordinates;
+      const scaledWidth = originalCoords.width * imageMetrics.scale;
+      const scaledHeight = originalCoords.height * imageMetrics.scale;
 
       ctx.strokeStyle = '#00ff00';
       ctx.lineWidth = 2;
       ctx.strokeRect(
-        originalCoords.x + offsetX,
-        originalCoords.y + offsetY,
-        originalCoords.width,
-        originalCoords.height
+        canvasX - scaledWidth / 2,
+        canvasY - scaledHeight / 2,
+        scaledWidth,
+        scaledHeight
       );
 
-      if (annotation.tool?.name) {
+      if (draggedAnnotation.tool?.name) {
         ctx.font = '14px Arial';
         const padding = 4;
         const textHeight = 16;
-        const textMetrics = ctx.measureText(annotation.tool.name);
+        const textMetrics = ctx.measureText(draggedAnnotation.tool.name);
         
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(
-          originalCoords.x + offsetX,
-          originalCoords.y + offsetY - textHeight - padding * 2,
+          canvasX - scaledWidth / 2,
+          canvasY - scaledHeight / 2 - textHeight - padding * 2,
           textMetrics.width + padding * 2,
           textHeight + padding * 2
         );
 
         ctx.fillStyle = '#ffffff';
         ctx.fillText(
-          annotation.tool.name,
-          originalCoords.x + offsetX + padding,
-          originalCoords.y + offsetY - padding
+          draggedAnnotation.tool.name,
+          canvasX - scaledWidth / 2 + padding,
+          canvasY - scaledHeight / 2 - padding
         );
       }
-    });
 
-    ctx.restore();
+      ctx.restore();
+    }
+  }, [draggedAnnotation, mousePos, dragStartPos, imageMetrics]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDraggable || !imageMetrics) return;
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const clickedAnnotation = existingAnnotations.find(annotation => 
+      isOverAnnotation(x, y, annotation)
+    );
+
+    if (clickedAnnotation) {
+      onAnnotationDragStart?.(clickedAnnotation, { x: e.clientX, y: e.clientY });
+      e.currentTarget.style.cursor = 'grabbing';
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDraggable || !imageMetrics) return;
 
-    const coords = getMouseCoordinates(e.clientX, e.clientY);
-    if (!coords) return;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-    setMousePos(coords);
-
-    if (isDragging) {
-      drawDraggingAnnotations();
-      return;
-    }
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     const overAnnotation = existingAnnotations.some(annotation => 
-      isOverAnnotation(coords.x, coords.y, annotation)
+      isOverAnnotation(x, y, annotation)
     );
 
     e.currentTarget.style.cursor = overAnnotation ? 'grab' : (isDropTarget ? 'copy' : 'default');
   };
 
-  const handleAnnotationDrag = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDraggable || !imageMetrics) return;
-
-    const coords = getMouseCoordinates(e.clientX, e.clientY);
-    if (!coords) return;
-
-    dragStartPosRef.current = coords;
-    setMousePos(coords);
-
-    const clickedAnnotation = existingAnnotations.find(annotation => 
-      isOverAnnotation(coords.x, coords.y, annotation)
-    );
-
-    if (clickedAnnotation) {
-      if (e.shiftKey) {
-        setSelectedAnnotations(prev => 
-          prev.includes(clickedAnnotation) 
-            ? prev.filter(a => a !== clickedAnnotation)
-            : [...prev, clickedAnnotation]
-        );
-      } else {
-        setSelectedAnnotation(clickedAnnotation);
-        setDraggedAnnotation(clickedAnnotation);
-        if (selectedAnnotations.length <= 1) {
-          setSelectedAnnotations([clickedAnnotation]);
-        }
-      }
-      setIsDragging(true);
-      e.preventDefault();
-      e.currentTarget.style.cursor = 'grabbing';
-    } else {
-      if (!e.shiftKey) {
-        setSelectedAnnotation(null);
-        setSelectedAnnotations([]);
-      }
-    }
-  };
-
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDragging && isDropTarget && mousePos && dragStartPosRef.current && imageMetrics) {
-      const offsetX = mousePos.x - dragStartPosRef.current.x;
-      const offsetY = mousePos.y - dragStartPosRef.current.y;
+    if (draggedAnnotation && isDropTarget && mousePos && dragStartPos && imageMetrics) {
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (!rect) return;
 
-      const annotations = selectedAnnotations.length > 0 ? selectedAnnotations : 
-                         draggedAnnotation ? [draggedAnnotation] : [];
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-      annotations.forEach(annotation => {
-        const newCoords = {
-          x: annotation.coordinates.x + (offsetX / imageMetrics.scale),
-          y: annotation.coordinates.y + (offsetY / imageMetrics.scale),
-          width: annotation.coordinates.width,
-          height: annotation.coordinates.height
-        };
-        onAnnotationDragEnd?.(annotation, newCoords);
-      });
+      const newCoords = {
+        x: (x - imageMetrics.x) / imageMetrics.scale,
+        y: (y - imageMetrics.y) / imageMetrics.scale,
+        width: draggedAnnotation.coordinates.width,
+        height: draggedAnnotation.coordinates.height
+      };
+
+      onAnnotationDragEnd?.(draggedAnnotation, newCoords);
     }
-
-    setIsDragging(false);
-    setDraggedAnnotation(null);
-    dragStartPosRef.current = null;
-    drawCanvas();
   };
 
   const handleSelectAll = () => {
@@ -310,21 +279,10 @@ export function AnnotationCanvas({
       <canvas
         ref={canvasRef}
         className="w-full h-full touch-none"
-        style={{ cursor: isDragging ? 'grabbing' : 'default' }}
-        onMouseDown={isDraggable ? handleAnnotationDrag : handleStart}
+        style={{ cursor: draggedAnnotation ? 'grabbing' : 'default' }}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => {
-          setIsDragging(false);
-          setDraggedAnnotation(null);
-          dragStartPosRef.current = null;
-          drawCanvas();
-        }}
-        onDragOver={(e) => {
-          if (isDropTarget) {
-            e.preventDefault();
-          }
-        }}
       />
       {isDraggable && existingAnnotations.length > 0 && (
         <div className="absolute top-2 right-2 flex gap-2">
@@ -342,7 +300,7 @@ export function AnnotationCanvas({
             size="sm"
             onClick={handleDeleteSelected}
             className="flex items-center gap-2"
-            disabled={!selectedAnnotation && selectedAnnotations.length === 0}
+            disabled={selectedAnnotations.length === 0}
           >
             <Trash2 className="h-4 w-4" />
             Delete Selected
