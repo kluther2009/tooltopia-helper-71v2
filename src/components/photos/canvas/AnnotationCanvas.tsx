@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { Annotation, CanvasCoordinates } from "./types";
 import { drawImageOnCanvas, drawAnnotation, drawRectangle } from "./canvasUtils";
@@ -107,14 +106,15 @@ export function AnnotationCanvas({
       ctx.strokeStyle = '#00ff00';
       ctx.lineWidth = 2;
 
-      const width = draggedAnnotation.coordinates.width * metrics.scale;
-      const height = draggedAnnotation.coordinates.height * metrics.scale;
+      // Calculate the original dimensions in pixels
+      const originalWidth = draggedAnnotation.coordinates.width * metrics.scale;
+      const originalHeight = draggedAnnotation.coordinates.height * metrics.scale;
 
       ctx.strokeRect(
-        x - width / 2,
-        y - height / 2,
-        width,
-        height
+        x - originalWidth / 2,
+        y - originalHeight / 2,
+        originalWidth,
+        originalHeight
       );
 
       // Draw tool name
@@ -125,8 +125,8 @@ export function AnnotationCanvas({
         
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(
-          x - width / 2,
-          y - height / 2 - 24,
+          x - originalWidth / 2,
+          y - originalHeight / 2 - 24,
           textMetrics.width + padding * 2,
           20
         );
@@ -134,8 +134,8 @@ export function AnnotationCanvas({
         ctx.fillStyle = '#ffffff';
         ctx.fillText(
           draggedAnnotation.tool.name,
-          x - width / 2 + padding,
-          y - height / 2 - 8
+          x - originalWidth / 2 + padding,
+          y - originalHeight / 2 - 8
         );
       }
 
@@ -203,9 +203,11 @@ export function AnnotationCanvas({
       const coords = getMouseCoordinates(e.clientX, e.clientY);
       if (!coords) return;
 
+      // Calculate the relative size based on the original dimensions
       const newCoords = {
         x: (coords.x - imageMetrics.x) / imageMetrics.scale,
         y: (coords.y - imageMetrics.y) / imageMetrics.scale,
+        // Keep the original dimensions instead of recalculating
         width: draggedAnnotation.coordinates.width,
         height: draggedAnnotation.coordinates.height
       };
