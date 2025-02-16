@@ -1,6 +1,7 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LocationPhoto } from "@/types/photos";
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +20,30 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
   const [step, setStep] = useState<'select-old' | 'select-new' | 'compare'>('select-old');
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [transferredAnnotations, setTransferredAnnotations] = useState<any[]>([]);
+  const [draggedAnnotation, setDraggedAnnotation] = useState<any | null>(null);
+  const [dragPreviewPos, setDragPreviewPos] = useState<{ x: number; y: number } | null>(null);
   const { photos, isLoading, handleDeletePhoto } = useInitialInventoryPhotos();
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (draggedAnnotation) {
+        setDragPreviewPos({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDraggedAnnotation(null);
+      setDragPreviewPos(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggedAnnotation]);
 
   const fetchAnnotations = async (photoId: string) => {
     const { data, error } = await supabase
@@ -55,13 +79,28 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     setNewPhoto(null);
     setStep('select-old');
     setTransferredAnnotations([]);
+    setDraggedAnnotation(null);
+    setDragPreviewPos(null);
     onClose();
+  };
+
+  const handleAnnotationDragStart = (annotation: any) => {
+    setDraggedAnnotation(annotation);
   };
 
   const handleAnnotationDrop = async (annotation: any, newCoordinates: any) => {
     if (!newPhoto) return;
 
     try {
+      // Remove from source annotations
+      setAnnotations(prev => prev.filter(a => a.id !== annotation.id));
+      
+      // Add to transferred annotations with new coordinates
+      setTransferredAnnotations(prev => [...prev, {
+        ...annotation,
+        coordinates: newCoordinates
+      }]);
+
       const { error } = await supabase
         .from('temp_annotation_transfers')
         .insert({
@@ -71,16 +110,13 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
         });
 
       if (error) throw error;
-
-      setTransferredAnnotations([...transferredAnnotations, {
-        ...annotation,
-        coordinates: newCoordinates
-      }]);
-
       toast.success('Annotation transferred successfully');
     } catch (error) {
       console.error('Error transferring annotation:', error);
       toast.error('Failed to transfer annotation');
+    } finally {
+      setDraggedAnnotation(null);
+      setDragPreviewPos(null);
     }
   };
 
@@ -168,6 +204,10 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                       onAnnotationDragEnd={handleAnnotationDrop}
                       onAnnotationDelete={handleAnnotationDelete}
                       isDraggable
+                      onAnnotationDragStart={handleAnnotationDragStart}
+                      draggedAnnotation={draggedAnnotation}
+                      dragPreviewPos={dragPreviewPos}
+                      isReplacingPhoto
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
                       Old Photo (Drag annotations to transfer)
@@ -175,13 +215,17 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                   </div>
                 )}
               </div>
-              <div className="relative h-full">
+              <div className="relative h-full border-2 border-dashed border-gray-300 rounded-lg">
                 {newPhoto && (
                   <div className="relative h-full">
                     <AnnotationCanvas
                       imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(newPhoto.file_path).data.publicUrl}`}
                       existingAnnotations={transferredAnnotations}
                       isDropTarget
+                      draggedAnnotation={draggedAnnotation}
+                      dragPreviewPos={dragPreviewPos}
+                      onAnnotationDragEnd={handleAnnotationDrop}
+                      isReplacingPhoto
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
                       New Photo (Drop annotations here)

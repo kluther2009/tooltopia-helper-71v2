@@ -8,12 +8,14 @@ interface UseCanvasInteractionProps {
   canvasRef: RefObject<HTMLCanvasElement>;
   onRectangleDrawn?: (coordinates: CanvasCoordinates) => void;
   imageMetrics?: { scale: number; x: number; y: number } | null;
+  isReplacingPhoto?: boolean;
 }
 
 export const useCanvasInteraction = ({ 
   canvasRef, 
   onRectangleDrawn,
-  imageMetrics 
+  imageMetrics,
+  isReplacingPhoto = false
 }: UseCanvasInteractionProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
@@ -32,7 +34,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleStart = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isReadOnly) return;
+    if (isReadOnly || isReplacingPhoto) return;
     
     const coords = getCoordinates(e);
     if (!coords) return;
@@ -50,7 +52,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current) return;
+    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current || isReplacingPhoto) return;
 
     if ('touches' in e) {
       e.preventDefault();
@@ -63,7 +65,7 @@ export const useCanvasInteraction = ({
   };
 
   const handleEnd = (e: React.MouseEvent | React.TouchEvent | TouchEvent) => {
-    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current || !imageMetrics) return;
+    if (isReadOnly || !isDrawing || !startPos || !canvasRef.current || !imageMetrics || isReplacingPhoto) return;
 
     if ('touches' in e) {
       e.preventDefault();
