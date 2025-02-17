@@ -23,7 +23,12 @@ serve(async (req) => {
 
     // Get the image data
     const response = await fetch(imageUrl)
-    const imageBlob = await response.blob()
+    const arrayBuffer = await response.arrayBuffer()
+    
+    // Convert array buffer to base64
+    const base64String = btoa(
+      String.fromCharCode(...new Uint8Array(arrayBuffer))
+    )
 
     // Initialize Gemini AI
     const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY')!)
@@ -38,13 +43,15 @@ serve(async (req) => {
       {
         inlineData: {
           mimeType: "image/jpeg",
-          data: await imageBlob.text()  // Convert blob to base64
+          data: base64String
         }
       }
     ])
 
     const response = await result.response
     const text = response.text()
+
+    console.log('Gemini response:', text)
 
     // Try to parse the response as JSON, if it's not valid JSON, wrap it in an array
     let tools
