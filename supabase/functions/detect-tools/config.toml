@@ -1,0 +1,6 @@
+
+project_id = "bnwztdwbdejiubjfpigj"
+[api]
+enabled = true
+[functions.detect-tools]
+verify_jwt = true

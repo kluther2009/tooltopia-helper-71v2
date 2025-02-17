@@ -6,9 +6,11 @@ import { PhotoUploadForm } from "@/components/photos/upload/PhotoUploadForm";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ReplacePhotoDialog } from "@/components/photos/ReplacePhotoDialog";
+import { DetectToolsDialog } from "@/components/photos/DetectToolsDialog";
 
 export default function InitialInventory() {
   const [showReplacement, setShowReplacement] = useState(false);
+  const [showDetectTools, setShowDetectTools] = useState(false);
 
   return (
     <Card className="max-w-7xl mx-auto p-6">
@@ -19,6 +21,12 @@ export default function InitialInventory() {
               <TabsTrigger value="view">View Photos</TabsTrigger>
               <TabsTrigger value="upload">Upload Photo</TabsTrigger>
             </TabsList>
+            <Button 
+              variant="outline"
+              onClick={() => setShowDetectTools(true)}
+            >
+              Detect Tools
+            </Button>
             <Button 
               variant="outline"
               onClick={() => setShowReplacement(true)}
@@ -40,6 +48,11 @@ export default function InitialInventory() {
       <ReplacePhotoDialog 
         isOpen={showReplacement}
         onClose={() => setShowReplacement(false)}
+      />
+
+      <DetectToolsDialog
+        isOpen={showDetectTools}
+        onClose={() => setShowDetectTools(false)}
       />
     </Card>
   );
