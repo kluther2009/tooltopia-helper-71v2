@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -8,18 +9,19 @@ import { Trash2 } from "lucide-react"
 interface PhotoCardProps {
   photo: LocationPhoto
   onPhotoClick: (photo: LocationPhoto) => void
-  onDeleteClick: (photo: LocationPhoto) => void
+  onDeleteClick?: (photo: LocationPhoto) => void
+  disabled?: boolean
 }
 
-export function PhotoCard({ photo, onPhotoClick, onDeleteClick }: PhotoCardProps) {
+export function PhotoCard({ photo, onPhotoClick, onDeleteClick, disabled }: PhotoCardProps) {
   return (
     <Card key={photo.id} className="p-4">
       <div className="aspect-video relative rounded-md overflow-hidden mb-3">
         <img
           src={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
           alt={photo.location}
-          className="object-cover w-full h-full"
-          onClick={() => onPhotoClick(photo)}
+          className={`object-cover w-full h-full cursor-pointer ${disabled ? 'opacity-50' : ''}`}
+          onClick={() => !disabled && onPhotoClick(photo)}
         />
       </div>
       <div className="flex justify-between items-center">
@@ -29,13 +31,16 @@ export function PhotoCard({ photo, onPhotoClick, onDeleteClick }: PhotoCardProps
             {new Date(photo.created_at).toLocaleDateString()}
           </p>
         </div>
-        <Button
-          variant="destructive"
-          size="icon"
-          onClick={() => onDeleteClick(photo)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {onDeleteClick && (
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={() => onDeleteClick(photo)}
+            disabled={disabled}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </Card>
   )
