@@ -1,5 +1,6 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { GoogleGenerativeAI } from "npm:@google/generative-ai"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
@@ -20,42 +21,44 @@ serve(async (req) => {
       throw new Error('No image URL provided')
     }
 
-    // Create Supabase client for getting public URL
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    const supabase = createClient(supabaseUrl!, supabaseKey!)
-
-    // Get the actual image data from the URL
+    // Get the image data
     const response = await fetch(imageUrl)
-    const imageBuffer = await response.arrayBuffer()
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+    const imageBlob = await response.blob()
 
-    // Call Google Cloud Vision API
-    const visionApiResponse = await fetch('https://vision.googleapis.com/v1/images:annotate?key=' + Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        requests: [{
-          image: {
-            content: base64Image
-          },
-          features: [
-            {
-              type: 'OBJECT_LOCALIZATION',
-              maxResults: 20
-            }
-          ]
-        }]
-      })
-    })
+    // Initialize Gemini AI
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY')!)
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" })
 
-    const data = await visionApiResponse.json()
-    console.log('Vision API Response:', JSON.stringify(data, null, 2))
+    // Prepare the prompt
+    const prompt = "Analyze this image and list any tools or equipment you can see. For each tool, describe its location in the image. Format the response as a JSON array where each object has 'tool' and 'location' properties."
+
+    // Generate content
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: await imageBlob.text()  // Convert blob to base64
+        }
+      }
+    ])
+
+    const response = await result.response
+    const text = response.text()
+
+    // Try to parse the response as JSON, if it's not valid JSON, wrap it in an array
+    let tools
+    try {
+      tools = JSON.parse(text)
+    } catch (e) {
+      tools = [{
+        tool: "Unknown",
+        location: text
+      }]
+    }
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify({ tools }),
       { 
         headers: { 
           ...corsHeaders,

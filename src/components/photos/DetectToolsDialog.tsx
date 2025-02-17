@@ -32,17 +32,17 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
       if (error) throw error;
 
-      // Format and display results
-      const detectedObjects = data.responses[0]?.localizedObjectAnnotations || [];
-      const tools = detectedObjects.filter((obj: any) => 
-        ['Tool', 'Hardware', 'Equipment'].includes(obj.name)
-      );
-
-      if (tools.length === 0) {
-        toast.info('No tools detected in this photo');
+      // Display results
+      if (data.tools && data.tools.length > 0) {
+        toast.success(`Detected tools in the photo`);
+        console.log('Detected tools:', data.tools);
+        
+        // Show each tool and its location
+        data.tools.forEach((item: { tool: string, location: string }) => {
+          toast.info(`${item.tool}: ${item.location}`);
+        });
       } else {
-        toast.success(`Detected ${tools.length} tools in the photo`);
-        console.log('Detected tools:', tools);
+        toast.info('No tools detected in this photo');
       }
 
     } catch (error) {
