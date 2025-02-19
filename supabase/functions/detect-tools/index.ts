@@ -28,17 +28,15 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    
-    // Use the latest model version
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-vision" })
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" })
 
     // Fetch and process image
-    const imageResponse = await fetch(imageUrl)
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.status}`)
+    const imgResponse = await fetch(imageUrl)
+    if (!imgResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imgResponse.status}`)
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer()
+    const imageBuffer = await imgResponse.arrayBuffer()
     const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
 
     console.log('Sending request to Gemini API with image size:', imageBuffer.byteLength)
@@ -54,9 +52,11 @@ serve(async (req) => {
       "Identify and list all tools, power tools, and hardware items visible in this image. For each item, please specify its location in the image using coordinates [x1,y1,x2,y2] and provide a detailed description. Format the response as a JSON array where each object has 'box_2d' (array of 4 numbers for coordinates) and 'label' (string describing the tool)."
     ])
 
-    const response = await result.response
-    const text = response.text()
-    console.log('Raw Gemini response:', text)
+    console.log('Got result from Gemini:', result)
+    const geminiResponse = await result.response
+    console.log('Got response from result:', geminiResponse)
+    const text = geminiResponse.text()
+    console.log('Raw Gemini response text:', text)
 
     // Parse the response
     let tools = []
