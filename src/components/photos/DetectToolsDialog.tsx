@@ -34,12 +34,12 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
       // Display results
       if (data.tools && data.tools.length > 0) {
-        toast.success(`Detected tools in the photo`);
+        toast.success(`Detected ${data.tools.length} tools in the photo`);
         console.log('Detected tools:', data.tools);
         
-        // Show each tool and its location
-        data.tools.forEach((item: { tool: string, location: string }) => {
-          toast.info(`${item.tool}: ${item.location}`);
+        // Show each detected tool
+        data.tools.forEach((item: { box_2d: number[], label: string }) => {
+          toast.info(`Found: ${item.label}`);
         });
       } else {
         toast.info('No tools detected in this photo');

@@ -34,8 +34,8 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY')!)
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" })
 
-    // Prepare the prompt
-    const prompt = "Analyze this image and list any tools or equipment you can see. For each tool, describe its location in the image. Format the response as a JSON array where each object has 'tool' and 'location' properties."
+    // Prepare the prompt with specific instructions
+    const prompt = "Identify diy tools, power tools, household hardware items, try and read any labels or stickers to add any other information. Return the response as a JSON array where each item has 'box_2d' (array of 4 numbers for x1,y1,x2,y2 coordinates) and 'label' (string describing the tool) properties."
 
     // Generate content
     const result = await model.generateContent([
@@ -53,16 +53,30 @@ serve(async (req) => {
 
     console.log('Gemini response:', text)
 
-    // Try to parse the response as JSON, if it's not valid JSON, wrap it in an array
-    let tools
+    // Try to parse the response as JSON array
+    let detectedItems
     try {
-      tools = JSON.parse(text)
+      detectedItems = JSON.parse(text)
+      if (!Array.isArray(detectedItems)) {
+        // If response is an object, wrap it in an array
+        detectedItems = [detectedItems]
+      }
     } catch (e) {
-      tools = [{
-        tool: "Unknown",
-        location: text
+      console.error('Failed to parse Gemini response as JSON:', e)
+      // Create a basic response without bounding box if parsing fails
+      detectedItems = [{
+        box_2d: [0, 0, 0, 0],
+        label: text
       }]
     }
+
+    // Filter out non-tool items and format response
+    const tools = detectedItems.filter(item => {
+      const label = item.label.toLowerCase()
+      return !label.includes('box') && 
+             !label.includes('container') && 
+             !label.includes('cup')
+    })
 
     return new Response(
       JSON.stringify({ tools }),
