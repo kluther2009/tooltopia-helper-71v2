@@ -21,18 +21,6 @@ serve(async (req) => {
       throw new Error('No image URL provided')
     }
 
-    // Get the image data
-    const imageResponse = await fetch(imageUrl)
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.status}`)
-    }
-
-    const arrayBuffer = await imageResponse.arrayBuffer()
-    console.log('Image size:', arrayBuffer.byteLength)
-
-    // Convert array buffer to base64
-    const base64String = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-
     // Initialize Gemini AI
     const apiKey = Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY')
     if (!apiKey) {
@@ -40,54 +28,67 @@ serve(async (req) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" })
-
-    console.log('Sending request to Gemini API')
     
-    // Call Gemini API
+    // Use the latest model version
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-vision" })
+
+    // Fetch and process image
+    const imageResponse = await fetch(imageUrl)
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status}`)
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer()
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+
+    console.log('Sending request to Gemini API with image size:', imageBuffer.byteLength)
+    
+    // Call Gemini API with the processed image
     const result = await model.generateContent([
-      "Identify diy tools, power tools, household hardware items, try and read any labels or stickers to add any other information. Return the response as a JSON array where each item has 'box_2d' (array of 4 numbers for x1,y1,x2,y2 coordinates) and 'label' (string describing the tool) properties.",
       {
         inlineData: {
           mimeType: "image/jpeg",
-          data: base64String
+          data: base64Image
         }
-      }
+      },
+      "Identify and list all tools, power tools, and hardware items visible in this image. For each item, please specify its location in the image using coordinates [x1,y1,x2,y2] and provide a detailed description. Format the response as a JSON array where each object has 'box_2d' (array of 4 numbers for coordinates) and 'label' (string describing the tool)."
     ])
 
-    const geminiResponse = await result.response
-    const text = geminiResponse.text()
+    const response = await result.response
+    const text = response.text()
     console.log('Raw Gemini response:', text)
 
-    // Try to extract JSON from the response
-    let detectedItems = []
+    // Parse the response
+    let tools = []
     try {
-      const matches = text.match(/\[.*\]/s) // Match everything between [ and ] including newlines
+      // Try to find JSON array in the response
+      const matches = text.match(/\[.*\]/s)
       if (matches) {
-        detectedItems = JSON.parse(matches[0])
+        tools = JSON.parse(matches[0])
       } else {
-        // Try to parse the whole response as JSON
-        detectedItems = JSON.parse(text)
+        // If no array found, try parsing the entire response
+        tools = JSON.parse(text)
       }
+
+      // Ensure we have an array
+      if (!Array.isArray(tools)) {
+        tools = [tools]
+      }
+
+      // Filter and validate each tool entry
+      tools = tools.filter(item => {
+        return item && 
+               typeof item.label === 'string' && 
+               Array.isArray(item.box_2d) && 
+               item.box_2d.length === 4
+      })
+
     } catch (e) {
       console.error('JSON parsing error:', e)
-      throw new Error('Failed to parse Gemini response as JSON')
+      throw new Error('Failed to parse tool detection results')
     }
 
-    if (!Array.isArray(detectedItems)) {
-      detectedItems = [detectedItems]
-    }
-
-    // Filter out non-tool items
-    const tools = detectedItems.filter(item => {
-      if (!item || typeof item.label !== 'string') return false
-      const label = item.label.toLowerCase()
-      return !label.includes('box') && 
-             !label.includes('container') && 
-             !label.includes('cup')
-    })
-
-    console.log('Detected tools:', tools)
+    console.log('Processed tools:', tools)
 
     return new Response(
       JSON.stringify({ tools }),
