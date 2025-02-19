@@ -25,12 +25,23 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         .from('location-photos')
         .getPublicUrl(photo.file_path);
 
+      console.log('Calling detect-tools with URL:', publicUrl);
+
       // Call our edge function
       const { data, error } = await supabase.functions.invoke('detect-tools', {
         body: { imageUrl: publicUrl }
       });
 
-      if (error) throw error;
+      console.log('Response from detect-tools:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No data received from edge function');
+      }
 
       // Display results
       if (data.tools && data.tools.length > 0) {
@@ -47,7 +58,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
     } catch (error) {
       console.error('Error detecting tools:', error);
-      toast.error('Failed to detect tools in photo');
+      toast.error(error instanceof Error ? error.message : 'Failed to detect tools in photo');
     } finally {
       setDetecting(false);
       onClose();
