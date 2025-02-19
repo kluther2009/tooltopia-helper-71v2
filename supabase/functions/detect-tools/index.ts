@@ -22,8 +22,8 @@ serve(async (req) => {
     }
 
     // Get the image data
-    const response = await fetch(imageUrl)
-    const arrayBuffer = await response.arrayBuffer()
+    const imageResponse = await fetch(imageUrl)
+    const arrayBuffer = await imageResponse.arrayBuffer()
     
     // Convert array buffer to base64
     const base64String = btoa(
@@ -48,8 +48,8 @@ serve(async (req) => {
       }
     ])
 
-    const response = await result.response
-    const text = response.text()
+    const geminiResponse = await result.response
+    const text = geminiResponse.text()
 
     console.log('Gemini response:', text)
 
