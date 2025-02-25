@@ -38,7 +38,7 @@ serve(async (req) => {
 
     console.log('Initializing Gemini...')
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" })
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) // Updated model name
 
     // Fetch and process image
     console.log('Fetching image...')
@@ -59,16 +59,22 @@ serve(async (req) => {
     const base64Image = arrayBufferToBase64(imageBuffer)
     console.log('Image converted to base64')
 
-    // Call Gemini API
+    // Call Gemini API with updated structure
     console.log('Calling Gemini API...')
     const result = await model.generateContent([
       {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: base64Image
-        }
-      },
-      "Identify and list all tools, power tools, and hardware items visible in this image. Format your response as a JSON array where each object has 'box_2d' (array of 4 coordinates [x1,y1,x2,y2]) and 'label' (string describing the tool)."
+        parts: [
+          {
+            text: "Identify and list all tools, power tools, and hardware items visible in this image. Format your response as a JSON array where each object has 'box_2d' (array of 4 coordinates [x1,y1,x2,y2]) and 'label' (string describing the tool)."
+          },
+          {
+            inlineData: {
+              mimeType: "image/jpeg",
+              data: base64Image
+            }
+          }
+        ]
+      }
     ])
 
     const response = await result.response
