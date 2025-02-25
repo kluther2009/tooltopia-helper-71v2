@@ -14,8 +14,18 @@ serve(async (req) => {
   }
 
   try {
-    const { imageUrl } = await req.json()
-    console.log('Processing image URL:', imageUrl)
+    // Parse request body
+    let body;
+    try {
+      body = await req.json()
+      console.log('Request body:', body)
+    } catch (e) {
+      console.error('Error parsing request body:', e)
+      throw new Error('Invalid request body')
+    }
+
+    const { imageUrl } = body
+    console.log('Image URL:', imageUrl)
     
     if (!imageUrl) {
       throw new Error('No image URL provided')
@@ -24,33 +34,36 @@ serve(async (req) => {
     // Initialize Gemini AI
     const apiKey = Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY')
     if (!apiKey) {
-      throw new Error('GOOGLE_CLOUD_VISION_API_KEY not found')
+      console.error('GOOGLE_CLOUD_VISION_API_KEY not found')
+      throw new Error('API key not configured')
     }
 
     console.log('Initializing Gemini...')
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" })
 
+    // Fetch image
+    console.log('Fetching image from URL:', imageUrl)
+    const imgResponse = await fetch(imageUrl)
+    if (!imgResponse.ok) {
+      console.error('Image fetch failed:', imgResponse.status, imgResponse.statusText)
+      throw new Error(`Failed to fetch image: ${imgResponse.status}`)
+    }
+
+    // Process image
+    const imageBuffer = await imgResponse.arrayBuffer()
+    console.log('Image buffer size:', imageBuffer.byteLength)
+    
+    if (imageBuffer.byteLength === 0) {
+      throw new Error('Image buffer is empty')
+    }
+
     try {
-      // Fetch and process image
-      console.log('Fetching image...')
-      const imgResponse = await fetch(imageUrl)
-      if (!imgResponse.ok) {
-        throw new Error(`Failed to fetch image: ${imgResponse.status}`)
-      }
-
-      const imageBuffer = await imgResponse.arrayBuffer()
-      console.log('Image fetched, size:', imageBuffer.byteLength)
-      
-      if (imageBuffer.byteLength === 0) {
-        throw new Error('Image buffer is empty')
-      }
-
       const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
-      console.log('Image converted to base64')
+      console.log('Successfully converted image to base64')
 
-      // Call Gemini API with the processed image
-      console.log('Calling Gemini API...')
+      // Call Gemini API
+      console.log('Sending request to Gemini...')
       const result = await model.generateContent([
         {
           inlineData: {
@@ -58,46 +71,46 @@ serve(async (req) => {
             data: base64Image
           }
         },
-        "Identify and list all tools, power tools, and hardware items visible in this image. For each item, please specify its location in the image using coordinates [x1,y1,x2,y2] and provide a detailed description. Format the response as a JSON array where each object has 'box_2d' (array of 4 numbers for coordinates) and 'label' (string describing the tool)."
+        "Identify and list all tools, power tools, and hardware items visible in this image. Format your response as a JSON array where each object has 'box_2d' (array of 4 coordinates [x1,y1,x2,y2]) and 'label' (string describing the tool)."
       ])
 
-      console.log('Got result from Gemini')
-      const geminiResponse = await result.response
-      console.log('Response object:', geminiResponse)
-      const text = geminiResponse.text()
-      console.log('Response text:', text)
+      const response = await result.response
+      const text = response.text()
+      console.log('Raw Gemini response:', text)
 
-      // Parse the response
+      // Parse response
       let tools = []
       try {
-        // Try to find JSON array in the response
-        const matches = text.match(/\[.*\]/s)
-        if (matches) {
-          tools = JSON.parse(matches[0])
+        const jsonMatch = text.match(/\[.*?\]/s)
+        if (jsonMatch) {
+          tools = JSON.parse(jsonMatch[0])
         } else {
-          // If no array found, try parsing the entire response
+          console.log('No JSON array found in response, trying to parse full text')
           tools = JSON.parse(text)
         }
 
-        // Ensure we have an array
         if (!Array.isArray(tools)) {
+          console.log('Converting single tool to array')
           tools = [tools]
         }
 
-        // Filter and validate each tool entry
         tools = tools.filter(item => {
-          return item && 
-                 typeof item.label === 'string' && 
-                 Array.isArray(item.box_2d) && 
-                 item.box_2d.length === 4
+          const isValid = item && 
+                         typeof item.label === 'string' && 
+                         Array.isArray(item.box_2d) && 
+                         item.box_2d.length === 4
+          if (!isValid) {
+            console.log('Filtered out invalid tool:', item)
+          }
+          return isValid
         })
 
+        console.log('Final processed tools:', tools)
       } catch (e) {
-        console.error('JSON parsing error:', e)
+        console.error('Error parsing Gemini response:', e)
+        console.log('Raw text that failed to parse:', text)
         throw new Error(`Failed to parse tool detection results: ${e.message}`)
       }
-
-      console.log('Processed tools:', tools)
 
       return new Response(
         JSON.stringify({ tools }),
@@ -108,12 +121,12 @@ serve(async (req) => {
           }
         }
       )
-    } catch (innerError) {
-      console.error('Inner error:', innerError)
-      throw innerError // Re-throw to be caught by outer catch
+    } catch (e) {
+      console.error('Error in image processing or API call:', e)
+      throw e
     }
   } catch (error) {
-    console.error('Function error:', error)
+    console.error('Top-level error:', error)
     return new Response(
       JSON.stringify({
         error: error.message,
