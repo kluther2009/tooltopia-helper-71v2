@@ -16,6 +16,43 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
+function extractJsonFromText(text: string): any {
+  try {
+    // First try direct JSON parse
+    return JSON.parse(text);
+  } catch (e) {
+    // If that fails, try to find JSON array in the text
+    const jsonMatch = text.match(/\[\s*{[^]*}\s*\]/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.error('Failed to parse matched JSON:', e);
+      }
+    }
+    
+    // If still no valid JSON, try to extract individual tool objects
+    const toolsArray = [];
+    const toolMatches = text.matchAll(/{[^}]+}/g);
+    for (const match of toolMatches) {
+      try {
+        const tool = JSON.parse(match[0]);
+        if (tool.label && Array.isArray(tool.box_2d) && tool.box_2d.length === 4) {
+          toolsArray.push(tool);
+        }
+      } catch (e) {
+        console.error('Failed to parse individual tool:', e);
+      }
+    }
+    
+    if (toolsArray.length > 0) {
+      return toolsArray;
+    }
+    
+    throw new Error('No valid JSON found in response');
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -65,7 +102,7 @@ serve(async (req) => {
       contents: [{
         role: "user",
         parts: [
-          { text: "Identify and list all tools, power tools, and hardware items visible in this image. Format your response as a JSON array where each object has 'box_2d' (array of 4 coordinates [x1,y1,x2,y2]) and 'label' (string describing the tool)." },
+          { text: "Look at this image and identify all tools. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [x1,y1,x2,y2] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -80,18 +117,12 @@ serve(async (req) => {
     const text = response.text()
     console.log('Raw response:', text)
 
-    // Parse response
+    // Parse response with improved parsing logic
     let tools = []
     try {
-      const jsonMatch = text.match(/\[.*?\]/s)
-      if (jsonMatch) {
-        tools = JSON.parse(jsonMatch[0])
-      } else {
-        tools = JSON.parse(text)
-      }
-
+      tools = extractJsonFromText(text);
       if (!Array.isArray(tools)) {
-        tools = [tools]
+        tools = [tools];
       }
 
       tools = tools.filter(item => {
