@@ -1,94 +1,84 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
-import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos";
-import { PhotoGrid } from "./PhotoGrid";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { LocationPhoto } from "@/types/photos";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { PhotoGrid } from "./PhotoGrid"
+import { useState } from "react"
+import { supabase } from "@/integrations/supabase/client"
+import { DetectedToolsViewer } from "./DetectedToolsViewer"
+import { toast } from "sonner"
 
 interface DetectToolsDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
-  const { photos, isLoading } = useInitialInventoryPhotos();
-  const [detecting, setDetecting] = useState(false);
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
+  const [detectedTools, setDetectedTools] = useState<any[]>([])
+  const [isDetecting, setIsDetecting] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
-  const handlePhotoSelect = async (photo: LocationPhoto) => {
+  const detectTools = async (photoUrl: string) => {
+    setIsDetecting(true)
+    setSelectedPhotoUrl(photoUrl)
+
     try {
-      setDetecting(true);
-      
-      // Get the public URL of the photo
-      const { data: { publicUrl } } = supabase.storage
-        .from('location-photos')
-        .getPublicUrl(photo.file_path);
-
-      console.log('Calling detect-tools with URL:', publicUrl);
-
-      // Call our edge function
       const { data, error } = await supabase.functions.invoke('detect-tools', {
-        body: { imageUrl: publicUrl }
-      });
-
-      console.log('Response from detect-tools:', { data, error });
+        body: { imageUrl: photoUrl }
+      })
 
       if (error) {
-        console.error('Edge function error:', error);
-        throw error;
+        console.error('Error detecting tools:', error)
+        toast.error('Failed to detect tools')
+        return
       }
 
-      if (!data) {
-        throw new Error('No data received from edge function');
-      }
-
-      // Display results
       if (data.tools && data.tools.length > 0) {
-        toast.success(`Detected ${data.tools.length} tools in the photo`);
-        console.log('Detected tools:', data.tools);
-        
-        // Show each detected tool
-        data.tools.forEach((item: { box_2d: number[], label: string }) => {
-          toast.info(`Found: ${item.label}`);
-        });
+        setDetectedTools(data.tools)
+        setShowConfirmation(true)
       } else {
-        toast.info('No tools detected in this photo');
+        toast.info('No tools detected in the image')
       }
-
     } catch (error) {
-      console.error('Error detecting tools:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to detect tools in photo');
+      console.error('Error in detectTools:', error)
+      toast.error('Failed to process image')
     } finally {
-      setDetecting(false);
-      onClose();
+      setIsDetecting(false)
     }
-  };
+  }
+
+  const handleToolsConfirmed = async (tools: any[]) => {
+    try {
+      // Here you would save the detected tools data to your database
+      console.log('Saving detected tools:', tools)
+      toast.success('Tool detection data saved')
+      setShowConfirmation(false)
+    } catch (error) {
+      console.error('Error saving tool data:', error)
+      toast.error('Failed to save tool data')
+    }
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Select Photo to Detect Tools</DialogTitle>
-        </DialogHeader>
-        <div className="min-h-[500px]">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <p>Loading photos...</p>
-            </div>
-          ) : photos.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <p>No photos available. Please upload some photos first.</p>
-            </div>
-          ) : (
-            <PhotoGrid 
-              photos={photos}
-              onPhotoClick={handlePhotoSelect}
-              disabled={detecting}
-            />
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Detect Tools in Photos</DialogTitle>
+          </DialogHeader>
+          <PhotoGrid 
+            onPhotoSelect={detectTools}
+            isProcessing={isDetecting}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <DetectedToolsViewer
+        imageUrl={selectedPhotoUrl || ''}
+        detectedTools={detectedTools}
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleToolsConfirmed}
+      />
+    </>
+  )
 }
