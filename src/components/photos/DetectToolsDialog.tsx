@@ -23,12 +23,22 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
     
-    // Get the public URL for the photo
-    const photoUrl = supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl
-    console.log('Selected photo URL:', photoUrl)
-    setSelectedPhotoUrl(photoUrl)
-
     try {
+      // Get a signed URL for the photo that expires in 5 minutes
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('location-photos')
+        .createSignedUrl(photo.file_path, 300)
+
+      if (signedUrlError) {
+        console.error('Error getting signed URL:', signedUrlError)
+        toast.error('Failed to access image')
+        return
+      }
+
+      const photoUrl = signedUrlData.signedUrl
+      console.log('Selected photo URL (signed):', photoUrl)
+      setSelectedPhotoUrl(photoUrl)
+
       const { data, error } = await supabase.functions.invoke('detect-tools', {
         body: { imageUrl: photoUrl }
       })
