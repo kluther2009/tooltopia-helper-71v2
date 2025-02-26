@@ -22,7 +22,10 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
+    
+    // Get the public URL for the photo
     const photoUrl = supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl
+    console.log('Selected photo URL:', photoUrl)
     setSelectedPhotoUrl(photoUrl)
 
     try {
@@ -39,7 +42,6 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       console.log('API Response:', data)
 
       if (data.tools && data.tools.length > 0) {
-        // The API is already returning the correct format with label and box_2d
         setDetectedTools(data.tools)
         setShowConfirmation(true)
       } else {
@@ -82,13 +84,15 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         </DialogContent>
       </Dialog>
 
-      <DetectedToolsViewer
-        imageUrl={selectedPhotoUrl || ''}
-        detectedTools={detectedTools}
-        isOpen={showConfirmation}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleToolsConfirmed}
-      />
+      {selectedPhotoUrl && (
+        <DetectedToolsViewer
+          imageUrl={selectedPhotoUrl}
+          detectedTools={detectedTools}
+          isOpen={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleToolsConfirmed}
+        />
+      )}
     </>
   )
 }
