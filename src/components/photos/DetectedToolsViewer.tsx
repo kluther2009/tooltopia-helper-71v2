@@ -31,8 +31,8 @@ export function DetectedToolsViewer({
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement
     setImageDimensions({
-      width: img.naturalWidth,
-      height: img.naturalHeight
+      width: img.width,  // Using displayed width instead of naturalWidth
+      height: img.height // Using displayed height instead of naturalHeight
     })
     setLoading(false)
   }
@@ -73,12 +73,16 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
+                // Get coordinates from the API response
                 const [x1, y1, x2, y2] = tool.box_2d
+
+                // Create box style using pixel values instead of percentages
                 const boxStyle = {
-                  left: `${(x1 / imageDimensions.width) * 100}%`,
-                  top: `${(y1 / imageDimensions.height) * 100}%`,
-                  width: `${((x2 - x1) / imageDimensions.width) * 100}%`,
-                  height: `${((y2 - y1) / imageDimensions.height) * 100}%`,
+                  position: 'absolute',
+                  left: `${x1}px`,
+                  top: `${y1}px`,
+                  width: `${x2 - x1}px`,
+                  height: `${y2 - y1}px`,
                 }
 
                 return (
@@ -90,8 +94,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: boxStyle.left,
-                        top: `calc(${boxStyle.top} - 24px)`,
+                        left: `${x1}px`,
+                        top: `${y1 - 24}px`,
                       }}
                     >
                       {tool.label}
