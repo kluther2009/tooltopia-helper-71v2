@@ -36,52 +36,49 @@ export function DetectedToolsViewer({
     if (!ctx) return
 
     console.log('Loading image with URL:', imageUrl)
-    console.log('Detected tools:', detectedTools)
+    
+    // Reset state
+    setImageLoaded(false)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     const image = new Image()
-    image.crossOrigin = "anonymous"  // Add this to handle CORS
-    image.src = imageUrl
+    image.crossOrigin = "anonymous"
 
+    // Set up onload before setting src
     image.onload = () => {
-      // Get the original image dimensions
-      const originalWidth = image.width
-      const originalHeight = image.height
-
-      // Calculate scaling to fit within a reasonable size while maintaining aspect ratio
+      console.log('Image loaded successfully:', image.width, 'x', image.height)
+      
+      // Calculate dimensions
       const maxWidth = 800
       const maxHeight = 600
-      let width = originalWidth
-      let height = originalHeight
+      let width = image.width
+      let height = image.height
+      const aspectRatio = width / height
 
       if (width > maxWidth) {
-        const ratio = maxWidth / width
         width = maxWidth
-        height = height * ratio
+        height = width / aspectRatio
       }
 
       if (height > maxHeight) {
-        const ratio = maxHeight / height
         height = maxHeight
-        width = width * ratio
+        width = height * aspectRatio
       }
 
-      // Set canvas dimensions
+      // Update canvas size
       canvas.width = width
       canvas.height = height
       setImageDimensions({ width, height })
 
-      // Clear previous content
-      ctx.clearRect(0, 0, width, height)
-
       // Draw scaled image
       ctx.drawImage(image, 0, 0, width, height)
 
-      // Calculate scale factors for bounding boxes
-      const scaleX = width / originalWidth
-      const scaleY = height / originalHeight
+      // Calculate scale factors
+      const scaleX = width / image.width
+      const scaleY = height / image.height
 
-      // Draw boxes and labels for each detected tool
-      ctx.strokeStyle = '#00FF00' // Green color
+      // Draw boxes and labels
+      ctx.strokeStyle = '#00FF00'
       ctx.lineWidth = 2
       ctx.font = '16px Arial'
 
@@ -121,6 +118,13 @@ export function DetectedToolsViewer({
       toast.error("Failed to load image")
       onClose()
     }
+
+    // Add timestamp to bust cache
+    const timestamp = new Date().getTime()
+    const urlWithCache = `${imageUrl}?t=${timestamp}`
+    console.log('Loading image with cache buster:', urlWithCache)
+    image.src = urlWithCache
+
   }, [imageUrl, detectedTools, isOpen])
 
   const handleConfirm = () => {
@@ -138,7 +142,7 @@ export function DetectedToolsViewer({
         <div className="relative w-full flex justify-center p-4">
           <canvas 
             ref={canvasRef}
-            className="max-w-full h-auto border border-gray-200 rounded-lg shadow-sm"
+            className="max-w-full h-auto border border-gray-200 rounded-lg shadow-sm bg-gray-50"
             style={{
               width: imageDimensions.width > 0 ? `${imageDimensions.width}px` : 'auto',
               height: imageDimensions.height > 0 ? `${imageDimensions.height}px` : 'auto'
