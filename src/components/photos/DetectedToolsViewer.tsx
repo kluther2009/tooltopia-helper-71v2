@@ -59,8 +59,8 @@ export function DetectedToolsViewer({
     setError(null)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Draw loading state
-    canvas.width = 400  // Default size while loading
+    // Set initial canvas size and draw loading state
+    canvas.width = 400
     canvas.height = 300
     ctx.fillStyle = '#f8f9fa'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -109,7 +109,7 @@ export function DetectedToolsViewer({
       setImageDimensions({ width, height })
 
       try {
-        // Draw background
+        // Clear canvas and draw background
         ctx.fillStyle = '#f8f9fa'
         ctx.fillRect(0, 0, width, height)
 
@@ -117,7 +117,7 @@ export function DetectedToolsViewer({
         ctx.drawImage(image, 0, 0, width, height)
         console.log('Image drawn to canvas successfully')
 
-        // Calculate scale factors
+        // Calculate scale factors for annotations
         const scaleX = width / (image.naturalWidth || image.width)
         const scaleY = height / (image.naturalHeight || image.height)
 
@@ -170,7 +170,7 @@ export function DetectedToolsViewer({
     }
 
     try {
-      // Try to create a URL object (this will fail if the URL is invalid)
+      // Try to create a URL object and add cache busting
       const url = new URL(imageUrl)
       url.searchParams.append('t', Date.now().toString())
       console.log("Full image URL being used:", url.toString())
@@ -192,6 +192,7 @@ export function DetectedToolsViewer({
 
   const handleConfirm = () => {
     onConfirm(detectedTools)
+    toast.success("Tool detection data saved")
     onClose()
   }
 
