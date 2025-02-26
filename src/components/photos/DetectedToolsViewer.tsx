@@ -149,6 +149,12 @@ export function DetectedToolsViewer({
 
   }, [imageUrl, detectedTools, isOpen])
 
+  const handleConfirm = () => {
+    onConfirm(detectedTools)
+    toast.success("Tool detection data saved")
+    onClose()
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[850px] max-h-[90vh] overflow-y-auto">
