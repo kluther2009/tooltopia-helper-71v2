@@ -25,8 +25,10 @@ export function DetectedToolsViewer({
   onConfirm 
 }: DetectedToolsViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const imageRef = useRef<HTMLImageElement | null>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen || !imageUrl || !canvasRef.current) {
@@ -34,124 +36,136 @@ export function DetectedToolsViewer({
       return
     }
 
+    console.log('Starting image load process for:', imageUrl)
+    
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
     if (!ctx) {
-      console.error('Failed to get canvas context')
+      setError('Failed to get canvas context')
       return
     }
 
-    console.log('Starting image load process for:', imageUrl)
-    
-    // Reset state
+    // Reset canvas and state
     setImageLoaded(false)
+    setError(null)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     // Create new image object
     const image = new Image()
+    imageRef.current = image
     
-    // Important: Set crossOrigin before src
     image.crossOrigin = "anonymous"
 
     image.onload = () => {
+      if (!canvas || !ctx) return
+      
       console.log('Image loaded successfully:', {
+        width: image.width,
+        height: image.height,
         naturalWidth: image.naturalWidth,
         naturalHeight: image.naturalHeight
       })
-      
-      // Calculate dimensions
+
+      // Calculate dimensions maintaining aspect ratio
       const maxWidth = 800
       const maxHeight = 600
-      let width = image.naturalWidth
-      let height = image.naturalHeight
+      let width = image.naturalWidth || image.width
+      let height = image.naturalHeight || image.height
       const aspectRatio = width / height
 
       if (width > maxWidth) {
         width = maxWidth
-        height = width / aspectRatio
+        height = Math.round(width / aspectRatio)
       }
 
       if (height > maxHeight) {
         height = maxHeight
-        width = height * aspectRatio
+        width = Math.round(height * aspectRatio)
       }
 
-      console.log('Calculated dimensions:', { width, height })
-
-      // Update canvas size
+      // Set canvas dimensions
       canvas.width = width
       canvas.height = height
       setImageDimensions({ width, height })
 
-      // Draw scaled image
-      ctx.drawImage(image, 0, 0, width, height)
+      // Draw background color
+      ctx.fillStyle = '#f8f9fa'
+      ctx.fillRect(0, 0, width, height)
 
-      // Calculate scale factors
-      const scaleX = width / image.naturalWidth
-      const scaleY = height / image.naturalHeight
+      // Draw image
+      try {
+        ctx.drawImage(image, 0, 0, width, height)
+        console.log('Image drawn to canvas successfully')
 
-      console.log('Drawing bounding boxes for', detectedTools.length, 'tools')
+        // Calculate scale factors
+        const scaleX = width / (image.naturalWidth || image.width)
+        const scaleY = height / (image.naturalHeight || image.height)
 
-      // Draw boxes and labels
-      detectedTools.forEach((tool, index) => {
-        const [x, y, w, h] = tool.box_2d
-        
-        // Scale coordinates
-        const scaledX = x * scaleX
-        const scaledY = y * scaleY
-        const scaledW = w * scaleX
-        const scaledH = h * scaleY
+        // Draw boxes and labels
+        detectedTools.forEach((tool, index) => {
+          const [x1, y1, x2, y2] = tool.box_2d
+          
+          // Scale coordinates
+          const scaledX = x1 * scaleX
+          const scaledY = y1 * scaleY
+          const scaledWidth = (x2 - x1) * scaleX
+          const scaledHeight = (y2 - y1) * scaleY
 
-        console.log(`Drawing box ${index + 1}:`, {
-          original: { x, y, w, h },
-          scaled: { x: scaledX, y: scaledY, w: scaledW, h: scaledH }
+          // Draw box
+          ctx.strokeStyle = '#00FF00'
+          ctx.lineWidth = 2
+          ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight)
+
+          // Draw label
+          const labelText = tool.label
+          ctx.font = '16px Arial'
+          const padding = 4
+          const metrics = ctx.measureText(labelText)
+          
+          // Label background
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+          ctx.fillRect(
+            scaledX,
+            scaledY - 24,
+            metrics.width + padding * 2,
+            20
+          )
+
+          // Label text
+          ctx.fillStyle = '#FFFFFF'
+          ctx.fillText(labelText, scaledX + padding, scaledY - 10)
         })
 
-        // Draw rectangle
-        ctx.strokeStyle = '#00FF00'
-        ctx.lineWidth = 2
-        ctx.strokeRect(scaledX, scaledY, scaledW - scaledX, scaledH - scaledY)
-
-        // Draw label background
-        ctx.font = '16px Arial'
-        const padding = 4
-        const textMetrics = ctx.measureText(tool.label)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-        ctx.fillRect(
-          scaledX,
-          scaledY - 24,
-          textMetrics.width + padding * 2,
-          20
-        )
-
-        // Draw label text
-        ctx.fillStyle = '#FFFFFF'
-        ctx.fillText(tool.label, scaledX + padding, scaledY - 10)
-      })
-
-      setImageLoaded(true)
-      console.log('Finished drawing image and annotations')
+        setImageLoaded(true)
+      } catch (err) {
+        console.error('Error drawing image:', err)
+        setError('Failed to draw image to canvas')
+      }
     }
 
-    image.onerror = (error) => {
-      console.error('Error loading image:', error)
+    image.onerror = (err) => {
+      console.error('Error loading image:', err)
+      setError('Failed to load image')
       toast.error("Failed to load image")
-      onClose()
     }
 
-    // Add timestamp to bust cache and debug query parameters
-    const timestamp = new Date().getTime()
-    const urlWithParams = `${imageUrl}?t=${timestamp}&debug=true`
-    console.log('Loading image with URL:', urlWithParams)
-    
-    // Set src after all handlers are set up
-    image.src = urlWithParams
+    // Add cache busting
+    const url = new URL(imageUrl)
+    url.searchParams.append('t', Date.now().toString())
+    image.src = url.toString()
 
+    // Cleanup
+    return () => {
+      if (imageRef.current) {
+        imageRef.current.onload = null
+        imageRef.current.onerror = null
+        imageRef.current = null
+      }
+    }
   }, [imageUrl, detectedTools, isOpen])
 
   const handleConfirm = () => {
     onConfirm(detectedTools)
-    toast.success("Tool detection data saved")
     onClose()
   }
 
@@ -161,16 +175,24 @@ export function DetectedToolsViewer({
         <DialogHeader>
           <DialogTitle>Detected Tools</DialogTitle>
         </DialogHeader>
-        <div className="relative w-full flex justify-center p-4">
+        <div className="relative w-full flex flex-col items-center p-4">
+          {error && (
+            <div className="text-red-500 mb-4">{error}</div>
+          )}
           <canvas 
             ref={canvasRef}
             className="max-w-full h-auto border border-gray-200 rounded-lg shadow-sm bg-gray-50"
             style={{
               width: imageDimensions.width > 0 ? `${imageDimensions.width}px` : 'auto',
               height: imageDimensions.height > 0 ? `${imageDimensions.height}px` : 'auto',
-              display: 'block' // Ensure canvas is visible
+              display: 'block'
             }}
           />
+          {!imageLoaded && !error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          )}
         </div>
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
