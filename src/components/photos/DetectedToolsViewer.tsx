@@ -27,12 +27,17 @@ export function DetectedToolsViewer({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
+  const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement
     setImageDimensions({
-      width: img.width,  // Using displayed width instead of naturalWidth
-      height: img.height // Using displayed height instead of naturalHeight
+      width: img.naturalWidth,
+      height: img.naturalHeight
+    })
+    setDisplayDimensions({
+      width: img.width,
+      height: img.height
     })
     setLoading(false)
   }
@@ -76,14 +81,22 @@ export function DetectedToolsViewer({
                 // Get coordinates from the API response
                 const [x1, y1, x2, y2] = tool.box_2d
 
-                // Create box style using pixel values instead of percentages
+                // Calculate the scaling factor between natural and display dimensions
+                const scaleX = displayDimensions.width / imageDimensions.width
+                const scaleY = displayDimensions.height / imageDimensions.height
+
+                // Scale the coordinates to match the displayed image size
+                const scaledX1 = x1 * scaleX
+                const scaledY1 = y1 * scaleY
+                const scaledWidth = (x2 - x1) * scaleX
+                const scaledHeight = (y2 - y1) * scaleY
+
                 const boxStyle = {
-                  position: 'absolute',
-                  left: `${x1}px`,
-                  top: `${y1}px`,
-                  width: `${x2 - x1}px`,
-                  height: `${y2 - y1}px`,
-                }
+                  left: scaledX1,
+                  top: scaledY1,
+                  width: scaledWidth,
+                  height: scaledHeight,
+                } as const
 
                 return (
                   <div key={index}>
@@ -94,8 +107,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: `${x1}px`,
-                        top: `${y1 - 24}px`,
+                        left: scaledX1,
+                        top: Math.max(0, scaledY1 - 24),
                       }}
                     >
                       {tool.label}
