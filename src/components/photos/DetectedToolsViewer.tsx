@@ -41,7 +41,6 @@ export function DetectedToolsViewer({
     })
     setLoading(false)
 
-    // Log the dimensions
     console.log('Natural dimensions:', { width: img.naturalWidth, height: img.naturalHeight })
     console.log('Display dimensions:', { width: img.width, height: img.height })
   }
@@ -58,10 +57,9 @@ export function DetectedToolsViewer({
     onClose()
   }
 
-  // Log detected tools when they change
+  // Log detected tools for debugging
   console.log('All detected tools:', detectedTools)
   
-  // Find and log tape measure specifically
   const tapeMeasure = detectedTools.find(tool => 
     tool.label.toLowerCase().includes('tape') || 
     tool.label.toLowerCase().includes('measure')
@@ -70,10 +68,10 @@ export function DetectedToolsViewer({
     console.log('Tape measure coordinates:', {
       label: tapeMeasure.label,
       coordinates: tapeMeasure.box_2d,
-      x1: tapeMeasure.box_2d[0],
-      y1: tapeMeasure.box_2d[1],
-      x2: tapeMeasure.box_2d[2],
-      y2: tapeMeasure.box_2d[3]
+      originalY1: tapeMeasure.box_2d[0],
+      originalX1: tapeMeasure.box_2d[1],
+      originalY2: tapeMeasure.box_2d[2],
+      originalX2: tapeMeasure.box_2d[3]
     })
   }
 
@@ -101,24 +99,32 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                // Get coordinates from the API response
-                const [x1, y1, x2, y2] = tool.box_2d
+                // Get normalized coordinates (0-1000) from the API response
+                // Format is [y_min, x_min, y_max, x_max]
+                const [y1, x1, y2, x2] = tool.box_2d
 
-                // Calculate the scaling factor between natural and display dimensions
+                // Convert from 1000x1000 normalized coordinates to actual image dimensions
+                const imageX1 = (x1 / 1000) * imageDimensions.width
+                const imageY1 = (y1 / 1000) * imageDimensions.height
+                const imageX2 = (x2 / 1000) * imageDimensions.width
+                const imageY2 = (y2 / 1000) * imageDimensions.height
+
+                // Calculate display scaling factors
                 const scaleX = displayDimensions.width / imageDimensions.width
                 const scaleY = displayDimensions.height / imageDimensions.height
 
-                // Scale the coordinates to match the displayed image size
-                const scaledX1 = x1 * scaleX
-                const scaledY1 = y1 * scaleY
-                const scaledWidth = (x2 - x1) * scaleX
-                const scaledHeight = (y2 - y1) * scaleY
+                // Scale to final display dimensions
+                const finalX1 = imageX1 * scaleX
+                const finalY1 = imageY1 * scaleY
+                const finalWidth = (imageX2 - imageX1) * scaleX
+                const finalHeight = (imageY2 - imageY1) * scaleY
 
+                // Create box style
                 const boxStyle = {
-                  left: scaledX1,
-                  top: scaledY1,
-                  width: scaledWidth,
-                  height: scaledHeight,
+                  left: finalX1,
+                  top: finalY1,
+                  width: finalWidth,
+                  height: finalHeight,
                 } as const
 
                 return (
@@ -130,8 +136,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: scaledX1,
-                        top: Math.max(0, scaledY1 - 24),
+                        left: finalX1,
+                        top: Math.max(0, finalY1 - 24),
                       }}
                     >
                       {tool.label}
