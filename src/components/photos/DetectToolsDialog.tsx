@@ -37,7 +37,19 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       }
 
       if (data.tools && data.tools.length > 0) {
-        setDetectedTools(data.tools)
+        // Format the tools data to match the expected structure
+        const formattedTools = data.tools.map((tool: any) => ({
+          label: tool.name || tool.label,
+          box_2d: [
+            tool.boundingBox.x,
+            tool.boundingBox.y,
+            tool.boundingBox.x + tool.boundingBox.width,
+            tool.boundingBox.y + tool.boundingBox.height
+          ]
+        }))
+        
+        console.log('Formatted tools:', formattedTools)
+        setDetectedTools(formattedTools)
         setShowConfirmation(true)
       } else {
         toast.info('No tools detected in the image')
