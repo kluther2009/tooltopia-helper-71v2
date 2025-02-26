@@ -30,14 +30,23 @@ export function DetectedToolsViewer({
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [error, setError] = useState<string | null>(null)
 
+  // Debug function to test direct image access
+  const testDirectImageAccess = () => {
+    try {
+      const url = new URL(imageUrl)
+      window.open(url.toString(), '_blank')
+    } catch (err) {
+      console.error("Invalid URL:", err)
+      toast.error("Invalid image URL")
+    }
+  }
+
   useEffect(() => {
     if (!isOpen || !imageUrl || !canvasRef.current) {
       console.log('Early return:', { isOpen, imageUrl, hasCanvas: !!canvasRef.current })
       return
     }
 
-    console.log('Starting image load process for:', imageUrl)
-    
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
     if (!ctx) {
@@ -49,6 +58,17 @@ export function DetectedToolsViewer({
     setImageLoaded(false)
     setError(null)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Draw loading state
+    canvas.width = 400  // Default size while loading
+    canvas.height = 300
+    ctx.fillStyle = '#f8f9fa'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.font = '14px Arial'
+    ctx.fillStyle = '#666'
+    ctx.fillText('Loading image...', 20, 30)
+
+    console.log('Attempting to load image from URL:', imageUrl)
 
     // Create new image object
     const image = new Image()
@@ -88,12 +108,12 @@ export function DetectedToolsViewer({
       canvas.height = height
       setImageDimensions({ width, height })
 
-      // Draw background color
-      ctx.fillStyle = '#f8f9fa'
-      ctx.fillRect(0, 0, width, height)
-
-      // Draw image
       try {
+        // Draw background
+        ctx.fillStyle = '#f8f9fa'
+        ctx.fillRect(0, 0, width, height)
+
+        // Draw image
         ctx.drawImage(image, 0, 0, width, height)
         console.log('Image drawn to canvas successfully')
 
@@ -149,10 +169,16 @@ export function DetectedToolsViewer({
       toast.error("Failed to load image")
     }
 
-    // Add cache busting
-    const url = new URL(imageUrl)
-    url.searchParams.append('t', Date.now().toString())
-    image.src = url.toString()
+    try {
+      // Try to create a URL object (this will fail if the URL is invalid)
+      const url = new URL(imageUrl)
+      url.searchParams.append('t', Date.now().toString())
+      console.log("Full image URL being used:", url.toString())
+      image.src = url.toString()
+    } catch (err) {
+      console.error("Invalid URL format:", imageUrl, err)
+      setError(`Invalid URL format: ${imageUrl}`)
+    }
 
     // Cleanup
     return () => {
@@ -177,8 +203,21 @@ export function DetectedToolsViewer({
         </DialogHeader>
         <div className="relative w-full flex flex-col items-center p-4">
           {error && (
-            <div className="text-red-500 mb-4">{error}</div>
+            <div className="text-red-500 mb-4">
+              <p>{error}</p>
+              <p className="text-xs break-all mt-1">URL: {imageUrl}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={testDirectImageAccess}
+                className="mt-2"
+              >
+                Test Direct Image Access
+              </Button>
+            </div>
           )}
+          
+          {/* Main canvas */}
           <canvas 
             ref={canvasRef}
             className="max-w-full h-auto border border-gray-200 rounded-lg shadow-sm bg-gray-50"
@@ -188,9 +227,24 @@ export function DetectedToolsViewer({
               display: 'block'
             }}
           />
+
+          {/* Loading spinner */}
           {!imageLoaded && !error && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            </div>
+          )}
+
+          {/* Fallback image test */}
+          {error && (
+            <div className="mt-4 w-full max-w-md">
+              <p className="text-sm font-medium mb-2 text-gray-500">Fallback Image Test:</p>
+              <img 
+                src={imageUrl} 
+                alt="Direct image test" 
+                className="w-full h-auto border border-red-300 rounded"
+                onError={(e) => console.error('Fallback image failed to load:', e)}
+              />
             </div>
           )}
         </div>
