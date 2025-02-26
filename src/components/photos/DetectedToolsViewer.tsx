@@ -29,30 +29,41 @@ export function DetectedToolsViewer({
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
-    if (!isOpen || !imageUrl || !canvasRef.current) return
+    if (!isOpen || !imageUrl || !canvasRef.current) {
+      console.log('Early return:', { isOpen, imageUrl, hasCanvas: !!canvasRef.current })
+      return
+    }
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {
+      console.error('Failed to get canvas context')
+      return
+    }
 
-    console.log('Loading image with URL:', imageUrl)
+    console.log('Starting image load process for:', imageUrl)
     
     // Reset state
     setImageLoaded(false)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+    // Create new image object
     const image = new Image()
+    
+    // Important: Set crossOrigin before src
     image.crossOrigin = "anonymous"
 
-    // Set up onload before setting src
     image.onload = () => {
-      console.log('Image loaded successfully:', image.width, 'x', image.height)
+      console.log('Image loaded successfully:', {
+        naturalWidth: image.naturalWidth,
+        naturalHeight: image.naturalHeight
+      })
       
       // Calculate dimensions
       const maxWidth = 800
       const maxHeight = 600
-      let width = image.width
-      let height = image.height
+      let width = image.naturalWidth
+      let height = image.naturalHeight
       const aspectRatio = width / height
 
       if (width > maxWidth) {
@@ -65,6 +76,8 @@ export function DetectedToolsViewer({
         width = height * aspectRatio
       }
 
+      console.log('Calculated dimensions:', { width, height })
+
       // Update canvas size
       canvas.width = width
       canvas.height = height
@@ -74,15 +87,13 @@ export function DetectedToolsViewer({
       ctx.drawImage(image, 0, 0, width, height)
 
       // Calculate scale factors
-      const scaleX = width / image.width
-      const scaleY = height / image.height
+      const scaleX = width / image.naturalWidth
+      const scaleY = height / image.naturalHeight
+
+      console.log('Drawing bounding boxes for', detectedTools.length, 'tools')
 
       // Draw boxes and labels
-      ctx.strokeStyle = '#00FF00'
-      ctx.lineWidth = 2
-      ctx.font = '16px Arial'
-
-      detectedTools.forEach(tool => {
+      detectedTools.forEach((tool, index) => {
         const [x, y, w, h] = tool.box_2d
         
         // Scale coordinates
@@ -91,10 +102,18 @@ export function DetectedToolsViewer({
         const scaledW = w * scaleX
         const scaledH = h * scaleY
 
+        console.log(`Drawing box ${index + 1}:`, {
+          original: { x, y, w, h },
+          scaled: { x: scaledX, y: scaledY, w: scaledW, h: scaledH }
+        })
+
         // Draw rectangle
+        ctx.strokeStyle = '#00FF00'
+        ctx.lineWidth = 2
         ctx.strokeRect(scaledX, scaledY, scaledW - scaledX, scaledH - scaledY)
 
         // Draw label background
+        ctx.font = '16px Arial'
         const padding = 4
         const textMetrics = ctx.measureText(tool.label)
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
@@ -111,6 +130,7 @@ export function DetectedToolsViewer({
       })
 
       setImageLoaded(true)
+      console.log('Finished drawing image and annotations')
     }
 
     image.onerror = (error) => {
@@ -119,19 +139,15 @@ export function DetectedToolsViewer({
       onClose()
     }
 
-    // Add timestamp to bust cache
+    // Add timestamp to bust cache and debug query parameters
     const timestamp = new Date().getTime()
-    const urlWithCache = `${imageUrl}?t=${timestamp}`
-    console.log('Loading image with cache buster:', urlWithCache)
-    image.src = urlWithCache
+    const urlWithParams = `${imageUrl}?t=${timestamp}&debug=true`
+    console.log('Loading image with URL:', urlWithParams)
+    
+    // Set src after all handlers are set up
+    image.src = urlWithParams
 
   }, [imageUrl, detectedTools, isOpen])
-
-  const handleConfirm = () => {
-    onConfirm(detectedTools)
-    toast.success("Tool detection data saved")
-    onClose()
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -145,7 +161,8 @@ export function DetectedToolsViewer({
             className="max-w-full h-auto border border-gray-200 rounded-lg shadow-sm bg-gray-50"
             style={{
               width: imageDimensions.width > 0 ? `${imageDimensions.width}px` : 'auto',
-              height: imageDimensions.height > 0 ? `${imageDimensions.height}px` : 'auto'
+              height: imageDimensions.height > 0 ? `${imageDimensions.height}px` : 'auto',
+              display: 'block' // Ensure canvas is visible
             }}
           />
         </div>
