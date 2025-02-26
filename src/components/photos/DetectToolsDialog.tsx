@@ -36,20 +36,11 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         return
       }
 
+      console.log('API Response:', data)
+
       if (data.tools && data.tools.length > 0) {
-        // Format the tools data to match the expected structure
-        const formattedTools = data.tools.map((tool: any) => ({
-          label: tool.name || tool.label,
-          box_2d: [
-            tool.boundingBox.x,
-            tool.boundingBox.y,
-            tool.boundingBox.x + tool.boundingBox.width,
-            tool.boundingBox.y + tool.boundingBox.height
-          ]
-        }))
-        
-        console.log('Formatted tools:', formattedTools)
-        setDetectedTools(formattedTools)
+        // The API is already returning the correct format with label and box_2d
+        setDetectedTools(data.tools)
         setShowConfirmation(true)
       } else {
         toast.info('No tools detected in the image')
@@ -68,6 +59,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       console.log('Saving detected tools:', tools)
       toast.success('Tool detection data saved')
       setShowConfirmation(false)
+      onClose()
     } catch (error) {
       console.error('Error saving tool data:', error)
       toast.error('Failed to save tool data')
