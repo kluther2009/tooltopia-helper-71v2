@@ -91,6 +91,12 @@ serve(async (req) => {
       throw new Error('Image buffer is empty')
     }
 
+    // Get image dimensions
+    const imageBlob = new Blob([imageBuffer])
+    const imageBitmap = await createImageBitmap(imageBlob)
+    const originalWidth = imageBitmap.width
+    const originalHeight = imageBitmap.height
+
     // Convert image to base64 using the helper function
     console.log('Converting image to base64...')
     const base64Image = arrayBufferToBase64(imageBuffer)
@@ -102,7 +108,7 @@ serve(async (req) => {
       contents: [{
         role: "user",
         parts: [
-          { text: "Look at this image and identify all tools. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [x1,y1,x2,y2] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
+          { text: "Look at this image and identify all tools. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates normalized to 0-1000). Only include these two properties and ensure the response is valid JSON." },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -132,21 +138,27 @@ serve(async (req) => {
                item.box_2d.length === 4
       })
 
-      console.log('Processed tools:', tools)
+      // Return the tools along with the original image dimensions
+      return new Response(
+        JSON.stringify({ 
+          tools,
+          imageDimensions: {
+            width: originalWidth,
+            height: originalHeight
+          }
+        }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
     } catch (e) {
       console.error('Error parsing response:', e)
       throw new Error(`Failed to parse tool detection results: ${e.message}`)
     }
-
-    return new Response(
-      JSON.stringify({ tools }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
   } catch (error) {
     console.error('Function error:', error)
     return new Response(
