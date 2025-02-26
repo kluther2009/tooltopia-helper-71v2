@@ -5,6 +5,7 @@ import { useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { DetectedToolsViewer } from "./DetectedToolsViewer"
 import { toast } from "sonner"
+import { LocationPhoto } from "@/types/photos"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
@@ -17,13 +18,13 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const [isDetecting, setIsDetecting] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
 
-  const detectTools = async (photoUrl: string) => {
+  const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
-    setSelectedPhotoUrl(photoUrl)
+    setSelectedPhotoUrl(photo.url)
 
     try {
       const { data, error } = await supabase.functions.invoke('detect-tools', {
-        body: { imageUrl: photoUrl }
+        body: { imageUrl: photo.url }
       })
 
       if (error) {
@@ -66,8 +67,10 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
             <DialogTitle>Detect Tools in Photos</DialogTitle>
           </DialogHeader>
           <PhotoGrid 
-            onPhotoSelect={detectTools}
-            isProcessing={isDetecting}
+            photos={[]} // You'll need to pass your photos array here
+            onPhotoClick={handlePhotoSelect}
+            onDeleteClick={undefined}
+            disabled={isDetecting}
           />
         </DialogContent>
       </Dialog>
