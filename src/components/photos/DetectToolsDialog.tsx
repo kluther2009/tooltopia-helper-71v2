@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { DetectedToolsViewer } from "./DetectedToolsViewer"
 import { toast } from "sonner"
 import { LocationPhoto } from "@/types/photos"
+import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
@@ -13,6 +14,7 @@ interface DetectToolsDialogProps {
 }
 
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
+  const { photos } = useInitialInventoryPhotos()
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [detectedTools, setDetectedTools] = useState<any[]>([])
   const [isDetecting, setIsDetecting] = useState(false)
@@ -20,11 +22,12 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
-    setSelectedPhotoUrl(photo.url)
+    const photoUrl = supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl
+    setSelectedPhotoUrl(photoUrl)
 
     try {
       const { data, error } = await supabase.functions.invoke('detect-tools', {
-        body: { imageUrl: photo.url }
+        body: { imageUrl: photoUrl }
       })
 
       if (error) {
@@ -67,7 +70,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
             <DialogTitle>Detect Tools in Photos</DialogTitle>
           </DialogHeader>
           <PhotoGrid 
-            photos={[]} // You'll need to pass your photos array here
+            photos={photos}
             onPhotoClick={handlePhotoSelect}
             onDeleteClick={undefined}
             disabled={isDetecting}
