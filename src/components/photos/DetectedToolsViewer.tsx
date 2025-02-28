@@ -104,8 +104,9 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
-                const [yMin, xMin, yMax, xMax] = tool.box_2d;
+                // IMPORTANT: Changed to assume [x_min, y_min, x_max, y_max] format
+                // which is more standard in computer vision
+                const [xMin, yMin, xMax, yMax] = tool.box_2d;
                 
                 // Step 1: Convert from Gemini's 0-1000 scale to 0-1 scale
                 const normalizedXMin = xMin / 1000;
@@ -125,7 +126,7 @@ export function DetectedToolsViewer({
                 
                 // Log raw coordinates from API
                 console.log(`Raw coordinates for ${tool.label}:`, {
-                  format: 'Gemini [y_min, x_min, y_max, x_max]',
+                  format: 'Assumed [x_min, y_min, x_max, y_max]',
                   values: tool.box_2d,
                   normalizedScale: '0-1000'
                 });
