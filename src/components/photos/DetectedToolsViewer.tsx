@@ -31,18 +31,39 @@ export function DetectedToolsViewer({
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement
+    const naturalWidth = img.naturalWidth
+    const naturalHeight = img.naturalHeight
+    const displayWidth = img.width
+    const displayHeight = img.height
+    
     setImageDimensions({
-      width: img.naturalWidth,
-      height: img.naturalHeight
+      width: naturalWidth,
+      height: naturalHeight
     })
     setDisplayDimensions({
-      width: img.width,
-      height: img.height
+      width: displayWidth,
+      height: displayHeight
     })
     setLoading(false)
 
-    console.log('Natural dimensions:', { width: img.naturalWidth, height: img.naturalHeight })
-    console.log('Display dimensions:', { width: img.width, height: img.height })
+    // Enhanced debugging information
+    console.log('Image dimensions:', {
+      natural: { width: naturalWidth, height: naturalHeight },
+      display: { width: displayWidth, height: displayHeight },
+      scaleFactor: { 
+        x: displayWidth / naturalWidth, 
+        y: displayHeight / naturalHeight 
+      }
+    })
+    
+    // Log the image size passed to the API (same as natural size)
+    console.log('Image size passed to API:', { width: naturalWidth, height: naturalHeight })
+    
+    // Log normalization factor (converting actual pixels to 0-1000 scale)
+    console.log('Normalization factors:', {
+      x: 1000 / naturalWidth,
+      y: 1000 / naturalHeight
+    })
   }
 
   const handleImageError = () => {
@@ -88,6 +109,13 @@ export function DetectedToolsViewer({
                 // [y_min, x_min, y_max, x_max] on a 0-1000 scale
                 const [yMin, xMin, yMax, xMax] = tool.box_2d;
                 
+                // Log raw coordinates from API
+                console.log(`Raw coordinates for ${tool.label}:`, {
+                  format: 'Gemini [y_min, x_min, y_max, x_max]',
+                  values: tool.box_2d,
+                  normalizedScale: '0-1000'
+                });
+                
                 // Convert from normalized 0-1000 coordinates to actual image dimensions
                 const imageXMin = (xMin / 1000) * imageDimensions.width;
                 const imageYMin = (yMin / 1000) * imageDimensions.height;
@@ -97,6 +125,16 @@ export function DetectedToolsViewer({
                 // Calculate the width and height of the box in image dimensions
                 const boxWidth = imageXMax - imageXMin;
                 const boxHeight = imageYMax - imageYMin;
+                
+                // Log conversion to actual image pixel coordinates
+                console.log(`Image pixel coordinates for ${tool.label}:`, {
+                  xMin: imageXMin,
+                  yMin: imageYMin,
+                  xMax: imageXMax,
+                  yMax: imageYMax,
+                  width: boxWidth,
+                  height: boxHeight
+                });
                 
                 // Scale to display dimensions
                 const scaleX = displayDimensions.width / imageDimensions.width;
@@ -108,6 +146,15 @@ export function DetectedToolsViewer({
                 const displayWidth = boxWidth * scaleX;
                 const displayHeight = boxHeight * scaleY;
                 
+                // Log scaling to display dimensions
+                console.log(`Display coordinates for ${tool.label}:`, {
+                  scaleFactors: { x: scaleX, y: scaleY },
+                  xMin: displayXMin,
+                  yMin: displayYMin,
+                  width: displayWidth,
+                  height: displayHeight
+                });
+                
                 // Create style for the bounding box
                 const boxStyle = {
                   left: displayXMin,
@@ -116,11 +163,21 @@ export function DetectedToolsViewer({
                   height: displayHeight,
                 };
                 
-                // Log the coordinate transformations for debugging
-                console.log(`Tool ${index} (${tool.label}):`, {
+                // Complete transformation log
+                console.log(`Tool ${index} (${tool.label}) - Full transformation:`, {
                   original: tool.box_2d, // [y_min, x_min, y_max, x_max]
-                  imageDimensions: {xMin: imageXMin, yMin: imageYMin, xMax: imageXMax, yMax: imageYMax},
-                  displayDimensions: {x: displayXMin, y: displayYMin, width: displayWidth, height: displayHeight}
+                  normalizedToImage: {
+                    xMin: imageXMin, 
+                    yMin: imageYMin, 
+                    xMax: imageXMax, 
+                    yMax: imageYMax
+                  },
+                  imageToDisplay: {
+                    x: displayXMin, 
+                    y: displayYMin, 
+                    width: displayWidth, 
+                    height: displayHeight
+                  }
                 });
 
                 return (
