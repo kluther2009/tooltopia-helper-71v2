@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -15,17 +16,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Project } from "@/types/projects";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface ProjectTaskDialogProps {
   project: Project;
@@ -135,43 +132,16 @@ export function ProjectTaskDialog({ project, open, onOpenChange }: ProjectTaskDi
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Due Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent 
-                      className="w-auto p-0 bg-popover" 
-                      align="start"
-                    >
-                      <Calendar
-                        mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const formattedDate = format(date, "yyyy-MM-dd");
-                            field.onChange(formattedDate);
-                          }
-                        }}
-                        initialFocus
-                        className="rounded-md border"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <FormControl>
+                    <DatePicker
+                      date={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          field.onChange(date.toISOString().split('T')[0]);
+                        }
+                      }}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
