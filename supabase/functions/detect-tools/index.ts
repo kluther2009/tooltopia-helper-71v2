@@ -1,147 +1,162 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.1.3'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { GoogleGenerativeAI } from "npm:@google/generative-ai"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function extractJsonFromText(text: string): any {
+  try {
+    // First try direct JSON parse
+    return JSON.parse(text);
+  } catch (e) {
+    // If that fails, try to find JSON array in the text
+    const jsonMatch = text.match(/\[\s*{[^]*}\s*\]/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.error('Failed to parse matched JSON:', e);
+      }
+    }
+    
+    // If still no valid JSON, try to extract individual tool objects
+    const toolsArray = [];
+    const toolMatches = text.matchAll(/{[^}]+}/g);
+    for (const match of toolMatches) {
+      try {
+        const tool = JSON.parse(match[0]);
+        if (tool.label && Array.isArray(tool.box_2d) && tool.box_2d.length === 4) {
+          toolsArray.push(tool);
+        }
+      } catch (e) {
+        console.error('Failed to parse individual tool:', e);
+      }
+    }
+    
+    if (toolsArray.length > 0) {
+      return toolsArray;
+    }
+    
+    throw new Error('No valid JSON found in response');
+  }
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { imageUrl } = await req.json()
+    console.log('Processing image URL:', imageUrl)
     
     if (!imageUrl) {
-      return new Response(
-        JSON.stringify({ error: 'Image URL is required' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400 
-        }
-      )
+      throw new Error('No image URL provided')
     }
 
-    console.log('Received image URL:', imageUrl.substring(0, 50) + '...')
-
-    // Fetch image as binary data
-    console.log('Fetching image...')
-    const imageResponse = await fetch(imageUrl)
-    if (!imageResponse.ok) {
-      console.error('Failed to fetch image:', imageResponse.status, imageResponse.statusText)
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch image' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
-    }
-
-    const imageBlob = await imageResponse.blob()
-    console.log('Image fetched, size:', imageBlob.size, 'bytes')
-
-    // Convert blob to base64
-    const arrayBuffer = await imageBlob.arrayBuffer()
-    const imageBase64 = btoa(
-      new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-    )
-
-    // Initialize Gemini API
-    console.log('Initializing Gemini API...')
+    // Initialize Gemini AI
     const apiKey = Deno.env.get('GOOGLE_CLOUD_VISION_API_KEY')
     if (!apiKey) {
-      console.error('Missing GOOGLE_CLOUD_VISION_API_KEY')
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
+      throw new Error('GOOGLE_CLOUD_VISION_API_KEY not found')
     }
 
+    console.log('Initializing Gemini...')
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
-    // Updated system prompt for tool detection
-    const systemPrompt = `You are a computer vision expert specializing in identifying tools in workshop and garage settings.
-When presented with an image, carefully analyze it and identify all visible tools. If no tools are visible, return an empty array.`
+    // Fetch and process image
+    console.log('Fetching image...')
+    const imgResponse = await fetch(imageUrl)
+    if (!imgResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imgResponse.status}`)
+    }
 
-    console.log('Sending request to Gemini API...')
+    const imageBuffer = await imgResponse.arrayBuffer()
+    console.log('Image fetched, size:', imageBuffer.byteLength)
+    
+    if (imageBuffer.byteLength === 0) {
+      throw new Error('Image buffer is empty')
+    }
+
+    // Convert image to base64 using the helper function
+    console.log('Converting image to base64...')
+    const base64Image = arrayBufferToBase64(imageBuffer)
+    console.log('Image converted to base64')
+
+    // Call Gemini API with corrected structure
+    console.log('Calling Gemini API...')
     const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: systemPrompt },
-            { 
-              inline_data: {
-                mime_type: 'image/jpeg',
-                data: imageBase64
-              }
-            },
-            { text: `Identify all tools in this image. Format your response as a JSON object with a "tools" array containing objects with "label" (the tool name) and "box_2d" (array of normalized coordinates [y_min, x_min, y_max, x_max] on a 0-1000 scale where (0,0) is top-left).` }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 4096,
-      }
+      contents: [{
+        role: "user",
+        parts: [
+          { text: "Look at this image and identify all tools. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [x1,y1,x2,y2] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
+          {
+            inline_data: {
+              mime_type: "image/jpeg",
+              data: base64Image
+            }
+          }
+        ]
+      }]
     })
 
-    const response = result.response
+    const response = await result.response
     const text = response.text()
-    console.log('Received response from Gemini API')
+    console.log('Raw response:', text)
 
-    // Extract JSON data from the response
+    // Parse response with improved parsing logic
     let tools = []
     try {
-      // Try to parse the entire response as JSON
-      const parsedData = JSON.parse(text)
-      tools = parsedData.tools || []
-      console.log(`Successfully parsed JSON, found ${tools.length} tools`)
-    } catch (e) {
-      console.error('Failed to parse response as JSON, attempting to extract JSON block:', e)
-      
-      // Try to extract a JSON block from text response
-      const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || 
-                        text.match(/```\n([\s\S]*?)\n```/) ||
-                        text.match(/{[\s\S]*?}/)
-      
-      if (jsonMatch) {
-        try {
-          const jsonString = jsonMatch[1] || jsonMatch[0]
-          const parsedData = JSON.parse(jsonString)
-          tools = parsedData.tools || []
-          console.log(`Extracted JSON from code block, found ${tools.length} tools`)
-        } catch (jsonError) {
-          console.error('Failed to parse extracted JSON:', jsonError)
-        }
+      tools = extractJsonFromText(text);
+      if (!Array.isArray(tools)) {
+        tools = [tools];
       }
-    }
 
-    console.log('Detected tools:', tools)
+      tools = tools.filter(item => {
+        return item && 
+               typeof item.label === 'string' && 
+               Array.isArray(item.box_2d) && 
+               item.box_2d.length === 4
+      })
+
+      console.log('Processed tools:', tools)
+    } catch (e) {
+      console.error('Error parsing response:', e)
+      throw new Error(`Failed to parse tool detection results: ${e.message}`)
+    }
 
     return new Response(
       JSON.stringify({ tools }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     )
   } catch (error) {
-    console.error('Error processing image:', error)
+    console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: error.message,
+        details: error.stack
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500
       }
     )
   }
