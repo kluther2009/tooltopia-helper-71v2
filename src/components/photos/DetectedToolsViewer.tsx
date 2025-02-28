@@ -60,21 +60,6 @@ export function DetectedToolsViewer({
   // Log detected tools for debugging
   console.log('All detected tools:', detectedTools)
   
-  const tapeMeasure = detectedTools.find(tool => 
-    tool.label.toLowerCase().includes('tape') || 
-    tool.label.toLowerCase().includes('measure')
-  )
-  if (tapeMeasure) {
-    console.log('Tape measure coordinates:', {
-      label: tapeMeasure.label,
-      coordinates: tapeMeasure.box_2d,
-      originalY1: tapeMeasure.box_2d[0],
-      originalX1: tapeMeasure.box_2d[1],
-      originalY2: tapeMeasure.box_2d[2],
-      originalX2: tapeMeasure.box_2d[3]
-    })
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[850px] max-h-[90vh] overflow-y-auto">
@@ -99,33 +84,44 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                // Get normalized coordinates (0-1000) from the API response
-                // Format is [y_min, x_min, y_max, x_max]
-                const [y1, x1, y2, x2] = tool.box_2d
-
-                // Convert from 1000x1000 normalized coordinates to actual image dimensions
-                const imageX1 = (x1 / 1000) * imageDimensions.width
-                const imageY1 = (y1 / 1000) * imageDimensions.height
-                const imageX2 = (x2 / 1000) * imageDimensions.width
-                const imageY2 = (y2 / 1000) * imageDimensions.height
-
-                // Calculate display scaling factors
-                const scaleX = displayDimensions.width / imageDimensions.width
-                const scaleY = displayDimensions.height / imageDimensions.height
-
-                // Scale to final display dimensions
-                const finalX1 = imageX1 * scaleX
-                const finalY1 = imageY1 * scaleY
-                const finalWidth = (imageX2 - imageX1) * scaleX
-                const finalHeight = (imageY2 - imageY1) * scaleY
-
-                // Create box style
+                // Extract coordinates according to Gemini's format:
+                // [y_min, x_min, y_max, x_max] on a 0-1000 scale
+                const [yMin, xMin, yMax, xMax] = tool.box_2d;
+                
+                // Convert from normalized 0-1000 coordinates to actual image dimensions
+                const imageXMin = (xMin / 1000) * imageDimensions.width;
+                const imageYMin = (yMin / 1000) * imageDimensions.height;
+                const imageXMax = (xMax / 1000) * imageDimensions.width;
+                const imageYMax = (yMax / 1000) * imageDimensions.height;
+                
+                // Calculate the width and height of the box in image dimensions
+                const boxWidth = imageXMax - imageXMin;
+                const boxHeight = imageYMax - imageYMin;
+                
+                // Scale to display dimensions
+                const scaleX = displayDimensions.width / imageDimensions.width;
+                const scaleY = displayDimensions.height / imageDimensions.height;
+                
+                // Calculate final display coordinates and dimensions
+                const displayXMin = imageXMin * scaleX;
+                const displayYMin = imageYMin * scaleY;
+                const displayWidth = boxWidth * scaleX;
+                const displayHeight = boxHeight * scaleY;
+                
+                // Create style for the bounding box
                 const boxStyle = {
-                  left: finalX1,
-                  top: finalY1,
-                  width: finalWidth,
-                  height: finalHeight,
-                } as const
+                  left: displayXMin,
+                  top: displayYMin,
+                  width: displayWidth,
+                  height: displayHeight,
+                };
+                
+                // Log the coordinate transformations for debugging
+                console.log(`Tool ${index} (${tool.label}):`, {
+                  original: tool.box_2d, // [y_min, x_min, y_max, x_max]
+                  imageDimensions: {xMin: imageXMin, yMin: imageYMin, xMax: imageXMax, yMax: imageYMax},
+                  displayDimensions: {x: displayXMin, y: displayYMin, width: displayWidth, height: displayHeight}
+                });
 
                 return (
                   <div key={index}>
@@ -136,8 +132,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: finalX1,
-                        top: Math.max(0, finalY1 - 24),
+                        left: displayXMin,
+                        top: Math.max(0, displayYMin - 24),
                       }}
                     >
                       {tool.label}
