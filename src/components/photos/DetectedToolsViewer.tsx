@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
 
 interface Tool {
@@ -28,6 +28,52 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
+  const imgRef = useRef<HTMLImageElement>(null)
+  
+  // Add effect to monitor image size changes at runtime
+  useEffect(() => {
+    if (!imgRef.current || loading) return
+    
+    const updateDisplaySize = () => {
+      if (!imgRef.current) return
+      
+      const currentWidth = imgRef.current.clientWidth
+      const currentHeight = imgRef.current.clientHeight
+      
+      console.log('Runtime image dimensions check:', {
+        client: { width: currentWidth, height: currentHeight },
+        calculated: displayDimensions,
+        match: currentWidth === displayDimensions.width && currentHeight === displayDimensions.height
+      })
+      
+      // Update display dimensions if they've changed
+      if (currentWidth !== displayDimensions.width || currentHeight !== displayDimensions.height) {
+        console.log('Display dimensions changed at runtime - updating:', {
+          previous: displayDimensions,
+          current: { width: currentWidth, height: currentHeight }
+        })
+        setDisplayDimensions({
+          width: currentWidth,
+          height: currentHeight
+        })
+      }
+    }
+    
+    // Check dimensions after mounting and on window resize
+    updateDisplaySize()
+    
+    const resizeObserver = new ResizeObserver(updateDisplaySize)
+    if (imgRef.current) {
+      resizeObserver.observe(imgRef.current)
+    }
+    
+    window.addEventListener('resize', updateDisplaySize)
+    
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', updateDisplaySize)
+    }
+  }, [loading, displayDimensions])
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement
@@ -50,6 +96,7 @@ export function DetectedToolsViewer({
     console.log('Image dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
+      clientSize: { width: img.clientWidth, height: img.clientHeight },
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight 
@@ -97,12 +144,20 @@ export function DetectedToolsViewer({
           ) : (
             <div className="relative inline-block">
               <img 
+                ref={imgRef}
                 src={imageUrl}
                 alt="Tool detection"
                 className="max-w-full h-auto rounded-lg shadow-sm"
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
+              
+              {/* Debugging overlay to show image dimensions */}
+              {!loading && (
+                <div className="absolute top-0 left-0 bg-black/70 text-white px-2 py-1 text-xs z-10">
+                  {displayDimensions.width} × {displayDimensions.height} px
+                </div>
+              )}
               
               {!loading && detectedTools.map((tool, index) => {
                 // Extract coordinates according to Gemini's format:
@@ -157,10 +212,10 @@ export function DetectedToolsViewer({
                 
                 // Create style for the bounding box
                 const boxStyle = {
-                  left: displayXMin,
-                  top: displayYMin,
-                  width: displayWidth,
-                  height: displayHeight,
+                  left: `${displayXMin}px`,
+                  top: `${displayYMin}px`,
+                  width: `${displayWidth}px`,
+                  height: `${displayHeight}px`,
                 };
                 
                 // Complete transformation log
@@ -185,12 +240,17 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute border-2 border-green-500"
                       style={boxStyle}
-                    />
+                    >
+                      {/* Debug info inside the box */}
+                      <div className="absolute bottom-0 right-0 bg-black/70 text-white px-1 text-[8px]">
+                        {Math.round(displayWidth)}×{Math.round(displayHeight)}
+                      </div>
+                    </div>
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: displayXMin,
-                        top: Math.max(0, displayYMin - 24),
+                        left: `${displayXMin}px`,
+                        top: `${Math.max(0, displayYMin - 24)}px`,
                       }}
                     >
                       {tool.label}
