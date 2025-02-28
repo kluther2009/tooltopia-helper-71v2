@@ -29,6 +29,11 @@ export function DetectedToolsViewer({
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
   const imageRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  
+  // IMPORTANT: We now detect which coordinate format to use based on a constant
+  // Gemini API documentation states that they use [y_min, x_min, y_max, x_max] format
+  // but testing showed that for some images a different format works better
+  const USE_YMINXMIN_FORMAT = false // Set to true for [y_min, x_min, y_max, x_max], false for [x_min, y_min, x_max, y_max]
 
   // Function to update dimensions based on the actual rendered image
   const updateDimensions = () => {
@@ -49,7 +54,8 @@ export function DetectedToolsViewer({
       console.log('Updated dimensions:', {
         natural: { width: img.naturalWidth, height: img.naturalHeight },
         display: { width: rect.width, height: rect.height },
-        aspectRatio: img.naturalWidth / img.naturalHeight
+        aspectRatio: img.naturalWidth / img.naturalHeight,
+        coordinateFormat: USE_YMINXMIN_FORMAT ? '[y_min, x_min, y_max, x_max]' : '[x_min, y_min, x_max, y_max]'
       })
     }
   }
@@ -111,87 +117,18 @@ export function DetectedToolsViewer({
     onClose()
   }
 
-  // Function to calculate bounding box positions based on different coordinate systems
-  const getBoxPositions = (tool: Tool) => {
-    if (displayDimensions.width === 0 || displayDimensions.height === 0) {
-      return {
-        left: '0px',
-        top: '0px',
-        width: '0px',
-        height: '0px'
-      }
-    }
-    
-    const [coord1, coord2, coord3, coord4] = tool.box_2d;
-    
-    // Try both coordinate systems and use heuristics to determine which is correct
-    // For rectangular images, the correct system may differ from oblong images
-    
-    // Approach 1: Assume [x_min, y_min, x_max, y_max] (standard computer vision format)
-    const xMin1 = coord1 / 1000;
-    const yMin1 = coord2 / 1000;
-    const xMax1 = coord3 / 1000;
-    const yMax1 = coord4 / 1000;
-    const width1 = xMax1 - xMin1;
-    const height1 = yMax1 - yMin1;
-    
-    // Approach 2: Assume [y_min, x_min, y_max, x_max] (original format)
-    const yMin2 = coord1 / 1000;
-    const xMin2 = coord2 / 1000;
-    const yMax2 = coord3 / 1000;
-    const xMax2 = coord4 / 1000;
-    const width2 = xMax2 - xMin2;
-    const height2 = yMax2 - yMin2;
-    
-    // Use aspect ratio information to determine which coordinate system to use
-    // For rectangular images (wider than tall), approach 1 tends to work better
-    // For portrait images (taller than wide), approach 2 may work better
-    const isWiderThanTall = imageDimensions.width > imageDimensions.height;
-    const aspectRatio = imageDimensions.width / imageDimensions.height;
-    
-    // Determine which approach to use based on image properties
-    // This is a heuristic; we could make this more sophisticated
-    const useApproach1 = true; // Default to approach 1 for now
-    
-    // Apply the selected approach
-    let leftPx, topPx, widthPx, heightPx;
-    
-    if (useApproach1) {
-      leftPx = xMin1 * displayDimensions.width;
-      topPx = yMin1 * displayDimensions.height;
-      widthPx = width1 * displayDimensions.width;
-      heightPx = height1 * displayDimensions.height;
-      
-      console.log(`Using approach 1 for ${tool.label} with values:`, {
-        left: leftPx,
-        top: topPx,
-        width: widthPx,
-        height: heightPx
-      });
-    } else {
-      leftPx = xMin2 * displayDimensions.width;
-      topPx = yMin2 * displayDimensions.height;
-      widthPx = width2 * displayDimensions.width;
-      heightPx = height2 * displayDimensions.height;
-      
-      console.log(`Using approach 2 for ${tool.label} with values:`, {
-        left: leftPx,
-        top: topPx,
-        width: widthPx,
-        height: heightPx
-      });
-    }
-    
-    return {
-      left: `${leftPx}px`,
-      top: `${topPx}px`,
-      width: `${widthPx}px`,
-      height: `${heightPx}px`
-    };
-  };
+  // Toggle to force reverting to the original coordinate system
+  const toggleCoordinateSystem = () => {
+    // This function would allow toggling between coordinate systems if needed
+    // Not implemented in the UI, but available for debugging
+    console.log('Would toggle coordinate system')
+  }
 
   // Log detected tools for debugging
-  console.log('All detected tools:', detectedTools)
+  console.log('All detected tools with format:', 
+    USE_YMINXMIN_FORMAT ? '[y_min, x_min, y_max, x_max]' : '[x_min, y_min, x_max, y_max]', 
+    detectedTools
+  )
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -218,7 +155,48 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                const boxStyle = getBoxPositions(tool);
+                // Get coordinates based on the format we're using
+                let xMin, yMin, xMax, yMax;
+                
+                if (USE_YMINXMIN_FORMAT) {
+                  // Original format: [y_min, x_min, y_max, x_max]
+                  [yMin, xMin, yMax, xMax] = tool.box_2d;
+                } else {
+                  // New format: [x_min, y_min, x_max, y_max]
+                  [xMin, yMin, xMax, yMax] = tool.box_2d;
+                }
+                
+                // Convert from 0-1000 scale to 0-1 scale
+                const normalizedXMin = xMin / 1000;
+                const normalizedYMin = yMin / 1000;
+                const normalizedXMax = xMax / 1000;
+                const normalizedYMax = yMax / 1000;
+                
+                // Calculate width and height
+                const normalizedWidth = normalizedXMax - normalizedXMin;
+                const normalizedHeight = normalizedYMax - normalizedYMin;
+                
+                // Scale to the displayed image dimensions
+                const leftPx = normalizedXMin * displayDimensions.width;
+                const topPx = normalizedYMin * displayDimensions.height;
+                const widthPx = normalizedWidth * displayDimensions.width;
+                const heightPx = normalizedHeight * displayDimensions.height;
+                
+                // Log coordinates for debugging
+                console.log(`Box coordinates for ${tool.label}:`, {
+                  format: USE_YMINXMIN_FORMAT ? '[y_min, x_min, y_max, x_max]' : '[x_min, y_min, x_max, y_max]',
+                  raw: tool.box_2d,
+                  normalized: [normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax],
+                  pixels: { left: leftPx, top: topPx, width: widthPx, height: heightPx }
+                });
+                
+                // Create the style object for positioning
+                const boxStyle = {
+                  left: `${leftPx}px`,
+                  top: `${topPx}px`,
+                  width: `${widthPx}px`,
+                  height: `${heightPx}px`
+                };
                 
                 return (
                   <div key={index}>
@@ -229,8 +207,9 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: boxStyle.left,
-                        top: `calc(${boxStyle.top} - 20px)`,
+                        left: `${leftPx}px`,
+                        top: `${Math.max(0, topPx - 5)}px`,
+                        transform: 'translateY(-100%)'
                       }}
                     >
                       {tool.label}
@@ -247,6 +226,21 @@ export function DetectedToolsViewer({
             </div>
           )}
         </div>
+        
+        {/*
+        // Uncomment for debugging
+        <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+          <div>Format: {USE_YMINXMIN_FORMAT ? '[y_min, x_min, y_max, x_max]' : '[x_min, y_min, x_max, y_max]'}</div>
+          <div>Image: {imageDimensions.width}×{imageDimensions.height}</div>
+          <div>Display: {displayDimensions.width}×{displayDimensions.height}</div>
+          <button 
+            onClick={toggleCoordinateSystem}
+            className="mt-1 px-2 py-1 bg-gray-200 rounded text-xs"
+          >
+            Toggle Format
+          </button>
+        </div>
+        */}
 
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
