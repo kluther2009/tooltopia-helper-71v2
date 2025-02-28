@@ -105,9 +105,14 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                // Extract coordinates according to Gemini's format:
-                // [y_min, x_min, y_max, x_max] on a 0-1000 scale
+                // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
                 const [yMin, xMin, yMax, xMax] = tool.box_2d;
+                
+                // Convert to percentages (this is the key fix!)
+                const left = `${xMin / 10}%`;     // Convert from 0-1000 to 0-100%
+                const top = `${yMin / 10}%`;      // Convert from 0-1000 to 0-100%
+                const width = `${(xMax - xMin) / 10}%`;
+                const height = `${(yMax - yMin) / 10}%`;
                 
                 // Log raw coordinates from API
                 console.log(`Raw coordinates for ${tool.label}:`, {
@@ -116,71 +121,22 @@ export function DetectedToolsViewer({
                   normalizedScale: '0-1000'
                 });
                 
-                // Convert from normalized 0-1000 coordinates to actual image dimensions
-                const imageXMin = (xMin / 1000) * imageDimensions.width;
-                const imageYMin = (yMin / 1000) * imageDimensions.height;
-                const imageXMax = (xMax / 1000) * imageDimensions.width;
-                const imageYMax = (yMax / 1000) * imageDimensions.height;
-                
-                // Calculate the width and height of the box in image dimensions
-                const boxWidth = imageXMax - imageXMin;
-                const boxHeight = imageYMax - imageYMin;
-                
-                // Log conversion to actual image pixel coordinates
-                console.log(`Image pixel coordinates for ${tool.label}:`, {
-                  xMin: imageXMin,
-                  yMin: imageYMin,
-                  xMax: imageXMax,
-                  yMax: imageYMax,
-                  width: boxWidth,
-                  height: boxHeight
-                });
-                
-                // Scale to display dimensions
-                const scaleX = displayDimensions.width / imageDimensions.width;
-                const scaleY = displayDimensions.height / imageDimensions.height;
-                
-                // Calculate final display coordinates and dimensions
-                const displayXMin = imageXMin * scaleX;
-                const displayYMin = imageYMin * scaleY;
-                const displayWidth = boxWidth * scaleX;
-                const displayHeight = boxHeight * scaleY;
-                
-                // Log scaling to display dimensions
-                console.log(`Display coordinates for ${tool.label}:`, {
-                  scaleFactors: { x: scaleX, y: scaleY },
-                  xMin: displayXMin,
-                  yMin: displayYMin,
-                  width: displayWidth,
-                  height: displayHeight
+                // Log percentage-based coordinates
+                console.log(`Percentage coordinates for ${tool.label}:`, {
+                  left,
+                  top,
+                  width,
+                  height
                 });
                 
                 // Create style for the bounding box
                 const boxStyle = {
-                  left: `${displayXMin}px`,
-                  top: `${displayYMin}px`,
-                  width: `${displayWidth}px`,
-                  height: `${displayHeight}px`,
+                  left,
+                  top,
+                  width,
+                  height
                 };
                 
-                // Complete transformation log
-                console.log(`Tool ${index} (${tool.label}) - Full transformation:`, {
-                  original: tool.box_2d, // [y_min, x_min, y_max, x_max]
-                  normalizedToImage: {
-                    xMin: imageXMin, 
-                    yMin: imageYMin, 
-                    xMax: imageXMax, 
-                    yMax: imageYMax
-                  },
-                  imageToDisplay: {
-                    x: displayXMin, 
-                    y: displayYMin, 
-                    width: displayWidth, 
-                    height: displayHeight
-                  },
-                  finalStyle: boxStyle
-                });
-
                 return (
                   <div key={index}>
                     <div 
@@ -190,8 +146,9 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: `${displayXMin}px`,
-                        top: `${Math.max(0, displayYMin - 24)}px`,
+                        left,
+                        top: `${Math.max(0, yMin / 10 - 3)}%`,
+                        transform: 'translateY(-100%)'
                       }}
                     >
                       {tool.label}
