@@ -1,12 +1,12 @@
 
-import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
+import * as React from "react";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const Popover = PopoverPrimitive.Root
+const Popover = PopoverPrimitive.Root;
 
-const PopoverTrigger = PopoverPrimitive.Trigger
+const PopoverTrigger = PopoverPrimitive.Trigger;
 
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
@@ -25,10 +25,20 @@ const PopoverContent = React.forwardRef<
         // Prevent auto-focus which can cause unexpected closing
         e.preventDefault();
       }}
+      onPointerDownOutside={(e) => {
+        const target = e.target as HTMLElement;
+        // Prevent closing when clicking calendar navigation
+        if (target.closest('.rdp-nav_button') || 
+            target.closest('.rdp-button') ||
+            target.classList.contains('rdp-nav_button') || 
+            target.classList.contains('rdp-button')) {
+          e.preventDefault();
+        }
+      }}
       {...props}
     />
   </PopoverPrimitive.Portal>
-))
-PopoverContent.displayName = PopoverPrimitive.Content.displayName
+));
+PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent }
+export { Popover, PopoverTrigger, PopoverContent };
