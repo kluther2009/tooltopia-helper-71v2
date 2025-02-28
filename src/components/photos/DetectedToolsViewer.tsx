@@ -157,10 +157,10 @@ export function DetectedToolsViewer({
                 
                 // Create style for the bounding box
                 const boxStyle = {
-                  left: displayXMin,
-                  top: displayYMin,
-                  width: displayWidth,
-                  height: displayHeight,
+                  left: `${displayXMin}px`,
+                  top: `${displayYMin}px`,
+                  width: `${displayWidth}px`,
+                  height: `${displayHeight}px`,
                 };
                 
                 // Complete transformation log
@@ -177,7 +177,8 @@ export function DetectedToolsViewer({
                     y: displayYMin, 
                     width: displayWidth, 
                     height: displayHeight
-                  }
+                  },
+                  finalStyle: boxStyle
                 });
 
                 return (
@@ -189,8 +190,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: displayXMin,
-                        top: Math.max(0, displayYMin - 24),
+                        left: `${displayXMin}px`,
+                        top: `${Math.max(0, displayYMin - 24)}px`,
                       }}
                     >
                       {tool.label}
