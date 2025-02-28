@@ -108,11 +108,21 @@ export function DetectedToolsViewer({
                 // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
                 const [yMin, xMin, yMax, xMax] = tool.box_2d;
                 
-                // Convert to percentages (this is the key fix!)
-                const left = `${xMin / 10}%`;     // Convert from 0-1000 to 0-100%
-                const top = `${yMin / 10}%`;      // Convert from 0-1000 to 0-100%
-                const width = `${(xMax - xMin) / 10}%`;
-                const height = `${(yMax - yMin) / 10}%`;
+                // Step 1: Convert from Gemini's 0-1000 scale to 0-1 scale
+                const normalizedXMin = xMin / 1000;
+                const normalizedYMin = yMin / 1000;
+                const normalizedXMax = xMax / 1000;
+                const normalizedYMax = yMax / 1000;
+                
+                // Step 2: Calculate the width and height in the normalized scale
+                const normalizedWidth = normalizedXMax - normalizedXMin;
+                const normalizedHeight = normalizedYMax - normalizedYMin;
+                
+                // Step 3: Convert normalized coordinates to exact pixel positions based on the displayed image
+                const leftPx = normalizedXMin * displayDimensions.width;
+                const topPx = normalizedYMin * displayDimensions.height;
+                const widthPx = normalizedWidth * displayDimensions.width;
+                const heightPx = normalizedHeight * displayDimensions.height;
                 
                 // Log raw coordinates from API
                 console.log(`Raw coordinates for ${tool.label}:`, {
@@ -121,20 +131,20 @@ export function DetectedToolsViewer({
                   normalizedScale: '0-1000'
                 });
                 
-                // Log percentage-based coordinates
-                console.log(`Percentage coordinates for ${tool.label}:`, {
-                  left,
-                  top,
-                  width,
-                  height
+                // Log calculated pixel positions
+                console.log(`Pixel coordinates for ${tool.label}:`, {
+                  left: `${leftPx}px`,
+                  top: `${topPx}px`,
+                  width: `${widthPx}px`,
+                  height: `${heightPx}px`
                 });
                 
-                // Create style for the bounding box
+                // Create style for the bounding box using pixels for precise positioning
                 const boxStyle = {
-                  left,
-                  top,
-                  width,
-                  height
+                  left: `${leftPx}px`,
+                  top: `${topPx}px`,
+                  width: `${widthPx}px`,
+                  height: `${heightPx}px`
                 };
                 
                 return (
@@ -146,8 +156,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left,
-                        top: `${Math.max(0, yMin / 10 - 3)}%`,
+                        left: `${leftPx}px`,
+                        top: `${Math.max(0, topPx - 5)}px`,
                         transform: 'translateY(-100%)'
                       }}
                     >
