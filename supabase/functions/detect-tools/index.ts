@@ -102,7 +102,7 @@ serve(async (req) => {
       contents: [{
         role: "user",
         parts: [
-          { text: "Look at this image and identify all tools. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [x1,y1,x2,y2] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
+          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
           {
             inline_data: {
               mime_type: "image/jpeg",
