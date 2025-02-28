@@ -68,9 +68,9 @@ Deno.serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' })
 
-    // Updated system prompt for tool detection with 2D bounding box coordinates
+    // Updated system prompt for tool detection
     const systemPrompt = `You are a computer vision expert specializing in identifying tools in workshop and garage settings.
-When presented with an image, carefully analyze it and identify all visible tools, return the 2d bounding box coordinates. If no tools are visible, return an empty array.`
+When presented with an image, carefully analyze it and identify all visible tools. If no tools are visible, return an empty array.`
 
     console.log('Sending request to Gemini API...')
     const result = await model.generateContent({
