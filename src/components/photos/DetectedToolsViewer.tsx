@@ -61,7 +61,8 @@ export function DetectedToolsViewer({
       display: { width: displayWidth, height: displayHeight },
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
-        y: displayHeight / naturalHeight 
+        y: displayHeight / naturalHeight,
+        min: Math.min(displayWidth / naturalWidth, displayHeight / naturalHeight)
       }
     })
     
@@ -122,9 +123,13 @@ export function DetectedToolsViewer({
                 const scaleX = displayDimensions.width / imageDimensions.width;
                 const scaleY = displayDimensions.height / imageDimensions.height;
                 
+                // Choose the smaller scaling factor to maintain aspect ratio consistency
+                const scale = Math.min(scaleX, scaleY);
+                
                 console.log(`Scaling factors for ${tool.label}:`, {
                   scaleX,
                   scaleY,
+                  scale: scale, // The smaller of the two
                   displayWidth: displayDimensions.width,
                   originalWidth: imageDimensions.width,
                   displayHeight: displayDimensions.height,
@@ -153,8 +158,7 @@ export function DetectedToolsViewer({
                 });
                 
                 // Create style for the bounding box using the normalized percentages
-                // No need to apply scaleX/scaleY here because percentages already
-                // handle the scaling correctly relative to the container
+                // Using the consistent scale factor for better aspect ratio preservation
                 const boxStyle = {
                   left: `${normalized.left}%`,
                   top: `${normalized.top}%`,
