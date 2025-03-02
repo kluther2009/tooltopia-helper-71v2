@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -104,21 +105,10 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                // Check if the image is portrait (oblong) or landscape (rectangle)
-                const isPortrait = imageDimensions.height > imageDimensions.width;
+                // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
+                const [yMin, xMin, yMax, xMax] = tool.box_2d;
                 
-                // Use different coordinate format based on aspect ratio
-                let xMin, yMin, xMax, yMax;
-                
-                if (isPortrait) {
-                  // For portrait/oblong images, use [x_min, y_min, x_max, y_max]
-                  [xMin, yMin, xMax, yMax] = tool.box_2d;
-                } else {
-                  // For landscape/rectangle images, use [y_min, x_min, y_max, x_max]
-                  [yMin, xMin, yMax, xMax] = tool.box_2d;
-                }
-                
-                // Convert to percentages
+                // Convert to percentages (this is the key fix!)
                 const left = `${xMin / 10}%`;     // Convert from 0-1000 to 0-100%
                 const top = `${yMin / 10}%`;      // Convert from 0-1000 to 0-100%
                 const width = `${(xMax - xMin) / 10}%`;
@@ -126,10 +116,9 @@ export function DetectedToolsViewer({
                 
                 // Log raw coordinates from API
                 console.log(`Raw coordinates for ${tool.label}:`, {
-                  format: isPortrait ? '[x_min, y_min, x_max, y_max]' : '[y_min, x_min, y_max, x_max]',
+                  format: 'Gemini [y_min, x_min, y_max, x_max]',
                   values: tool.box_2d,
-                  normalizedScale: '0-1000',
-                  aspectRatio: isPortrait ? 'portrait' : 'landscape'
+                  normalizedScale: '0-1000'
                 });
                 
                 // Log percentage-based coordinates
