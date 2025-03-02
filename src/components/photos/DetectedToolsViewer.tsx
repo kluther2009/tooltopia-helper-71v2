@@ -120,10 +120,6 @@ export function DetectedToolsViewer({
                 // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
                 const [yMin, xMin, yMax, xMax] = tool.box_2d;
                 
-                // Calculate scaling factors based on display vs original dimensions
-                const scaleX = displayDimensions.width / imageDimensions.width;
-                const scaleY = displayDimensions.height / imageDimensions.height;
-                
                 console.log(`Original bounding box for ${tool.label}:`, {
                   yMin, xMin, yMax, xMax,
                   format: 'Gemini [y_min, x_min, y_max, x_max]'
@@ -156,6 +152,10 @@ export function DetectedToolsViewer({
                   pixelYMax = yMax;
                   pixelXMax = xMax;
                 }
+                
+                // Calculate scaling factors based on display vs original dimensions
+                const scaleX = displayDimensions.width / imageDimensions.width;
+                const scaleY = displayDimensions.height / imageDimensions.height;
                 
                 // Apply proper scaling based on aspect ratio
                 let scale;
