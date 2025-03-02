@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -7,6 +6,7 @@ import { DetectedToolsViewer } from "./DetectedToolsViewer"
 import { toast } from "sonner"
 import { LocationPhoto } from "@/types/photos"
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos"
+import { fixImageOrientation, dataUrlToBase64 } from "@/utils/imageProcessing"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
@@ -37,8 +37,31 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
       const photoUrl = signedUrlData.signedUrl
       console.log('Selected photo URL (signed):', photoUrl)
+      
+      // Store the original photo URL for display
       setSelectedPhotoUrl(photoUrl)
 
+      // Process the image to fix orientation before sending to Gemini API
+      // We only need to do this client-side processing for the API, not for the viewer
+      // This is because we'll use consistent coordinate transformation for display
+      /*
+      console.log('Processing image orientation...')
+      const processedImageUrl = await fixImageOrientation(photoUrl)
+      console.log('Image processed for API')
+      
+      // Extract base64 data if using processed image
+      const base64Data = dataUrlToBase64(processedImageUrl)
+      
+      // Call the API with the processed image
+      const { data, error } = await supabase.functions.invoke('detect-tools', {
+        body: { 
+          imageUrl: photoUrl,
+          processedImage: base64Data // Send processed image if available
+        }
+      })
+      */
+      
+      // For now, we'll continue using the original URL until backend supports processed images
       const { data, error } = await supabase.functions.invoke('detect-tools', {
         body: { imageUrl: photoUrl }
       })
