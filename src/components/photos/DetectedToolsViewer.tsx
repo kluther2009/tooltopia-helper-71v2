@@ -124,47 +124,71 @@ export function DetectedToolsViewer({
                 const scaleX = displayDimensions.width / imageDimensions.width;
                 const scaleY = displayDimensions.height / imageDimensions.height;
                 
-                // Use the larger scaling factor to prevent shrinking/stretching
-                const scale = Math.max(scaleX, scaleY);
-                
-                console.log(`Scaling factors for ${tool.label}:`, {
-                  scaleX,
-                  scaleY,
-                  scale: scale, // The larger of the two
-                  displayWidth: displayDimensions.width,
-                  originalWidth: imageDimensions.width,
-                  displayHeight: displayDimensions.height,
-                  originalHeight: imageDimensions.height
+                console.log(`Original bounding box for ${tool.label}:`, {
+                  yMin, xMin, yMax, xMax,
+                  format: 'Gemini [y_min, x_min, y_max, x_max]'
                 });
                 
-                // Log raw bounding box data
-                console.log(`Raw coordinates for ${tool.label}:`, {
-                  format: 'Gemini [y_min, x_min, y_max, x_max]',
-                  values: tool.box_2d,
-                  normalizedScale: '0-1000'
-                });
+                // Detect if bounding box values are normalized (0-1000 range)
+                const isNormalized = tool.box_2d.every(val => val <= 1000);
+                console.log(`Is normalized (0-1000 range): ${isNormalized}`);
                 
-                // First convert from 0-1000 scale to 0-100% percentages
-                const normalized = {
-                  left: xMin / 10,     // Convert from 0-1000 to 0-100%
-                  top: yMin / 10,      // Convert from 0-1000 to 0-100%
-                  width: (xMax - xMin) / 10,
-                  height: (yMax - yMin) / 10
-                };
+                // Convert normalized values to pixel-based values if necessary
+                let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
                 
-                // Log percentage-based coordinates
-                console.log(`Percentage coordinates for ${tool.label}:`, {
-                  ...normalized,
+                if (isNormalized) {
+                  // Convert from 0-1000 range to pixel values
+                  pixelYMin = (yMin / 1000) * imageDimensions.height;
+                  pixelXMin = (xMin / 1000) * imageDimensions.width;
+                  pixelYMax = (yMax / 1000) * imageDimensions.height;
+                  pixelXMax = (xMax / 1000) * imageDimensions.width;
+                  
+                  console.log(`Converted to pixels for ${tool.label}:`, {
+                    yMin: pixelYMin,
+                    xMin: pixelXMin,
+                    yMax: pixelYMax,
+                    xMax: pixelXMax
+                  });
+                } else {
+                  // Already in pixel values
+                  pixelYMin = yMin;
+                  pixelXMin = xMin;
+                  pixelYMax = yMax;
+                  pixelXMax = xMax;
+                }
+                
+                // Apply proper scaling based on aspect ratio
+                let scale;
+                if (imageDimensions.width > imageDimensions.height) {
+                  // Landscape Mode
+                  scale = Math.min(scaleX, scaleY);
+                  console.log(`Landscape image: using min scale ${scale}`);
+                } else {
+                  // Portrait Mode
+                  scale = Math.max(scaleX, scaleY);
+                  console.log(`Portrait image: using max scale ${scale}`);
+                }
+                
+                // Calculate dimensions as percentages for responsive display
+                const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
+                const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
+                const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
+                const normalizedTop = imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height : 0;
+                
+                console.log(`Final normalized percentages for ${tool.label}:`, {
+                  left: normalizedLeft,
+                  top: normalizedTop,
+                  width: normalizedWidth,
+                  height: normalizedHeight,
                   unit: '%'
                 });
                 
-                // Create style for the bounding box using the normalized percentages
-                // Using the consistent scale factor for better aspect ratio preservation
+                // Create style for the bounding box using percentages
                 const boxStyle = {
-                  left: `${normalized.left}%`,
-                  top: `${normalized.top}%`,
-                  width: `${normalized.width}%`,
-                  height: `${normalized.height}%`
+                  left: `${normalizedLeft}%`,
+                  top: `${normalizedTop}%`,
+                  width: `${normalizedWidth}%`,
+                  height: `${normalizedHeight}%`
                 };
                 
                 return (
@@ -176,8 +200,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: `${normalized.left}%`,
-                        top: `${Math.max(0, normalized.top - 3)}%`,
+                        left: `${normalizedLeft}%`,
+                        top: `${Math.max(0, normalizedTop - 3)}%`,
                         transform: 'translateY(-100%)'
                       }}
                     >
