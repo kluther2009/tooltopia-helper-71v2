@@ -118,11 +118,13 @@ export function DetectedToolsViewer({
                 // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
                 const [yMin, xMin, yMax, xMax] = tool.box_2d;
                 
-                // Convert to percentages (this is the key fix!)
-                const left = `${xMin / 10}%`;     // Convert from 0-1000 to 0-100%
-                const top = `${yMin / 10}%`;      // Convert from 0-1000 to 0-100%
-                const width = `${(xMax - xMin) / 10}%`;
-                const height = `${(yMax - yMin) / 10}%`;
+                // Convert to CSS format
+                const convertedBoundingBox = {
+                  left: xMin / 10,     // Convert from 0-1000 to 0-100%
+                  top: yMin / 10,      // Convert from 0-1000 to 0-100%
+                  width: (xMax - xMin) / 10,
+                  height: (yMax - yMin) / 10
+                };
                 
                 // Log raw coordinates from API
                 console.log(`Raw coordinates for ${tool.label}:`, {
@@ -133,18 +135,16 @@ export function DetectedToolsViewer({
                 
                 // Log percentage-based coordinates
                 console.log(`Percentage coordinates for ${tool.label}:`, {
-                  left,
-                  top,
-                  width,
-                  height
+                  ...convertedBoundingBox,
+                  unit: '%'
                 });
                 
-                // Create style for the bounding box
+                // Create style for the bounding box using the converted format
                 const boxStyle = {
-                  left,
-                  top,
-                  width,
-                  height
+                  left: `${convertedBoundingBox.left}%`,
+                  top: `${convertedBoundingBox.top}%`,
+                  width: `${convertedBoundingBox.width}%`,
+                  height: `${convertedBoundingBox.height}%`
                 };
                 
                 return (
@@ -156,8 +156,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left,
-                        top: `${Math.max(0, yMin / 10 - 3)}%`,
+                        left: `${convertedBoundingBox.left}%`,
+                        top: `${Math.max(0, convertedBoundingBox.top - 3)}%`,
                         transform: 'translateY(-100%)'
                       }}
                     >
