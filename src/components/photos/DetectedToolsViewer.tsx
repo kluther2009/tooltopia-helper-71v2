@@ -137,6 +137,13 @@ export function DetectedToolsViewer({
                   originalHeight: imageDimensions.height
                 });
                 
+                // Log raw bounding box data
+                console.log(`Raw coordinates for ${tool.label}:`, {
+                  format: 'Gemini [y_min, x_min, y_max, x_max]',
+                  values: tool.box_2d,
+                  normalizedScale: '0-1000'
+                });
+                
                 // First convert from 0-1000 scale to 0-100% percentages
                 const normalized = {
                   left: xMin / 10,     // Convert from 0-1000 to 0-100%
@@ -144,13 +151,6 @@ export function DetectedToolsViewer({
                   width: (xMax - xMin) / 10,
                   height: (yMax - yMin) / 10
                 };
-                
-                // Log raw coordinates from API
-                console.log(`Raw coordinates for ${tool.label}:`, {
-                  format: 'Gemini [y_min, x_min, y_max, x_max]',
-                  values: tool.box_2d,
-                  normalizedScale: '0-1000'
-                });
                 
                 // Log percentage-based coordinates
                 console.log(`Percentage coordinates for ${tool.label}:`, {
