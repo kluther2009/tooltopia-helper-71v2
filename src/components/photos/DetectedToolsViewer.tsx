@@ -118,8 +118,21 @@ export function DetectedToolsViewer({
                 // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
                 const [yMin, xMin, yMax, xMax] = tool.box_2d;
                 
-                // Convert to CSS format
-                const convertedBoundingBox = {
+                // Calculate scaling factors based on display vs original dimensions
+                const scaleX = displayDimensions.width / imageDimensions.width;
+                const scaleY = displayDimensions.height / imageDimensions.height;
+                
+                console.log(`Scaling factors for ${tool.label}:`, {
+                  scaleX,
+                  scaleY,
+                  displayWidth: displayDimensions.width,
+                  originalWidth: imageDimensions.width,
+                  displayHeight: displayDimensions.height,
+                  originalHeight: imageDimensions.height
+                });
+                
+                // First convert from 0-1000 scale to 0-100% percentages
+                const normalized = {
                   left: xMin / 10,     // Convert from 0-1000 to 0-100%
                   top: yMin / 10,      // Convert from 0-1000 to 0-100%
                   width: (xMax - xMin) / 10,
@@ -135,16 +148,18 @@ export function DetectedToolsViewer({
                 
                 // Log percentage-based coordinates
                 console.log(`Percentage coordinates for ${tool.label}:`, {
-                  ...convertedBoundingBox,
+                  ...normalized,
                   unit: '%'
                 });
                 
-                // Create style for the bounding box using the converted format
+                // Create style for the bounding box using the normalized percentages
+                // No need to apply scaleX/scaleY here because percentages already
+                // handle the scaling correctly relative to the container
                 const boxStyle = {
-                  left: `${convertedBoundingBox.left}%`,
-                  top: `${convertedBoundingBox.top}%`,
-                  width: `${convertedBoundingBox.width}%`,
-                  height: `${convertedBoundingBox.height}%`
+                  left: `${normalized.left}%`,
+                  top: `${normalized.top}%`,
+                  width: `${normalized.width}%`,
+                  height: `${normalized.height}%`
                 };
                 
                 return (
@@ -156,8 +171,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left: `${convertedBoundingBox.left}%`,
-                        top: `${Math.max(0, convertedBoundingBox.top - 3)}%`,
+                        left: `${normalized.left}%`,
+                        top: `${Math.max(0, normalized.top - 3)}%`,
                         transform: 'translateY(-100%)'
                       }}
                     >
