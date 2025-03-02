@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
+import { transformBoundingBox } from "@/utils/imageProcessing"
 
 interface Tool {
   label: string
@@ -27,13 +28,30 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
+  const imageRef = useRef<HTMLImageElement>(null)
+
+  // Update dimensions when window is resized
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (imageRef.current) {
+        const img = imageRef.current
+        setDisplayDimensions({
+          width: img.clientWidth,
+          height: img.clientHeight
+        })
+      }
+    }
+    
+    window.addEventListener('resize', updateDimensions)
+    return () => window.removeEventListener('resize', updateDimensions)
+  }, [])
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement
     const naturalWidth = img.naturalWidth
     const naturalHeight = img.naturalHeight
-    const displayWidth = img.width
-    const displayHeight = img.height
+    const displayWidth = img.clientWidth
+    const displayHeight = img.clientHeight
     
     setImageDimensions({
       width: naturalWidth,
@@ -49,19 +67,7 @@ export function DetectedToolsViewer({
     console.log('Image dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
-      scaleFactor: { 
-        x: displayWidth / naturalWidth, 
-        y: displayHeight / naturalHeight 
-      }
-    })
-    
-    // Log the image size passed to the API (same as natural size)
-    console.log('Image size passed to API:', { width: naturalWidth, height: naturalHeight })
-    
-    // Log normalization factor (converting actual pixels to 0-1000 scale)
-    console.log('Normalization factors:', {
-      x: 1000 / naturalWidth,
-      y: 1000 / naturalHeight
+      aspectRatio: naturalWidth / naturalHeight
     })
   }
 
@@ -96,6 +102,7 @@ export function DetectedToolsViewer({
           ) : (
             <div className="relative inline-block">
               <img 
+                ref={imageRef}
                 src={imageUrl}
                 alt="Tool detection"
                 className="max-w-full h-auto rounded-lg shadow-sm"
@@ -104,49 +111,19 @@ export function DetectedToolsViewer({
               />
               
               {!loading && detectedTools.map((tool, index) => {
-                // Check if the image is portrait (oblong) or landscape (rectangle)
-                const isPortrait = imageDimensions.height > imageDimensions.width;
+                // Use the utility function to transform bounding box coordinates consistently
+                // This now assumes Gemini always returns [y_min, x_min, y_max, x_max] format
+                const boxStyle = transformBoundingBox(
+                  tool.box_2d,
+                  displayDimensions.width,
+                  displayDimensions.height
+                );
                 
-                // Use different coordinate format based on aspect ratio
-                let xMin, yMin, xMax, yMax;
-                
-                if (isPortrait) {
-                  // For portrait/oblong images, use [x_min, y_min, x_max, y_max]
-                  [xMin, yMin, xMax, yMax] = tool.box_2d;
-                } else {
-                  // For landscape/rectangle images, use [y_min, x_min, y_max, x_max]
-                  [yMin, xMin, yMax, xMax] = tool.box_2d;
-                }
-                
-                // Convert to percentages
-                const left = `${xMin / 10}%`;     // Convert from 0-1000 to 0-100%
-                const top = `${yMin / 10}%`;      // Convert from 0-1000 to 0-100%
-                const width = `${(xMax - xMin) / 10}%`;
-                const height = `${(yMax - yMin) / 10}%`;
-                
-                // Log raw coordinates from API
-                console.log(`Raw coordinates for ${tool.label}:`, {
-                  format: isPortrait ? '[x_min, y_min, x_max, y_max]' : '[y_min, x_min, y_max, x_max]',
-                  values: tool.box_2d,
-                  normalizedScale: '0-1000',
-                  aspectRatio: isPortrait ? 'portrait' : 'landscape'
+                // Log both the original coordinates and the transformed box for debugging
+                console.log(`Bounding box for ${tool.label}:`, {
+                  original: tool.box_2d,
+                  transformed: boxStyle
                 });
-                
-                // Log percentage-based coordinates
-                console.log(`Percentage coordinates for ${tool.label}:`, {
-                  left,
-                  top,
-                  width,
-                  height
-                });
-                
-                // Create style for the bounding box
-                const boxStyle = {
-                  left,
-                  top,
-                  width,
-                  height
-                };
                 
                 return (
                   <div key={index}>
@@ -157,9 +134,8 @@ export function DetectedToolsViewer({
                     <div 
                       className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                       style={{
-                        left,
-                        top: `${Math.max(0, yMin / 10 - 3)}%`,
-                        transform: 'translateY(-100%)'
+                        left: boxStyle.left,
+                        top: `calc(${boxStyle.top} - 20px)`,
                       }}
                     >
                       {tool.label}
