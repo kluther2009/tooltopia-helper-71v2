@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 
 interface Tool {
@@ -28,6 +28,15 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const img = document.getElementById("detected-image") as HTMLImageElement;
+    if (img && img.complete) {
+      setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      setDisplayDimensions({ width: img.clientWidth, height: img.clientHeight });
+      setLoading(false);
+    }
+  }, []);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement
@@ -59,7 +68,7 @@ export function DetectedToolsViewer({
     // Log the image size passed to the API (same as natural size)
     console.log('Image size passed to API:', { width: naturalWidth, height: naturalHeight })
     
-    // Log normalization factor (converting actual pixels to 0-1000 scale)
+    // Log normalization factors (converting actual pixels to 0-1000 scale)
     console.log('Normalization factors:', {
       x: 1000 / naturalWidth,
       y: 1000 / naturalHeight
@@ -97,6 +106,7 @@ export function DetectedToolsViewer({
           ) : (
             <div className="relative inline-block">
               <img 
+                id="detected-image"
                 src={imageUrl}
                 alt="Tool detection"
                 className="max-w-full h-auto rounded-lg shadow-sm"
