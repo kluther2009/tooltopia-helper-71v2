@@ -62,7 +62,8 @@ export function DetectedToolsViewer({
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
-        min: Math.min(displayWidth / naturalWidth, displayHeight / naturalHeight)
+        min: Math.min(displayWidth / naturalWidth, displayHeight / naturalHeight),
+        max: Math.max(displayWidth / naturalWidth, displayHeight / naturalHeight)
       }
     })
     
@@ -123,13 +124,13 @@ export function DetectedToolsViewer({
                 const scaleX = displayDimensions.width / imageDimensions.width;
                 const scaleY = displayDimensions.height / imageDimensions.height;
                 
-                // Choose the smaller scaling factor to maintain aspect ratio consistency
-                const scale = Math.min(scaleX, scaleY);
+                // Use the larger scaling factor to prevent shrinking/stretching
+                const scale = Math.max(scaleX, scaleY);
                 
                 console.log(`Scaling factors for ${tool.label}:`, {
                   scaleX,
                   scaleY,
-                  scale: scale, // The smaller of the two
+                  scale: scale, // The larger of the two
                   displayWidth: displayDimensions.width,
                   originalWidth: imageDimensions.width,
                   displayHeight: displayDimensions.height,
