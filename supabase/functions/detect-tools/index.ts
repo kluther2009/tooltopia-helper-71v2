@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { GoogleGenerativeAI } from "npm:@google/generative-ai"
 
@@ -96,13 +95,13 @@ serve(async (req) => {
     const base64Image = arrayBufferToBase64(imageBuffer)
     console.log('Image converted to base64')
 
-    // Call Gemini API with corrected structure
+    // Call Gemini API with improved prompt
     console.log('Calling Gemini API...')
     const result = await model.generateContent({
       contents: [{
         role: "user",
         parts: [
-          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
+          { text: "You are a computer vision expert specializing in identifying tools, workshop items, and painting supplies in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools and items including spray cans, paint pots, and other painting supplies. Pay special attention to labels on spray cans and paint containers - try to read and include these labels in your identification.\n\nFor each identified item, provide its precise location in the image using a bounding box. IMPORTANT: Always return bounding box coordinates in exactly the [y_min, x_min, y_max, x_max] format, where: \n- y_min is the top edge\n- x_min is the left edge\n- y_max is the bottom edge\n- x_max is the right edge\n\nReturn your response as a JSON array where each object has two properties: 'label' (string with the item name, including any label text if readable) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates normalized to 0-1000 scale). Only include these two properties and ensure the response is valid JSON." },
           {
             inline_data: {
               mime_type: "image/jpeg",
