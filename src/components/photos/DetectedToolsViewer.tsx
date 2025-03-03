@@ -29,7 +29,6 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
-  const [useActualScale, setUseActualScale] = useState(false) // Default to fit screen for better UX
 
   useEffect(() => {
     const img = document.getElementById("detected-image") as HTMLImageElement;
@@ -44,8 +43,8 @@ export function DetectedToolsViewer({
     const img = e.target as HTMLImageElement
     const naturalWidth = img.naturalWidth
     const naturalHeight = img.naturalHeight
-    const displayWidth = useActualScale ? naturalWidth : img.width
-    const displayHeight = useActualScale ? naturalHeight : img.height
+    const displayWidth = img.width
+    const displayHeight = img.height
     
     setImageDimensions({
       width: naturalWidth,
@@ -61,7 +60,6 @@ export function DetectedToolsViewer({
     console.log('Image dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
-      actualScale: useActualScale,
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
@@ -92,10 +90,6 @@ export function DetectedToolsViewer({
     onClose()
   }
 
-  const toggleScale = () => {
-    setUseActualScale(!useActualScale)
-  }
-
   // Log detected tools for debugging
   console.log('All detected tools:', detectedTools)
   
@@ -107,15 +101,6 @@ export function DetectedToolsViewer({
         </DialogHeader>
         
         <div className="w-full flex flex-col items-center p-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={toggleScale} 
-            className="mb-2 self-start"
-          >
-            {useActualScale ? "Fit to Window" : "Show Actual Size"}
-          </Button>
-
           {error ? (
             <div className="text-red-500 mb-4">
               <p>{error}</p>
@@ -123,16 +108,15 @@ export function DetectedToolsViewer({
             </div>
           ) : (
             <ScrollArea className="w-full rounded-md" style={{ 
-              maxHeight: 'calc(80vh - 160px)',
+              maxHeight: 'calc(80vh - 100px)',
               maxWidth: '100%'
             }}>
-              <div className={`relative ${useActualScale ? 'inline-block' : 'w-full'}`}>
+              <div className="relative w-full flex justify-center">
                 <img 
                   id="detected-image"
                   src={imageUrl}
                   alt="Tool detection"
-                  className={`rounded-lg shadow-sm ${useActualScale ? '' : 'max-w-full h-auto'}`}
-                  style={useActualScale ? { maxWidth: 'none', height: 'auto' } : {}}
+                  className="rounded-lg shadow-sm max-w-full h-auto"
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
@@ -190,44 +174,26 @@ export function DetectedToolsViewer({
                     console.log(`Portrait image: using max scale ${scale}`);
                   }
                   
-                  // For actual scale mode, we use 1:1 mapping or the right scale factor
-                  const effectiveScale = useActualScale ? 1 : scale;
+                  // Calculate dimensions as percentages for responsive display
+                  const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
+                  const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
+                  const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
+                  const normalizedTop = imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height : 0;
                   
-                  // If using actual scale, we use pixel coordinates directly
-                  // If using fitted scale, we convert to percentages for responsive display
-                  let boxStyle;
+                  const boxStyle = {
+                    left: `${normalizedLeft}%`,
+                    top: `${normalizedTop}%`,
+                    width: `${normalizedWidth}%`,
+                    height: `${normalizedHeight}%`
+                  };
                   
-                  if (useActualScale) {
-                    boxStyle = {
-                      left: `${pixelXMin}px`,
-                      top: `${pixelYMin}px`,
-                      width: `${pixelXMax - pixelXMin}px`,
-                      height: `${pixelYMax - pixelYMin}px`
-                    };
-                    
-                    console.log(`Using actual pixel values for ${tool.label}:`, boxStyle);
-                  } else {
-                    // Calculate dimensions as percentages for responsive display
-                    const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
-                    const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
-                    const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
-                    const normalizedTop = imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height : 0;
-                    
-                    boxStyle = {
-                      left: `${normalizedLeft}%`,
-                      top: `${normalizedTop}%`,
-                      width: `${normalizedWidth}%`,
-                      height: `${normalizedHeight}%`
-                    };
-                    
-                    console.log(`Final normalized percentages for ${tool.label}:`, {
-                      left: normalizedLeft,
-                      top: normalizedTop,
-                      width: normalizedWidth,
-                      height: normalizedHeight,
-                      unit: '%'
-                    });
-                  }
+                  console.log(`Final normalized percentages for ${tool.label}:`, {
+                    left: normalizedLeft,
+                    top: normalizedTop,
+                    width: normalizedWidth,
+                    height: normalizedHeight,
+                    unit: '%'
+                  });
                   
                   return (
                     <div key={index}>
@@ -237,10 +203,7 @@ export function DetectedToolsViewer({
                       />
                       <div 
                         className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
-                        style={useActualScale ? {
-                          left: `${pixelXMin}px`,
-                          top: `${Math.max(0, pixelYMin - 20)}px`
-                        } : {
+                        style={{
                           left: `${imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0}%`,
                           top: `${Math.max(0, imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height - 3 : 0)}%`,
                           transform: 'translateY(-100%)'
