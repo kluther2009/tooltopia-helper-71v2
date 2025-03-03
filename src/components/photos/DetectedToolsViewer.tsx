@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Tool {
   label: string
@@ -28,7 +29,7 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
-  const [useActualScale, setUseActualScale] = useState(true)
+  const [useActualScale, setUseActualScale] = useState(false) // Default to fit screen for better UX
 
   useEffect(() => {
     const img = document.getElementById("detected-image") as HTMLImageElement;
@@ -100,7 +101,7 @@ export function DetectedToolsViewer({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-auto">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Detected Tools</DialogTitle>
         </DialogHeader>
@@ -121,17 +122,17 @@ export function DetectedToolsViewer({
               <p className="text-xs break-all mt-1">URL: {imageUrl}</p>
             </div>
           ) : (
-            <div className="relative overflow-auto" style={{ 
-              maxWidth: '100%', 
-              maxHeight: 'calc(80vh - 100px)'
+            <ScrollArea className="w-full rounded-md" style={{ 
+              maxHeight: 'calc(80vh - 160px)',
+              maxWidth: '100%'
             }}>
-              <div className="relative inline-block">
+              <div className={`relative ${useActualScale ? 'inline-block' : 'w-full'}`}>
                 <img 
                   id="detected-image"
                   src={imageUrl}
                   alt="Tool detection"
                   className={`rounded-lg shadow-sm ${useActualScale ? '' : 'max-w-full h-auto'}`}
-                  style={useActualScale ? { width: 'auto', height: 'auto' } : {}}
+                  style={useActualScale ? { maxWidth: 'none', height: 'auto' } : {}}
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
@@ -240,8 +241,8 @@ export function DetectedToolsViewer({
                           left: `${pixelXMin}px`,
                           top: `${Math.max(0, pixelYMin - 20)}px`
                         } : {
-                          left: `${normalizedLeft}%`,
-                          top: `${Math.max(0, normalizedTop - 3)}%`,
+                          left: `${imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0}%`,
+                          top: `${Math.max(0, imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height - 3 : 0)}%`,
                           transform: 'translateY(-100%)'
                         }}
                       >
@@ -257,7 +258,7 @@ export function DetectedToolsViewer({
                   </div>
                 )}
               </div>
-            </div>
+            </ScrollArea>
           )}
         </div>
 
