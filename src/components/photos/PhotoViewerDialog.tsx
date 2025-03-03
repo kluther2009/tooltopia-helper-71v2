@@ -50,7 +50,7 @@ export function PhotoViewerDialog({
   };
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement;
+    const img = e.currentTarget;
     const width = img.naturalWidth;
     const height = img.naturalHeight;
     
