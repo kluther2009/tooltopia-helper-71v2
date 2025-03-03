@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
@@ -33,7 +32,6 @@ export function DetectedToolsViewer({
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
-  // Update display dimensions whenever the image container resizes
   useEffect(() => {
     if (!imageContainerRef.current || !imageRef.current) return
     
@@ -45,7 +43,6 @@ export function DetectedToolsViewer({
           height: img.clientHeight 
         })
         
-        // Debug info
         console.log("Updated display dimensions:", {
           width: img.clientWidth,
           height: img.clientHeight,
@@ -57,14 +54,11 @@ export function DetectedToolsViewer({
       }
     }
     
-    // Set up resize observer to update dimensions when container changes
     const resizeObserver = new ResizeObserver(updateDisplayDimensions)
     resizeObserver.observe(imageContainerRef.current)
     
-    // Initial update
     updateDisplayDimensions()
     
-    // Set up a window resize handler too
     window.addEventListener('resize', updateDisplayDimensions)
     
     return () => {
@@ -86,7 +80,6 @@ export function DetectedToolsViewer({
         height: imageRef.current.clientHeight 
       });
       
-      // Determine orientation
       if (width > height) {
         setOrientation('landscape');
       } else if (height > width) {
@@ -115,7 +108,6 @@ export function DetectedToolsViewer({
       height: displayHeight
     })
     
-    // Determine orientation
     if (naturalWidth > naturalHeight) {
       setOrientation('landscape');
     } else if (naturalHeight > naturalWidth) {
@@ -126,7 +118,6 @@ export function DetectedToolsViewer({
     
     setLoading(false)
 
-    // Enhanced debugging information
     console.log('Image loaded - dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
@@ -157,7 +148,7 @@ export function DetectedToolsViewer({
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
-            Detected Tools ({orientation.charAt(0).toUpperCase() + orientation.slice(1)} Photo)
+            Detected Tools ({orientation?.charAt(0).toUpperCase() + orientation?.slice(1) || 'Loading'} Photo)
           </DialogTitle>
         </DialogHeader>
         
@@ -188,47 +179,53 @@ export function DetectedToolsViewer({
                   />
                   
                   {!loading && detectedTools.map((tool, index) => {
-                    // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
-                    const [yMin, xMin, yMax, xMax] = tool.box_2d;
+                    let xMin, yMin, xMax, yMax;
                     
-                    // Log original bounding box
-                    console.log(`Original bounding box for ${tool.label}:`, {
-                      yMin, xMin, yMax, xMax,
-                      format: 'Gemini [y_min, x_min, y_max, x_max]'
-                    });
-                    
-                    // Detect if bounding box values are normalized (0-1000 range)
-                    const isNormalized = tool.box_2d.every(val => val <= 1000);
-                    
-                    // Convert normalized values to pixel-based values if necessary
-                    let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
-                    
-                    if (isNormalized) {
-                      // Convert from 0-1000 range to pixel values
-                      pixelYMin = (yMin / 1000) * imageDimensions.height;
-                      pixelXMin = (xMin / 1000) * imageDimensions.width;
-                      pixelYMax = (yMax / 1000) * imageDimensions.height;
-                      pixelXMax = (xMax / 1000) * imageDimensions.width;
+                    if (orientation === 'portrait') {
+                      [xMin, yMin, xMax, yMax] = tool.box_2d;
+                      
+                      console.log(`Portrait orientation - Raw bounding box for ${tool.label}:`, {
+                        xMin, yMin, xMax, yMax,
+                        format: 'Gemini [xMin, yMin, xMax, yMax]'
+                      });
                     } else {
-                      // Already in pixel values
-                      pixelYMin = yMin;
-                      pixelXMin = xMin;
-                      pixelYMax = yMax;
-                      pixelXMax = xMax;
+                      const [yMinVal, xMinVal, yMaxVal, xMaxVal] = tool.box_2d;
+                      yMin = yMinVal;
+                      xMin = xMinVal;
+                      yMax = yMaxVal;
+                      xMax = xMaxVal;
+                      
+                      console.log(`${orientation} orientation - Raw bounding box for ${tool.label}:`, {
+                        yMin, xMin, yMax, xMax,
+                        format: 'Gemini [yMin, xMin, yMax, xMax]'
+                      });
                     }
                     
-                    // Calculate scaling factors based on display vs original dimensions
+                    const isNormalized = tool.box_2d.every(val => val <= 1000);
+                    
+                    let pixelXMin, pixelYMin, pixelXMax, pixelYMax;
+                    
+                    if (isNormalized) {
+                      pixelXMin = (xMin / 1000) * imageDimensions.width;
+                      pixelYMin = (yMin / 1000) * imageDimensions.height;
+                      pixelXMax = (xMax / 1000) * imageDimensions.width;
+                      pixelYMax = (yMax / 1000) * imageDimensions.height;
+                    } else {
+                      pixelXMin = xMin;
+                      pixelYMin = yMin;
+                      pixelXMax = xMax;
+                      pixelYMax = yMax;
+                    }
+                    
                     const scaleX = displayDimensions.width / imageDimensions.width;
                     const scaleY = displayDimensions.height / imageDimensions.height;
                     
-                    // Apply scaling to bounding box coordinates
                     const scaledXMin = pixelXMin * scaleX;
                     const scaledYMin = pixelYMin * scaleY;
                     const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
                     const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
                     
-                    // Log the calculated positions
-                    console.log(`Calculated box for ${tool.label}:`, {
+                    console.log(`${orientation} - Calculated box for ${tool.label}:`, {
                       originalPixels: { xMin: pixelXMin, yMin: pixelYMin, xMax: pixelXMax, yMax: pixelYMax },
                       scaled: { 
                         xMin: scaledXMin, 
@@ -260,7 +257,7 @@ export function DetectedToolsViewer({
                           {tool.label}
                         </div>
                       </div>
-                    )
+                    );
                   })}
 
                   {loading && (
