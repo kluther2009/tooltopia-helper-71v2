@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -29,6 +29,35 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
+  const imageContainerRef = useRef<HTMLDivElement>(null)
+
+  // Update display dimensions whenever the image container resizes
+  useEffect(() => {
+    if (!imageContainerRef.current) return
+    
+    const updateDisplayDimensions = () => {
+      const img = document.getElementById("detected-image") as HTMLImageElement
+      if (img && img.complete) {
+        setDisplayDimensions({ 
+          width: img.clientWidth, 
+          height: img.clientHeight 
+        })
+      }
+    }
+    
+    // Set up resize observer to update dimensions when container changes
+    const resizeObserver = new ResizeObserver(updateDisplayDimensions)
+    resizeObserver.observe(imageContainerRef.current)
+    
+    // Initial update
+    updateDisplayDimensions()
+    
+    return () => {
+      if (imageContainerRef.current) {
+        resizeObserver.unobserve(imageContainerRef.current)
+      }
+    }
+  }, [loading])
 
   useEffect(() => {
     const img = document.getElementById("detected-image") as HTMLImageElement;
@@ -111,12 +140,12 @@ export function DetectedToolsViewer({
               maxHeight: 'calc(80vh - 100px)',
               maxWidth: '100%'
             }}>
-              <div className="relative w-full flex justify-center">
+              <div className="relative w-full flex justify-center" ref={imageContainerRef}>
                 <img 
                   id="detected-image"
                   src={imageUrl}
                   alt="Tool detection"
-                  className="rounded-lg shadow-sm max-w-full h-auto"
+                  className="rounded-lg shadow-sm max-w-full h-auto object-contain"
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
@@ -162,38 +191,36 @@ export function DetectedToolsViewer({
                   const scaleX = displayDimensions.width / imageDimensions.width;
                   const scaleY = displayDimensions.height / imageDimensions.height;
                   
-                  // Apply proper scaling based on aspect ratio
-                  let scale;
-                  if (imageDimensions.width > imageDimensions.height) {
-                    // Landscape Mode
-                    scale = Math.min(scaleX, scaleY);
-                    console.log(`Landscape image: using min scale ${scale}`);
-                  } else {
-                    // Portrait Mode
-                    scale = Math.max(scaleX, scaleY);
-                    console.log(`Portrait image: using max scale ${scale}`);
-                  }
+                  // Apply scaling to bounding box coordinates
+                  const scaledXMin = pixelXMin * scaleX;
+                  const scaledYMin = pixelYMin * scaleY;
+                  const scaledXMax = pixelXMax * scaleX;
+                  const scaledYMax = pixelYMax * scaleY;
                   
-                  // Calculate dimensions as percentages for responsive display
-                  const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
-                  const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
-                  const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
-                  const normalizedTop = imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height : 0;
+                  console.log(`Scaled coordinates for ${tool.label}:`, {
+                    xMin: scaledXMin,
+                    yMin: scaledYMin,
+                    xMax: scaledXMax,
+                    yMax: scaledYMax,
+                    scaleFactors: { x: scaleX, y: scaleY }
+                  });
                   
+                  // Calculate dimensions for display
                   const boxStyle = {
-                    left: `${normalizedLeft}%`,
-                    top: `${normalizedTop}%`,
-                    width: `${normalizedWidth}%`,
-                    height: `${normalizedHeight}%`
+                    left: `${scaledXMin}px`,
+                    top: `${scaledYMin}px`,
+                    width: `${scaledXMax - scaledXMin}px`,
+                    height: `${scaledYMax - scaledYMin}px`,
+                    position: 'absolute' as const
                   };
                   
-                  console.log(`Final normalized percentages for ${tool.label}:`, {
-                    left: normalizedLeft,
-                    top: normalizedTop,
-                    width: normalizedWidth,
-                    height: normalizedHeight,
-                    unit: '%'
-                  });
+                  // Calculate label position
+                  const labelStyle = {
+                    left: `${scaledXMin}px`,
+                    top: `${Math.max(0, scaledYMin - 20)}px`,
+                    transform: 'translateY(-100%)',
+                    position: 'absolute' as const
+                  };
                   
                   return (
                     <div key={index}>
@@ -203,11 +230,7 @@ export function DetectedToolsViewer({
                       />
                       <div 
                         className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
-                        style={{
-                          left: `${imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0}%`,
-                          top: `${Math.max(0, imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height - 3 : 0)}%`,
-                          transform: 'translateY(-100%)'
-                        }}
+                        style={labelStyle}
                       >
                         {tool.label}
                       </div>
