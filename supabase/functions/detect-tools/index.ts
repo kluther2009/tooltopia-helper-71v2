@@ -115,10 +115,7 @@ serve(async (req) => {
 
     const response = await result.response
     const text = response.text()
-    
-    // Log the full Gemini API response
-    console.log('Gemini API Response:', JSON.stringify(result, null, 2))
-    console.log('Raw response text:', text)
+    console.log('Raw response:', text)
 
     // Parse response with improved parsing logic
     let tools = []
@@ -136,15 +133,6 @@ serve(async (req) => {
       })
 
       console.log('Processed tools:', tools)
-      
-      // Log each tool's bounding box data
-      tools.forEach(tool => {
-        console.log(`Tool "${tool.label}" bounding box:`, {
-          format: 'Gemini [y_min, x_min, y_max, x_max]',
-          values: tool.box_2d,
-          normalizedRange: '0-1000',
-        })
-      })
     } catch (e) {
       console.error('Error parsing response:', e)
       throw new Error(`Failed to parse tool detection results: ${e.message}`)
