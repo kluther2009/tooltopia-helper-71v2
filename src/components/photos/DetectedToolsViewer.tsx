@@ -28,6 +28,7 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
+  const [useActualScale, setUseActualScale] = useState(true)
 
   useEffect(() => {
     const img = document.getElementById("detected-image") as HTMLImageElement;
@@ -42,8 +43,8 @@ export function DetectedToolsViewer({
     const img = e.target as HTMLImageElement
     const naturalWidth = img.naturalWidth
     const naturalHeight = img.naturalHeight
-    const displayWidth = img.width
-    const displayHeight = img.height
+    const displayWidth = useActualScale ? naturalWidth : img.width
+    const displayHeight = useActualScale ? naturalHeight : img.height
     
     setImageDimensions({
       width: naturalWidth,
@@ -59,6 +60,7 @@ export function DetectedToolsViewer({
     console.log('Image dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
+      actualScale: useActualScale,
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
@@ -89,133 +91,172 @@ export function DetectedToolsViewer({
     onClose()
   }
 
+  const toggleScale = () => {
+    setUseActualScale(!useActualScale)
+  }
+
   // Log detected tools for debugging
   console.log('All detected tools:', detectedTools)
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[850px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Detected Tools</DialogTitle>
         </DialogHeader>
         
-        <div className="relative w-full flex flex-col items-center p-4">
+        <div className="w-full flex flex-col items-center p-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={toggleScale} 
+            className="mb-2 self-start"
+          >
+            {useActualScale ? "Fit to Window" : "Show Actual Size"}
+          </Button>
+
           {error ? (
             <div className="text-red-500 mb-4">
               <p>{error}</p>
               <p className="text-xs break-all mt-1">URL: {imageUrl}</p>
             </div>
           ) : (
-            <div className="relative inline-block">
-              <img 
-                id="detected-image"
-                src={imageUrl}
-                alt="Tool detection"
-                className="max-w-full h-auto rounded-lg shadow-sm"
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-              />
-              
-              {!loading && detectedTools.map((tool, index) => {
-                // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
-                const [yMin, xMin, yMax, xMax] = tool.box_2d;
+            <div className="relative overflow-auto" style={{ 
+              maxWidth: '100%', 
+              maxHeight: 'calc(80vh - 100px)'
+            }}>
+              <div className="relative inline-block">
+                <img 
+                  id="detected-image"
+                  src={imageUrl}
+                  alt="Tool detection"
+                  className={`rounded-lg shadow-sm ${useActualScale ? '' : 'max-w-full h-auto'}`}
+                  style={useActualScale ? { width: 'auto', height: 'auto' } : {}}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
                 
-                console.log(`Original bounding box for ${tool.label}:`, {
-                  yMin, xMin, yMax, xMax,
-                  format: 'Gemini [y_min, x_min, y_max, x_max]'
-                });
-                
-                // Detect if bounding box values are normalized (0-1000 range)
-                const isNormalized = tool.box_2d.every(val => val <= 1000);
-                console.log(`Is normalized (0-1000 range): ${isNormalized}`);
-                
-                // Convert normalized values to pixel-based values if necessary
-                let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
-                
-                if (isNormalized) {
-                  // Convert from 0-1000 range to pixel values
-                  pixelYMin = (yMin / 1000) * imageDimensions.height;
-                  pixelXMin = (xMin / 1000) * imageDimensions.width;
-                  pixelYMax = (yMax / 1000) * imageDimensions.height;
-                  pixelXMax = (xMax / 1000) * imageDimensions.width;
+                {!loading && detectedTools.map((tool, index) => {
+                  // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
+                  const [yMin, xMin, yMax, xMax] = tool.box_2d;
                   
-                  console.log(`Converted to pixels for ${tool.label}:`, {
-                    yMin: pixelYMin,
-                    xMin: pixelXMin,
-                    yMax: pixelYMax,
-                    xMax: pixelXMax
+                  console.log(`Original bounding box for ${tool.label}:`, {
+                    yMin, xMin, yMax, xMax,
+                    format: 'Gemini [y_min, x_min, y_max, x_max]'
                   });
-                } else {
-                  // Already in pixel values
-                  pixelYMin = yMin;
-                  pixelXMin = xMin;
-                  pixelYMax = yMax;
-                  pixelXMax = xMax;
-                }
-                
-                // Calculate scaling factors based on display vs original dimensions
-                const scaleX = displayDimensions.width / imageDimensions.width;
-                const scaleY = displayDimensions.height / imageDimensions.height;
-                
-                // Apply proper scaling based on aspect ratio
-                let scale;
-                if (imageDimensions.width > imageDimensions.height) {
-                  // Landscape Mode
-                  scale = Math.min(scaleX, scaleY);
-                  console.log(`Landscape image: using min scale ${scale}`);
-                } else {
-                  // Portrait Mode
-                  scale = Math.max(scaleX, scaleY);
-                  console.log(`Portrait image: using max scale ${scale}`);
-                }
-                
-                // Calculate dimensions as percentages for responsive display
-                const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
-                const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
-                const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
-                const normalizedTop = imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height : 0;
-                
-                console.log(`Final normalized percentages for ${tool.label}:`, {
-                  left: normalizedLeft,
-                  top: normalizedTop,
-                  width: normalizedWidth,
-                  height: normalizedHeight,
-                  unit: '%'
-                });
-                
-                // Create style for the bounding box using percentages
-                const boxStyle = {
-                  left: `${normalizedLeft}%`,
-                  top: `${normalizedTop}%`,
-                  width: `${normalizedWidth}%`,
-                  height: `${normalizedHeight}%`
-                };
-                
-                return (
-                  <div key={index}>
-                    <div 
-                      className="absolute border-2 border-green-500"
-                      style={boxStyle}
-                    />
-                    <div 
-                      className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
-                      style={{
-                        left: `${normalizedLeft}%`,
-                        top: `${Math.max(0, normalizedTop - 3)}%`,
-                        transform: 'translateY(-100%)'
-                      }}
-                    >
-                      {tool.label}
+                  
+                  // Detect if bounding box values are normalized (0-1000 range)
+                  const isNormalized = tool.box_2d.every(val => val <= 1000);
+                  console.log(`Is normalized (0-1000 range): ${isNormalized}`);
+                  
+                  // Convert normalized values to pixel-based values if necessary
+                  let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
+                  
+                  if (isNormalized) {
+                    // Convert from 0-1000 range to pixel values
+                    pixelYMin = (yMin / 1000) * imageDimensions.height;
+                    pixelXMin = (xMin / 1000) * imageDimensions.width;
+                    pixelYMax = (yMax / 1000) * imageDimensions.height;
+                    pixelXMax = (xMax / 1000) * imageDimensions.width;
+                    
+                    console.log(`Converted to pixels for ${tool.label}:`, {
+                      yMin: pixelYMin,
+                      xMin: pixelXMin,
+                      yMax: pixelYMax,
+                      xMax: pixelXMax
+                    });
+                  } else {
+                    // Already in pixel values
+                    pixelYMin = yMin;
+                    pixelXMin = xMin;
+                    pixelYMax = yMax;
+                    pixelXMax = xMax;
+                  }
+                  
+                  // Calculate scaling factors based on display vs original dimensions
+                  const scaleX = displayDimensions.width / imageDimensions.width;
+                  const scaleY = displayDimensions.height / imageDimensions.height;
+                  
+                  // Apply proper scaling based on aspect ratio
+                  let scale;
+                  if (imageDimensions.width > imageDimensions.height) {
+                    // Landscape Mode
+                    scale = Math.min(scaleX, scaleY);
+                    console.log(`Landscape image: using min scale ${scale}`);
+                  } else {
+                    // Portrait Mode
+                    scale = Math.max(scaleX, scaleY);
+                    console.log(`Portrait image: using max scale ${scale}`);
+                  }
+                  
+                  // For actual scale mode, we use 1:1 mapping or the right scale factor
+                  const effectiveScale = useActualScale ? 1 : scale;
+                  
+                  // If using actual scale, we use pixel coordinates directly
+                  // If using fitted scale, we convert to percentages for responsive display
+                  let boxStyle;
+                  
+                  if (useActualScale) {
+                    boxStyle = {
+                      left: `${pixelXMin}px`,
+                      top: `${pixelYMin}px`,
+                      width: `${pixelXMax - pixelXMin}px`,
+                      height: `${pixelYMax - pixelYMin}px`
+                    };
+                    
+                    console.log(`Using actual pixel values for ${tool.label}:`, boxStyle);
+                  } else {
+                    // Calculate dimensions as percentages for responsive display
+                    const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
+                    const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
+                    const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
+                    const normalizedTop = imageDimensions.height > 0 ? 100 * pixelYMin / imageDimensions.height : 0;
+                    
+                    boxStyle = {
+                      left: `${normalizedLeft}%`,
+                      top: `${normalizedTop}%`,
+                      width: `${normalizedWidth}%`,
+                      height: `${normalizedHeight}%`
+                    };
+                    
+                    console.log(`Final normalized percentages for ${tool.label}:`, {
+                      left: normalizedLeft,
+                      top: normalizedTop,
+                      width: normalizedWidth,
+                      height: normalizedHeight,
+                      unit: '%'
+                    });
+                  }
+                  
+                  return (
+                    <div key={index}>
+                      <div 
+                        className="absolute border-2 border-green-500"
+                        style={boxStyle}
+                      />
+                      <div 
+                        className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
+                        style={useActualScale ? {
+                          left: `${pixelXMin}px`,
+                          top: `${Math.max(0, pixelYMin - 20)}px`
+                        } : {
+                          left: `${normalizedLeft}%`,
+                          top: `${Math.max(0, normalizedTop - 3)}%`,
+                          transform: 'translateY(-100%)'
+                        }}
+                      >
+                        {tool.label}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
 
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-                </div>
-              )}
+                {loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
