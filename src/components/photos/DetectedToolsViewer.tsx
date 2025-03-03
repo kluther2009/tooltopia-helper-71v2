@@ -30,17 +30,28 @@ export function DetectedToolsViewer({
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
   const imageContainerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
 
   // Update display dimensions whenever the image container resizes
   useEffect(() => {
-    if (!imageContainerRef.current) return
+    if (!imageContainerRef.current || !imageRef.current) return
     
     const updateDisplayDimensions = () => {
-      const img = document.getElementById("detected-image") as HTMLImageElement
+      const img = imageRef.current
       if (img && img.complete) {
         setDisplayDimensions({ 
           width: img.clientWidth, 
           height: img.clientHeight 
+        })
+        
+        // Debug info
+        console.log("Updated display dimensions:", {
+          width: img.clientWidth,
+          height: img.clientHeight,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          offsetLeft: img.offsetLeft,
+          offsetTop: img.offsetTop
         })
       }
     }
@@ -52,18 +63,21 @@ export function DetectedToolsViewer({
     // Initial update
     updateDisplayDimensions()
     
+    // Set up a window resize handler too
+    window.addEventListener('resize', updateDisplayDimensions)
+    
     return () => {
       if (imageContainerRef.current) {
         resizeObserver.unobserve(imageContainerRef.current)
       }
+      window.removeEventListener('resize', updateDisplayDimensions)
     }
   }, [loading])
 
   useEffect(() => {
-    const img = document.getElementById("detected-image") as HTMLImageElement;
-    if (img && img.complete) {
-      setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-      setDisplayDimensions({ width: img.clientWidth, height: img.clientHeight });
+    if (imageRef.current && imageRef.current.complete) {
+      setImageDimensions({ width: imageRef.current.naturalWidth, height: imageRef.current.naturalHeight });
+      setDisplayDimensions({ width: imageRef.current.clientWidth, height: imageRef.current.clientHeight });
       setLoading(false);
     }
   }, []);
@@ -86,24 +100,15 @@ export function DetectedToolsViewer({
     setLoading(false)
 
     // Enhanced debugging information
-    console.log('Image dimensions:', {
+    console.log('Image loaded - dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
+      offset: { left: img.offsetLeft, top: img.offsetTop },
+      position: { x: img.x, y: img.y },
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
-        min: Math.min(displayWidth / naturalWidth, displayHeight / naturalHeight),
-        max: Math.max(displayWidth / naturalWidth, displayHeight / naturalHeight)
       }
-    })
-    
-    // Log the image size passed to the API (same as natural size)
-    console.log('Image size passed to API:', { width: naturalWidth, height: naturalHeight })
-    
-    // Log normalization factors (converting actual pixels to 0-1000 scale)
-    console.log('Normalization factors:', {
-      x: 1000 / naturalWidth,
-      y: 1000 / naturalHeight
     })
   }
 
@@ -119,9 +124,6 @@ export function DetectedToolsViewer({
     onClose()
   }
 
-  // Log detected tools for debugging
-  console.log('All detected tools:', detectedTools)
-  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden">
@@ -140,109 +142,103 @@ export function DetectedToolsViewer({
               maxHeight: 'calc(80vh - 100px)',
               maxWidth: '100%'
             }}>
-              <div className="relative w-full flex justify-center" ref={imageContainerRef}>
-                <img 
-                  id="detected-image"
-                  src={imageUrl}
-                  alt="Tool detection"
-                  className="rounded-lg shadow-sm max-w-full h-auto object-contain"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
-                
-                {!loading && detectedTools.map((tool, index) => {
-                  // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
-                  const [yMin, xMin, yMax, xMax] = tool.box_2d;
+              <div 
+                className="relative w-full flex justify-center" 
+                ref={imageContainerRef}
+              >
+                <div className="relative inline-block">
+                  <img 
+                    id="detected-image"
+                    ref={imageRef}
+                    src={imageUrl}
+                    alt="Tool detection"
+                    className="rounded-lg shadow-sm max-w-full h-auto object-contain"
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                  />
                   
-                  console.log(`Original bounding box for ${tool.label}:`, {
-                    yMin, xMin, yMax, xMax,
-                    format: 'Gemini [y_min, x_min, y_max, x_max]'
-                  });
-                  
-                  // Detect if bounding box values are normalized (0-1000 range)
-                  const isNormalized = tool.box_2d.every(val => val <= 1000);
-                  console.log(`Is normalized (0-1000 range): ${isNormalized}`);
-                  
-                  // Convert normalized values to pixel-based values if necessary
-                  let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
-                  
-                  if (isNormalized) {
-                    // Convert from 0-1000 range to pixel values
-                    pixelYMin = (yMin / 1000) * imageDimensions.height;
-                    pixelXMin = (xMin / 1000) * imageDimensions.width;
-                    pixelYMax = (yMax / 1000) * imageDimensions.height;
-                    pixelXMax = (xMax / 1000) * imageDimensions.width;
+                  {!loading && detectedTools.map((tool, index) => {
+                    // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
+                    const [yMin, xMin, yMax, xMax] = tool.box_2d;
                     
-                    console.log(`Converted to pixels for ${tool.label}:`, {
-                      yMin: pixelYMin,
-                      xMin: pixelXMin,
-                      yMax: pixelYMax,
-                      xMax: pixelXMax
+                    // Log original bounding box
+                    console.log(`Original bounding box for ${tool.label}:`, {
+                      yMin, xMin, yMax, xMax,
+                      format: 'Gemini [y_min, x_min, y_max, x_max]'
                     });
-                  } else {
-                    // Already in pixel values
-                    pixelYMin = yMin;
-                    pixelXMin = xMin;
-                    pixelYMax = yMax;
-                    pixelXMax = xMax;
-                  }
-                  
-                  // Calculate scaling factors based on display vs original dimensions
-                  const scaleX = displayDimensions.width / imageDimensions.width;
-                  const scaleY = displayDimensions.height / imageDimensions.height;
-                  
-                  // Apply scaling to bounding box coordinates
-                  const scaledXMin = pixelXMin * scaleX;
-                  const scaledYMin = pixelYMin * scaleY;
-                  const scaledXMax = pixelXMax * scaleX;
-                  const scaledYMax = pixelYMax * scaleY;
-                  
-                  console.log(`Scaled coordinates for ${tool.label}:`, {
-                    xMin: scaledXMin,
-                    yMin: scaledYMin,
-                    xMax: scaledXMax,
-                    yMax: scaledYMax,
-                    scaleFactors: { x: scaleX, y: scaleY }
-                  });
-                  
-                  // Calculate dimensions for display
-                  const boxStyle = {
-                    left: `${scaledXMin}px`,
-                    top: `${scaledYMin}px`,
-                    width: `${scaledXMax - scaledXMin}px`,
-                    height: `${scaledYMax - scaledYMin}px`,
-                    position: 'absolute' as const
-                  };
-                  
-                  // Calculate label position
-                  const labelStyle = {
-                    left: `${scaledXMin}px`,
-                    top: `${Math.max(0, scaledYMin - 20)}px`,
-                    transform: 'translateY(-100%)',
-                    position: 'absolute' as const
-                  };
-                  
-                  return (
-                    <div key={index}>
-                      <div 
-                        className="absolute border-2 border-green-500"
-                        style={boxStyle}
-                      />
-                      <div 
-                        className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
-                        style={labelStyle}
-                      >
-                        {tool.label}
+                    
+                    // Detect if bounding box values are normalized (0-1000 range)
+                    const isNormalized = tool.box_2d.every(val => val <= 1000);
+                    
+                    // Convert normalized values to pixel-based values if necessary
+                    let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
+                    
+                    if (isNormalized) {
+                      // Convert from 0-1000 range to pixel values
+                      pixelYMin = (yMin / 1000) * imageDimensions.height;
+                      pixelXMin = (xMin / 1000) * imageDimensions.width;
+                      pixelYMax = (yMax / 1000) * imageDimensions.height;
+                      pixelXMax = (xMax / 1000) * imageDimensions.width;
+                    } else {
+                      // Already in pixel values
+                      pixelYMin = yMin;
+                      pixelXMin = xMin;
+                      pixelYMax = yMax;
+                      pixelXMax = xMax;
+                    }
+                    
+                    // Calculate scaling factors based on display vs original dimensions
+                    const scaleX = displayDimensions.width / imageDimensions.width;
+                    const scaleY = displayDimensions.height / imageDimensions.height;
+                    
+                    // Apply scaling to bounding box coordinates
+                    const scaledXMin = pixelXMin * scaleX;
+                    const scaledYMin = pixelYMin * scaleY;
+                    const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
+                    const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
+                    
+                    // Log the calculated positions
+                    console.log(`Calculated box for ${tool.label}:`, {
+                      originalPixels: { xMin: pixelXMin, yMin: pixelYMin, xMax: pixelXMax, yMax: pixelYMax },
+                      scaled: { 
+                        xMin: scaledXMin, 
+                        yMin: scaledYMin, 
+                        width: scaledWidth, 
+                        height: scaledHeight 
+                      },
+                      scaleFactors: { x: scaleX, y: scaleY }
+                    });
+                    
+                    return (
+                      <div key={index}>
+                        <div 
+                          className="absolute border-2 border-green-500"
+                          style={{
+                            left: `${scaledXMin}px`,
+                            top: `${scaledYMin}px`,
+                            width: `${scaledWidth}px`,
+                            height: `${scaledHeight}px`,
+                          }}
+                        />
+                        <div 
+                          className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
+                          style={{
+                            left: `${scaledXMin}px`,
+                            top: `${Math.max(0, scaledYMin - 20)}px`,
+                          }}
+                        >
+                          {tool.label}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
 
-                {loading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-                  </div>
-                )}
+                  {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                    </div>
+                  )}
+                </div>
               </div>
             </ScrollArea>
           )}
