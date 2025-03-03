@@ -21,6 +21,7 @@ export function PhotoViewerDialog({
   selectionMode = false 
 }: PhotoViewerDialogProps) {
   const [annotations, setAnnotations] = useState<any[]>([]);
+  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square' | null>(null);
 
   useEffect(() => {
     if (photo?.id && isOpen) {
@@ -48,6 +49,20 @@ export function PhotoViewerDialog({
     }
   };
 
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    const width = img.naturalWidth;
+    const height = img.naturalHeight;
+    
+    if (width > height) {
+      setOrientation('landscape');
+    } else if (height > width) {
+      setOrientation('portrait');
+    } else {
+      setOrientation('square');
+    }
+  };
+
   if (!photo && !selectionMode) return null;
 
   const handlePhotoClick = () => {
@@ -62,13 +77,17 @@ export function PhotoViewerDialog({
     }}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{photo?.location || "Select a Photo"}</DialogTitle>
+          <DialogTitle>
+            {photo?.location || "Select a Photo"}
+            {orientation && <span className="ml-2 text-sm text-gray-500">({orientation})</span>}
+          </DialogTitle>
         </DialogHeader>
         <div className="relative aspect-video" onClick={handlePhotoClick}>
           {photo && (
             <AnnotationCanvas
               imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
               existingAnnotations={annotations}
+              onImageLoad={handleImageLoad}
             />
           )}
         </div>

@@ -29,6 +29,7 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
+  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square'>('landscape')
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
@@ -76,8 +77,24 @@ export function DetectedToolsViewer({
 
   useEffect(() => {
     if (imageRef.current && imageRef.current.complete) {
-      setImageDimensions({ width: imageRef.current.naturalWidth, height: imageRef.current.naturalHeight });
-      setDisplayDimensions({ width: imageRef.current.clientWidth, height: imageRef.current.clientHeight });
+      const width = imageRef.current.naturalWidth;
+      const height = imageRef.current.naturalHeight;
+      
+      setImageDimensions({ width, height });
+      setDisplayDimensions({ 
+        width: imageRef.current.clientWidth, 
+        height: imageRef.current.clientHeight 
+      });
+      
+      // Determine orientation
+      if (width > height) {
+        setOrientation('landscape');
+      } else if (height > width) {
+        setOrientation('portrait');
+      } else {
+        setOrientation('square');
+      }
+      
       setLoading(false);
     }
   }, []);
@@ -97,6 +114,16 @@ export function DetectedToolsViewer({
       width: displayWidth,
       height: displayHeight
     })
+    
+    // Determine orientation
+    if (naturalWidth > naturalHeight) {
+      setOrientation('landscape');
+    } else if (naturalHeight > naturalWidth) {
+      setOrientation('portrait');
+    } else {
+      setOrientation('square');
+    }
+    
     setLoading(false)
 
     // Enhanced debugging information
@@ -105,6 +132,7 @@ export function DetectedToolsViewer({
       display: { width: displayWidth, height: displayHeight },
       offset: { left: img.offsetLeft, top: img.offsetTop },
       position: { x: img.x, y: img.y },
+      orientation: naturalWidth > naturalHeight ? 'landscape' : naturalHeight > naturalWidth ? 'portrait' : 'square',
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
@@ -128,7 +156,9 @@ export function DetectedToolsViewer({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Detected Tools</DialogTitle>
+          <DialogTitle>
+            Detected Tools ({orientation.charAt(0).toUpperCase() + orientation.slice(1)} Photo)
+          </DialogTitle>
         </DialogHeader>
         
         <div className="w-full flex flex-col items-center p-2">
