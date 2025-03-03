@@ -17,6 +17,7 @@ interface AnnotationCanvasProps {
   draggedAnnotation?: Annotation | null;
   dragPreviewPos?: { x: number; y: number } | null;
   isReplacingPhoto?: boolean;
+  onImageLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
 }
 
 export function AnnotationCanvas({ 
@@ -30,7 +31,8 @@ export function AnnotationCanvas({
   onAnnotationDragStart,
   draggedAnnotation,
   dragPreviewPos,
-  isReplacingPhoto = false
+  isReplacingPhoto = false,
+  onImageLoad
 }: AnnotationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -63,9 +65,13 @@ export function AnnotationCanvas({
     img.src = imageUrl;
     img.onload = () => {
       imageRef.current = img;
+      if (onImageLoad) {
+        const syntheticEvent = { target: img } as React.SyntheticEvent<HTMLImageElement>;
+        onImageLoad(syntheticEvent);
+      }
       drawCanvas();
     };
-  }, [imageUrl]);
+  }, [imageUrl, onImageLoad]);
 
   useEffect(() => {
     if (imageRef.current && existingAnnotations) {
