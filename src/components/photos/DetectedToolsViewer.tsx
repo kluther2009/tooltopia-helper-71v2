@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
@@ -56,7 +55,6 @@ export function DetectedToolsViewer({
     })
     setLoading(false)
 
-    // Enhanced debugging information
     console.log('Image dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
@@ -69,10 +67,8 @@ export function DetectedToolsViewer({
       }
     })
     
-    // Log the image size passed to the API (same as natural size)
     console.log('Image size passed to API:', { width: naturalWidth, height: naturalHeight })
     
-    // Log normalization factors (converting actual pixels to 0-1000 scale)
     console.log('Normalization factors:', {
       x: 1000 / naturalWidth,
       y: 1000 / naturalHeight
@@ -95,7 +91,6 @@ export function DetectedToolsViewer({
     setUseActualScale(!useActualScale)
   }
 
-  // Log detected tools for debugging
   console.log('All detected tools:', detectedTools)
   
   return (
@@ -137,7 +132,6 @@ export function DetectedToolsViewer({
                 />
                 
                 {!loading && detectedTools.map((tool, index) => {
-                  // Extract coordinates according to Gemini's format: [y_min, x_min, y_max, x_max]
                   const [yMin, xMin, yMax, xMax] = tool.box_2d;
                   
                   console.log(`Original bounding box for ${tool.label}:`, {
@@ -145,15 +139,12 @@ export function DetectedToolsViewer({
                     format: 'Gemini [y_min, x_min, y_max, x_max]'
                   });
                   
-                  // Detect if bounding box values are normalized (0-1000 range)
                   const isNormalized = tool.box_2d.every(val => val <= 1000);
                   console.log(`Is normalized (0-1000 range): ${isNormalized}`);
                   
-                  // Convert normalized values to pixel-based values if necessary
                   let pixelYMin, pixelXMin, pixelYMax, pixelXMax;
                   
                   if (isNormalized) {
-                    // Convert from 0-1000 range to pixel values
                     pixelYMin = (yMin / 1000) * imageDimensions.height;
                     pixelXMin = (xMin / 1000) * imageDimensions.width;
                     pixelYMax = (yMax / 1000) * imageDimensions.height;
@@ -166,34 +157,26 @@ export function DetectedToolsViewer({
                       xMax: pixelXMax
                     });
                   } else {
-                    // Already in pixel values
                     pixelYMin = yMin;
                     pixelXMin = xMin;
                     pixelYMax = yMax;
                     pixelXMax = xMax;
                   }
                   
-                  // Calculate scaling factors based on display vs original dimensions
                   const scaleX = displayDimensions.width / imageDimensions.width;
                   const scaleY = displayDimensions.height / imageDimensions.height;
                   
-                  // Apply proper scaling based on aspect ratio
                   let scale;
                   if (imageDimensions.width > imageDimensions.height) {
-                    // Landscape Mode
                     scale = Math.min(scaleX, scaleY);
                     console.log(`Landscape image: using min scale ${scale}`);
                   } else {
-                    // Portrait Mode
                     scale = Math.max(scaleX, scaleY);
                     console.log(`Portrait image: using max scale ${scale}`);
                   }
                   
-                  // For actual scale mode, we use 1:1 mapping or the right scale factor
                   const effectiveScale = useActualScale ? 1 : scale;
                   
-                  // If using actual scale, we use pixel coordinates directly
-                  // If using fitted scale, we convert to percentages for responsive display
                   let boxStyle;
                   
                   if (useActualScale) {
@@ -206,7 +189,6 @@ export function DetectedToolsViewer({
                     
                     console.log(`Using actual pixel values for ${tool.label}:`, boxStyle);
                   } else {
-                    // Calculate dimensions as percentages for responsive display
                     const normalizedWidth = imageDimensions.width > 0 ? 100 * (pixelXMax - pixelXMin) / imageDimensions.width : 0;
                     const normalizedHeight = imageDimensions.height > 0 ? 100 * (pixelYMax - pixelYMin) / imageDimensions.height : 0;
                     const normalizedLeft = imageDimensions.width > 0 ? 100 * pixelXMin / imageDimensions.width : 0;
@@ -240,8 +222,8 @@ export function DetectedToolsViewer({
                           left: `${pixelXMin}px`,
                           top: `${Math.max(0, pixelYMin - 20)}px`
                         } : {
-                          left: `${normalizedLeft}%`,
-                          top: `${Math.max(0, normalizedTop - 3)}%`,
+                          left: `${100 * pixelXMin / imageDimensions.width}%`,
+                          top: `${Math.max(0, 100 * pixelYMin / imageDimensions.height - 3)}%`,
                           transform: 'translateY(-100%)'
                         }}
                       >
