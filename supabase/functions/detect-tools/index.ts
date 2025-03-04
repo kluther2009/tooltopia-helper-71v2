@@ -131,14 +131,14 @@ serve(async (req) => {
     const response = await result.response
     const text = response.text()
     
-    // Enhanced logging of the full Gemini API response
-    console.log('===== RAW GEMINI API RESPONSE TEXT START =====')
+    // Log Gemini API response once with clear demarcation
+    console.log('\n========== RAW GEMINI API RESPONSE ==========\n')
     console.log(text)
-    console.log('===== RAW GEMINI API RESPONSE TEXT END =====')
+    console.log('\n=========== END GEMINI API RESPONSE ===========\n')
     
-    // Additional logging of result structure
-    console.log('Gemini API Response Structure:', {
-      candidates: result.candidates?.length || 0,
+    // Log response structure once
+    console.log('Gemini Response Structure:', {
+      candidatesCount: result.candidates?.length || 0,
       promptTokenCount: result.promptFeedback?.tokenCount || 'unknown'
     })
 
@@ -175,19 +175,15 @@ serve(async (req) => {
         });
       }
 
-      console.log('===== PROCESSED DETECTION RESULTS =====')
-      console.log('Coordinate System:', JSON.stringify(toolsData.coordinate_system, null, 2))
+      console.log('\n========== PROCESSED DETECTION RESULTS ==========\n')
+      console.log('Coordinate System:', toolsData.coordinate_system)
       console.log(`Detected ${toolsData.tools.length} tools:`)
       
-      // Log each tool's bounding box data
+      // Log summary of each tool once
       toolsData.tools.forEach((tool, index) => {
-        console.log(`Tool #${index + 1}: "${tool.label}" bounding box:`, {
-          rawCoordinates: tool.box_2d,
-          format: 'Gemini [y_min, x_min, y_max, x_max]',
-          normalizedRange: '0-1000',
-          coordinateSystem: toolsData.coordinate_system
-        })
+        console.log(`Tool #${index + 1}: "${tool.label}" box: [${tool.box_2d.join(', ')}]`)
       })
+      console.log('\n=========== END DETECTION RESULTS ===========\n')
     } catch (e) {
       console.error('Error parsing response:', e)
       throw new Error(`Failed to parse tool detection results: ${e.message}`)
