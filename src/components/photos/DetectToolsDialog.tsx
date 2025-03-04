@@ -23,7 +23,11 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const { photos } = useInitialInventoryPhotos()
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [detectedTools, setDetectedTools] = useState<any[]>([])
-  const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem | null>(null)
+  const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem>({
+    origin: 'top-left',
+    x_axis_direction: 'left-to-right',
+    y_axis_direction: 'top-to-bottom'
+  })
   const [isDetecting, setIsDetecting] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
 
@@ -60,11 +64,18 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
       if (data.tools && data.tools.length > 0) {
         setDetectedTools(data.tools)
-        setCoordinateSystem(data.coordinate_system || {
-          origin: 'top-left',
-          x_axis_direction: 'left-to-right',
-          y_axis_direction: 'top-to-bottom'
-        })
+        if (data.coordinate_system) {
+          setCoordinateSystem(data.coordinate_system)
+          console.log('Using coordinate system from API:', data.coordinate_system)
+        } else {
+          // Use default coordinate system if not provided
+          setCoordinateSystem({
+            origin: 'top-left',
+            x_axis_direction: 'left-to-right',
+            y_axis_direction: 'top-to-bottom'
+          })
+          console.log('Using default coordinate system')
+        }
         setShowConfirmation(true)
       } else {
         toast.info('No tools detected in the image')
@@ -114,6 +125,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
           isOpen={showConfirmation}
           onClose={() => setShowConfirmation(false)}
           onConfirm={handleToolsConfirmed}
+          coordinateSystem={coordinateSystem}
         />
       )}
     </>

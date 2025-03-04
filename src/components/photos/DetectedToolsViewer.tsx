@@ -22,6 +22,7 @@ interface DetectedToolsViewerProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: (tools: Tool[]) => void
+  coordinateSystem?: CoordinateSystem
 }
 
 export function DetectedToolsViewer({ 
@@ -29,22 +30,19 @@ export function DetectedToolsViewer({
   detectedTools, 
   isOpen, 
   onClose,
-  onConfirm 
+  onConfirm,
+  coordinateSystem = {
+    origin: 'top-left',
+    x_axis_direction: 'left-to-right',
+    y_axis_direction: 'top-to-bottom'
+  }
 }: DetectedToolsViewerProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
-  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square'>('landscape')
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
-  
-  // Default coordinate system (standard computer vision format)
-  const [coordinateSystem] = useState<CoordinateSystem>({
-    origin: 'top-left',
-    x_axis_direction: 'left-to-right',
-    y_axis_direction: 'top-to-bottom'
-  })
 
   useEffect(() => {
     if (!imageContainerRef.current || !imageRef.current) return
@@ -94,14 +92,6 @@ export function DetectedToolsViewer({
         height: imageRef.current.clientHeight 
       });
       
-      if (width > height) {
-        setOrientation('landscape');
-      } else if (height > width) {
-        setOrientation('portrait');
-      } else {
-        setOrientation('square');
-      }
-      
       setLoading(false);
     }
   }, []);
@@ -122,14 +112,6 @@ export function DetectedToolsViewer({
       height: displayHeight
     })
     
-    if (naturalWidth > naturalHeight) {
-      setOrientation('landscape');
-    } else if (naturalHeight > naturalWidth) {
-      setOrientation('portrait');
-    } else {
-      setOrientation('square');
-    }
-    
     setLoading(false)
 
     console.log('Image loaded - dimensions:', {
@@ -137,7 +119,6 @@ export function DetectedToolsViewer({
       display: { width: displayWidth, height: displayHeight },
       offset: { left: img.offsetLeft, top: img.offsetTop },
       position: { x: img.x, y: img.y },
-      orientation: naturalWidth > naturalHeight ? 'landscape' : naturalHeight > naturalWidth ? 'portrait' : 'square',
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
@@ -158,7 +139,7 @@ export function DetectedToolsViewer({
     onClose()
   }
 
-  // Function to convert coordinates based on the coordinate system
+  // Function to convert coordinates based on the explicit coordinate system
   const convertCoordinates = (box2d: number[]) => {
     if (!box2d || box2d.length !== 4) {
       console.error('Invalid bounding box format:', box2d);
@@ -188,7 +169,7 @@ export function DetectedToolsViewer({
       pixelYMax = yMax;
     }
     
-    // Apply coordinate system transformations
+    // Apply coordinate system transformations based on model-provided info
     if (coordinateSystem.origin !== 'top-left') {
       // Adjust for origin position
       if (coordinateSystem.origin === 'top-right') {
@@ -246,12 +227,20 @@ export function DetectedToolsViewer({
     };
   }
 
+  // Get image orientation for title display only
+  const getImageOrientation = () => {
+    if (!imageDimensions.width || !imageDimensions.height) return 'Loading';
+    if (imageDimensions.width > imageDimensions.height) return 'Landscape';
+    if (imageDimensions.height > imageDimensions.width) return 'Portrait';
+    return 'Square';
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
-            Detected Tools ({orientation?.charAt(0).toUpperCase() + orientation?.slice(1) || 'Loading'} Photo)
+            Detected Tools ({getImageOrientation()} Photo)
           </DialogTitle>
         </DialogHeader>
         
@@ -289,7 +278,6 @@ export function DetectedToolsViewer({
                     
                     console.log(`Rendering bounding box for ${tool.label}:`, {
                       box2d: tool.box_2d,
-                      orientation: orientation,
                       coordinateSystem: coordinateSystem
                     });
                     
