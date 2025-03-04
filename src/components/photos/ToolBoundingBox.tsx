@@ -11,6 +11,7 @@ interface ToolBoundingBoxProps {
   }
   isHighlighted?: boolean
   isActive?: boolean
+  isEditing?: boolean
   onClick?: () => void
 }
 
@@ -19,20 +20,29 @@ export function ToolBoundingBox({
   coords, 
   isHighlighted = false,
   isActive = false,
+  isEditing = false,
   onClick 
 }: ToolBoundingBoxProps) {
-  const borderColor = isHighlighted 
-    ? isActive ? "border-blue-500" : "border-yellow-500" 
-    : "border-green-500";
+  let borderColor = "border-green-500";
+  let labelColor = "bg-black/70";
   
-  const labelColor = isHighlighted
-    ? isActive ? "bg-blue-500" : "bg-yellow-500"
-    : "bg-black/70";
+  if (isHighlighted) {
+    if (isEditing) {
+      borderColor = "border-purple-500";
+      labelColor = "bg-purple-500";
+    } else if (isActive) {
+      borderColor = "border-blue-500";
+      labelColor = "bg-blue-500";
+    } else {
+      borderColor = "border-yellow-500";
+      labelColor = "bg-yellow-500";
+    }
+  }
   
   return (
     <>
       <div 
-        className={`absolute border-2 ${borderColor} cursor-pointer transition-colors duration-200`}
+        className={`absolute border-2 ${borderColor} cursor-pointer transition-colors duration-200 ${isEditing ? 'border-dashed' : ''}`}
         style={{
           left: `${coords.xMin}px`,
           top: `${coords.yMin}px`,
