@@ -31,6 +31,18 @@ function extractJsonFromText(text: string): any {
       }
     }
     
+    // Try to find coordinate system info separately
+    const coordSystemMatch = text.match(/{[^}]*"origin"[^}]*}/);
+    let coordinateSystem = null;
+    if (coordSystemMatch) {
+      try {
+        coordinateSystem = JSON.parse(coordSystemMatch[0]);
+        console.log('Found coordinate system info:', coordinateSystem);
+      } catch (e) {
+        console.error('Failed to parse coordinate system info:', e);
+      }
+    }
+    
     // If still no valid JSON, try to extract individual tool objects
     const toolsArray = [];
     const toolMatches = text.matchAll(/{[^}]+}/g);
@@ -46,7 +58,10 @@ function extractJsonFromText(text: string): any {
     }
     
     if (toolsArray.length > 0) {
-      return toolsArray;
+      return {
+        tools: toolsArray,
+        coordinate_system: coordinateSystem
+      };
     }
     
     throw new Error('No valid JSON found in response');
@@ -96,13 +111,13 @@ serve(async (req) => {
     const base64Image = arrayBufferToBase64(imageBuffer)
     console.log('Image converted to base64')
 
-    // Call Gemini API with corrected structure
+    // Call Gemini API with updated system prompt that requests coordinate system information
     console.log('Calling Gemini API...')
     const result = await model.generateContent({
       contents: [{
         role: "user",
         parts: [
-          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image. Return your response as a JSON array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Only include these two properties and ensure the response is valid JSON." },
+          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. Ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image.\n\nFirst, provide a single 'coordinate_system' object with the following properties to help interpret coordinates:\n- 'origin': the corner of the image where the coordinate system starts (e.g., 'top-left', 'top-right', 'bottom-left', 'bottom-right')\n- 'x_axis_direction': the direction the x-axis increases (e.g., 'left-to-right', 'right-to-left')\n- 'y_axis_direction': the direction the y-axis increases (e.g., 'top-to-bottom', 'bottom-to-top')\n\nThen, provide a 'tools' array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Ensure the response is valid JSON with this structure:\n\n{\n  \"coordinate_system\": {\n    \"origin\": \"top-left\",\n    \"x_axis_direction\": \"left-to-right\",\n    \"y_axis_direction\": \"top-to-bottom\"\n  },\n  \"tools\": [\n    {\n      \"label\": \"tool name\",\n      \"box_2d\": [y_min, x_min, y_max, x_max]\n    }\n  ]\n}" },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -121,28 +136,47 @@ serve(async (req) => {
     console.log('Raw response text:', text)
 
     // Parse response with improved parsing logic
-    let tools = []
+    let toolsData = {
+      coordinate_system: {
+        origin: "top-left",
+        x_axis_direction: "left-to-right",
+        y_axis_direction: "top-to-bottom"
+      },
+      tools: []
+    }
+    
     try {
-      tools = extractJsonFromText(text);
-      if (!Array.isArray(tools)) {
-        tools = [tools];
+      const extractedData = extractJsonFromText(text);
+      
+      // Handle different formats that might be returned
+      if (Array.isArray(extractedData)) {
+        // If we got just an array of tools
+        toolsData.tools = extractedData.filter(item => {
+          return item && 
+                 typeof item.label === 'string' && 
+                 Array.isArray(item.box_2d) && 
+                 item.box_2d.length === 4
+        });
+      } else if (extractedData.tools) {
+        // If we got the expected format with coordinate system and tools
+        toolsData = extractedData;
+        toolsData.tools = toolsData.tools.filter(item => {
+          return item && 
+                 typeof item.label === 'string' && 
+                 Array.isArray(item.box_2d) && 
+                 item.box_2d.length === 4
+        });
       }
 
-      tools = tools.filter(item => {
-        return item && 
-               typeof item.label === 'string' && 
-               Array.isArray(item.box_2d) && 
-               item.box_2d.length === 4
-      })
-
-      console.log('Processed tools:', tools)
+      console.log('Processed tools data:', toolsData)
       
       // Log each tool's bounding box data
-      tools.forEach(tool => {
+      toolsData.tools.forEach(tool => {
         console.log(`Tool "${tool.label}" bounding box:`, {
           format: 'Gemini [y_min, x_min, y_max, x_max]',
           values: tool.box_2d,
           normalizedRange: '0-1000',
+          coordinateSystem: toolsData.coordinate_system
         })
       })
     } catch (e) {
@@ -151,7 +185,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ tools }),
+      JSON.stringify(toolsData),
       { 
         headers: { 
           ...corsHeaders,

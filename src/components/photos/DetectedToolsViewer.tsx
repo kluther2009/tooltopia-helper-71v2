@@ -1,8 +1,15 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
+
+interface CoordinateSystem {
+  origin: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  x_axis_direction: 'left-to-right' | 'right-to-left';
+  y_axis_direction: 'top-to-bottom' | 'bottom-to-top';
+}
 
 interface Tool {
   label: string
@@ -31,6 +38,13 @@ export function DetectedToolsViewer({
   const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square'>('landscape')
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  
+  // Default coordinate system (standard computer vision format)
+  const [coordinateSystem] = useState<CoordinateSystem>({
+    origin: 'top-left',
+    x_axis_direction: 'left-to-right',
+    y_axis_direction: 'top-to-bottom'
+  })
 
   useEffect(() => {
     if (!imageContainerRef.current || !imageRef.current) return
@@ -127,7 +141,8 @@ export function DetectedToolsViewer({
       scaleFactor: { 
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
-      }
+      },
+      coordinateSystem: coordinateSystem
     })
   }
 
@@ -141,6 +156,94 @@ export function DetectedToolsViewer({
     onConfirm(detectedTools)
     toast.success("Tool detection data saved")
     onClose()
+  }
+
+  // Function to convert coordinates based on the coordinate system
+  const convertCoordinates = (box2d: number[]) => {
+    if (!box2d || box2d.length !== 4) {
+      console.error('Invalid bounding box format:', box2d);
+      return { xMin: 0, yMin: 0, width: 0, height: 0 };
+    }
+
+    // Default interpretation (Gemini's common format)
+    // box_2d: [y_min, x_min, y_max, x_max]
+    const [yMin, xMin, yMax, xMax] = box2d;
+    
+    console.log('Converting coordinates with system:', coordinateSystem, 'box2d:', box2d);
+    
+    // Check if coordinates are normalized (between 0-1000)
+    const isNormalized = box2d.every(val => val >= 0 && val <= 1000);
+    
+    // Convert to pixel values if normalized
+    let pixelXMin, pixelYMin, pixelXMax, pixelYMax;
+    if (isNormalized) {
+      pixelXMin = (xMin / 1000) * imageDimensions.width;
+      pixelYMin = (yMin / 1000) * imageDimensions.height;
+      pixelXMax = (xMax / 1000) * imageDimensions.width;
+      pixelYMax = (yMax / 1000) * imageDimensions.height;
+    } else {
+      pixelXMin = xMin;
+      pixelYMin = yMin;
+      pixelXMax = xMax;
+      pixelYMax = yMax;
+    }
+    
+    // Apply coordinate system transformations
+    if (coordinateSystem.origin !== 'top-left') {
+      // Adjust for origin position
+      if (coordinateSystem.origin === 'top-right') {
+        const temp = pixelXMin;
+        pixelXMin = imageDimensions.width - pixelXMax;
+        pixelXMax = imageDimensions.width - temp;
+      } else if (coordinateSystem.origin === 'bottom-left') {
+        const temp = pixelYMin;
+        pixelYMin = imageDimensions.height - pixelYMax;
+        pixelYMax = imageDimensions.height - temp;
+      } else if (coordinateSystem.origin === 'bottom-right') {
+        const tempX = pixelXMin;
+        pixelXMin = imageDimensions.width - pixelXMax;
+        pixelXMax = imageDimensions.width - tempX;
+        
+        const tempY = pixelYMin;
+        pixelYMin = imageDimensions.height - pixelYMax;
+        pixelYMax = imageDimensions.height - tempY;
+      }
+    }
+    
+    // Adjust for axis direction if needed
+    if (coordinateSystem.x_axis_direction === 'right-to-left') {
+      const temp = pixelXMin;
+      pixelXMin = imageDimensions.width - pixelXMax;
+      pixelXMax = imageDimensions.width - temp;
+    }
+    
+    if (coordinateSystem.y_axis_direction === 'bottom-to-top') {
+      const temp = pixelYMin;
+      pixelYMin = imageDimensions.height - pixelYMax;
+      pixelYMax = imageDimensions.height - temp;
+    }
+    
+    // Scale to display dimensions
+    const scaleX = displayDimensions.width / imageDimensions.width;
+    const scaleY = displayDimensions.height / imageDimensions.height;
+    
+    const scaledXMin = pixelXMin * scaleX;
+    const scaledYMin = pixelYMin * scaleY;
+    const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
+    const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
+    
+    console.log('Converted coordinates:', {
+      originalBox2d: box2d,
+      pixels: { xMin: pixelXMin, yMin: pixelYMin, xMax: pixelXMax, yMax: pixelYMax },
+      scaled: { xMin: scaledXMin, yMin: scaledYMin, width: scaledWidth, height: scaledHeight }
+    });
+    
+    return {
+      xMin: scaledXMin,
+      yMin: scaledYMin,
+      width: scaledWidth,
+      height: scaledHeight
+    };
   }
 
   return (
@@ -179,79 +282,35 @@ export function DetectedToolsViewer({
                   />
                   
                   {!loading && detectedTools.map((tool, index) => {
-                    let xMin, yMin, xMax, yMax;
-                    
-                    if (orientation === 'portrait') {
-                      [xMin, yMin, xMax, yMax] = tool.box_2d;
-                      
-                      console.log(`Portrait orientation - Raw bounding box for ${tool.label}:`, {
-                        xMin, yMin, xMax, yMax,
-                        format: 'Gemini [xMin, yMin, xMax, yMax]'
-                      });
-                    } else {
-                      const [yMinVal, xMinVal, yMaxVal, xMaxVal] = tool.box_2d;
-                      yMin = yMinVal;
-                      xMin = xMinVal;
-                      yMax = yMaxVal;
-                      xMax = xMaxVal;
-                      
-                      console.log(`${orientation} orientation - Raw bounding box for ${tool.label}:`, {
-                        yMin, xMin, yMax, xMax,
-                        format: 'Gemini [yMin, xMin, yMax, xMax]'
-                      });
+                    if (!tool.box_2d || tool.box_2d.length !== 4) {
+                      console.error('Invalid bounding box format for tool:', tool);
+                      return null;
                     }
                     
-                    const isNormalized = tool.box_2d.every(val => val <= 1000);
-                    
-                    let pixelXMin, pixelYMin, pixelXMax, pixelYMax;
-                    
-                    if (isNormalized) {
-                      pixelXMin = (xMin / 1000) * imageDimensions.width;
-                      pixelYMin = (yMin / 1000) * imageDimensions.height;
-                      pixelXMax = (xMax / 1000) * imageDimensions.width;
-                      pixelYMax = (yMax / 1000) * imageDimensions.height;
-                    } else {
-                      pixelXMin = xMin;
-                      pixelYMin = yMin;
-                      pixelXMax = xMax;
-                      pixelYMax = yMax;
-                    }
-                    
-                    const scaleX = displayDimensions.width / imageDimensions.width;
-                    const scaleY = displayDimensions.height / imageDimensions.height;
-                    
-                    const scaledXMin = pixelXMin * scaleX;
-                    const scaledYMin = pixelYMin * scaleY;
-                    const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
-                    const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
-                    
-                    console.log(`${orientation} - Calculated box for ${tool.label}:`, {
-                      originalPixels: { xMin: pixelXMin, yMin: pixelYMin, xMax: pixelXMax, yMax: pixelYMax },
-                      scaled: { 
-                        xMin: scaledXMin, 
-                        yMin: scaledYMin, 
-                        width: scaledWidth, 
-                        height: scaledHeight 
-                      },
-                      scaleFactors: { x: scaleX, y: scaleY }
+                    console.log(`Rendering bounding box for ${tool.label}:`, {
+                      box2d: tool.box_2d,
+                      orientation: orientation,
+                      coordinateSystem: coordinateSystem
                     });
+                    
+                    const coords = convertCoordinates(tool.box_2d);
                     
                     return (
                       <div key={index}>
                         <div 
                           className="absolute border-2 border-green-500"
                           style={{
-                            left: `${scaledXMin}px`,
-                            top: `${scaledYMin}px`,
-                            width: `${scaledWidth}px`,
-                            height: `${scaledHeight}px`,
+                            left: `${coords.xMin}px`,
+                            top: `${coords.yMin}px`,
+                            width: `${coords.width}px`,
+                            height: `${coords.height}px`,
                           }}
                         />
                         <div 
                           className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
                           style={{
-                            left: `${scaledXMin}px`,
-                            top: `${Math.max(0, scaledYMin - 20)}px`,
+                            left: `${coords.xMin}px`,
+                            top: `${Math.max(0, coords.yMin - 20)}px`,
                           }}
                         >
                           {tool.label}
