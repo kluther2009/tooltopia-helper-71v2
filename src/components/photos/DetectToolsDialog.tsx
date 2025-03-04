@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -7,6 +6,7 @@ import { DetectedToolsViewer } from "./DetectedToolsViewer"
 import { toast } from "sonner"
 import { LocationPhoto } from "@/types/photos"
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos"
+import { CoordinateSystem, Tool } from "./detected-tools/types"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
@@ -22,7 +22,7 @@ interface CoordinateSystem {
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const { photos } = useInitialInventoryPhotos()
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
-  const [detectedTools, setDetectedTools] = useState<any[]>([])
+  const [detectedTools, setDetectedTools] = useState<Tool[]>([])
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
@@ -98,7 +98,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     }
   }
 
-  const handleToolsConfirmed = async (tools: any[]) => {
+  const handleToolsConfirmed = async (tools: Tool[]) => {
     try {
       // Here you would save the detected tools data to your database
       console.log('===== TOOLS CONFIRMED =====');
