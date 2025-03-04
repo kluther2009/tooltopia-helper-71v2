@@ -50,6 +50,10 @@ function extractJsonFromText(text: string): any {
       try {
         const tool = JSON.parse(match[0]);
         if (tool.label && Array.isArray(tool.box_2d) && tool.box_2d.length === 4) {
+          // Ensure coordinates are normalized to 0-1000 range
+          if (tool.box_2d.some(coord => coord > 1000)) {
+            tool.box_2d = tool.box_2d.map(coord => Math.min(Math.round(coord), 1000));
+          }
           toolsArray.push(tool);
         }
       } catch (e) {
@@ -111,13 +115,13 @@ serve(async (req) => {
     const base64Image = arrayBufferToBase64(imageBuffer)
     console.log('Image converted to base64')
 
-    // Call Gemini API with updated system prompt that requests coordinate system information
+    // Call Gemini API with a simplified prompt focusing on normalized coordinates
     console.log('Calling Gemini API...')
     const result = await model.generateContent({
       contents: [{
         role: "user",
         parts: [
-          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. Ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image.\n\nFirst, provide a single 'coordinate_system' object with the following properties to help interpret coordinates:\n- 'origin': the corner of the image where the coordinate system starts (e.g., 'top-left', 'top-right', 'bottom-left', 'bottom-right')\n- 'x_axis_direction': the direction the x-axis increases (e.g., 'left-to-right', 'right-to-left')\n- 'y_axis_direction': the direction the y-axis increases (e.g., 'top-to-bottom', 'bottom-to-top')\n\nThen, provide a 'tools' array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Ensure the response is valid JSON with this structure:\n\n{\n  \"coordinate_system\": {\n    \"origin\": \"top-left\",\n    \"x_axis_direction\": \"left-to-right\",\n    \"y_axis_direction\": \"top-to-bottom\"\n  },\n  \"tools\": [\n    {\n      \"label\": \"tool name\",\n      \"box_2d\": [y_min, x_min, y_max, x_max]\n    }\n  ]\n}" },
+          { text: "Identify all tools in this image. For each tool, provide its name as 'label' and its bounding box coordinates as 'box_2d' in the format [y_min, x_min, y_max, x_max] where all values are normalized between 0-1000. Return the result as a JSON array of objects, each with 'label' and 'box_2d' properties. Example: [{\"label\": \"hammer\", \"box_2d\": [100, 200, 300, 400]}, {\"label\": \"screwdriver\", \"box_2d\": [500, 600, 700, 800]}]" },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -157,6 +161,13 @@ serve(async (req) => {
                  Array.isArray(item.box_2d) && 
                  item.box_2d.length === 4
         });
+        
+        // Ensure coordinates are normalized to 0-1000 range
+        toolsData.tools.forEach(tool => {
+          if (tool.box_2d.some(coord => coord > 1000)) {
+            tool.box_2d = tool.box_2d.map(coord => Math.min(Math.round(coord), 1000));
+          }
+        });
       } else if (extractedData.tools) {
         // If we got the expected format with coordinate system and tools
         toolsData = extractedData;
@@ -166,6 +177,13 @@ serve(async (req) => {
                  Array.isArray(item.box_2d) && 
                  item.box_2d.length === 4
         });
+        
+        // Ensure coordinates are normalized to 0-1000 range
+        toolsData.tools.forEach(tool => {
+          if (tool.box_2d.some(coord => coord > 1000)) {
+            tool.box_2d = tool.box_2d.map(coord => Math.min(Math.round(coord), 1000));
+          }
+        });
       }
 
       console.log('Processed tools data:', toolsData)
@@ -173,10 +191,9 @@ serve(async (req) => {
       // Log each tool's bounding box data
       toolsData.tools.forEach(tool => {
         console.log(`Tool "${tool.label}" bounding box:`, {
-          format: 'Gemini [y_min, x_min, y_max, x_max]',
+          format: 'Normalized [y_min, x_min, y_max, x_max]',
           values: tool.box_2d,
-          normalizedRange: '0-1000',
-          coordinateSystem: toolsData.coordinate_system
+          normalizedRange: '0-1000'
         })
       })
     } catch (e) {

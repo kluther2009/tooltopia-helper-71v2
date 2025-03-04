@@ -158,70 +158,29 @@ export function DetectedToolsViewer({
     onClose()
   }
 
-  // Function to convert coordinates based on the coordinate system
+  // Function to convert normalized coordinates to pixel coordinates and adjust for display
   const convertCoordinates = (box2d: number[]) => {
     if (!box2d || box2d.length !== 4) {
       console.error('Invalid bounding box format:', box2d);
       return { xMin: 0, yMin: 0, width: 0, height: 0 };
     }
 
-    // Default interpretation (Gemini's common format)
-    // box_2d: [y_min, x_min, y_max, x_max]
+    // Gemini's format: box_2d: [y_min, x_min, y_max, x_max] in range 0-1000
     const [yMin, xMin, yMax, xMax] = box2d;
     
-    console.log('Converting coordinates with system:', coordinateSystem, 'box2d:', box2d);
+    console.log('Converting normalized coordinates with system:', coordinateSystem, 'box2d:', box2d);
     
-    // Check if coordinates are normalized (between 0-1000)
-    const isNormalized = box2d.every(val => val >= 0 && val <= 1000);
+    // Normalize from 0-1000 to 0-1 and convert to pixel values
+    const normalizedYMin = yMin / 1000;
+    const normalizedXMin = xMin / 1000;
+    const normalizedYMax = yMax / 1000;
+    const normalizedXMax = xMax / 1000;
     
-    // Convert to pixel values if normalized
-    let pixelXMin, pixelYMin, pixelXMax, pixelYMax;
-    if (isNormalized) {
-      pixelXMin = (xMin / 1000) * imageDimensions.width;
-      pixelYMin = (yMin / 1000) * imageDimensions.height;
-      pixelXMax = (xMax / 1000) * imageDimensions.width;
-      pixelYMax = (yMax / 1000) * imageDimensions.height;
-    } else {
-      pixelXMin = xMin;
-      pixelYMin = yMin;
-      pixelXMax = xMax;
-      pixelYMax = yMax;
-    }
-    
-    // Apply coordinate system transformations
-    if (coordinateSystem.origin !== 'top-left') {
-      // Adjust for origin position
-      if (coordinateSystem.origin === 'top-right') {
-        const temp = pixelXMin;
-        pixelXMin = imageDimensions.width - pixelXMax;
-        pixelXMax = imageDimensions.width - temp;
-      } else if (coordinateSystem.origin === 'bottom-left') {
-        const temp = pixelYMin;
-        pixelYMin = imageDimensions.height - pixelYMax;
-        pixelYMax = imageDimensions.height - temp;
-      } else if (coordinateSystem.origin === 'bottom-right') {
-        const tempX = pixelXMin;
-        pixelXMin = imageDimensions.width - pixelXMax;
-        pixelXMax = imageDimensions.width - tempX;
-        
-        const tempY = pixelYMin;
-        pixelYMin = imageDimensions.height - pixelYMax;
-        pixelYMax = imageDimensions.height - tempY;
-      }
-    }
-    
-    // Adjust for axis direction if needed
-    if (coordinateSystem.x_axis_direction === 'right-to-left') {
-      const temp = pixelXMin;
-      pixelXMin = imageDimensions.width - pixelXMax;
-      pixelXMax = imageDimensions.width - temp;
-    }
-    
-    if (coordinateSystem.y_axis_direction === 'bottom-to-top') {
-      const temp = pixelYMin;
-      pixelYMin = imageDimensions.height - pixelYMax;
-      pixelYMax = imageDimensions.height - temp;
-    }
+    // Convert normalized coordinates to pixel values
+    const pixelXMin = normalizedXMin * imageDimensions.width;
+    const pixelYMin = normalizedYMin * imageDimensions.height;
+    const pixelXMax = normalizedXMax * imageDimensions.width;
+    const pixelYMax = normalizedYMax * imageDimensions.height;
     
     // Scale to display dimensions
     const scaleX = displayDimensions.width / imageDimensions.width;
@@ -234,8 +193,24 @@ export function DetectedToolsViewer({
     
     console.log('Converted coordinates:', {
       originalBox2d: box2d,
-      pixels: { xMin: pixelXMin, yMin: pixelYMin, xMax: pixelXMax, yMax: pixelYMax },
-      scaled: { xMin: scaledXMin, yMin: scaledYMin, width: scaledWidth, height: scaledHeight }
+      normalized: { 
+        xMin: normalizedXMin, 
+        yMin: normalizedYMin, 
+        xMax: normalizedXMax, 
+        yMax: normalizedYMax 
+      },
+      pixels: { 
+        xMin: pixelXMin, 
+        yMin: pixelYMin, 
+        xMax: pixelXMax, 
+        yMax: pixelYMax 
+      },
+      scaled: { 
+        xMin: scaledXMin, 
+        yMin: scaledYMin, 
+        width: scaledWidth, 
+        height: scaledHeight 
+      }
     });
     
     return {
