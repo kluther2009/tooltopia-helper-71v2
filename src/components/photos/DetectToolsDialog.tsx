@@ -18,6 +18,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const { photos } = useInitialInventoryPhotos()
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [detectedTools, setDetectedTools] = useState<Tool[]>([])
+  const [rawResponse, setRawResponse] = useState<string>("")
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
@@ -64,6 +65,15 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
       console.log('===== API RESPONSE =====');
       console.log('Full API Response:', data);
+
+      // Store and log the raw response
+      if (data.raw_response) {
+        setRawResponse(data.raw_response)
+        console.log('===== RAW GEMINI RESPONSE =====')
+        console.log(data.raw_response)
+        console.log('===== END RAW GEMINI RESPONSE =====')
+        toast.info('Check console for raw Gemini response')
+      }
 
       if (data.tools && data.tools.length > 0) {
         console.log(`Successfully detected ${data.tools.length} tools`);

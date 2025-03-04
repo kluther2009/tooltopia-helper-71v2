@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { GoogleGenerativeAI } from "npm:@google/generative-ai"
 
@@ -111,13 +110,13 @@ serve(async (req) => {
     const base64Image = arrayBufferToBase64(imageBuffer)
     console.log('Image converted to base64')
 
-    // Call Gemini API with updated system prompt that requests coordinate system information
+    // Call Gemini API with simplified prompt - just "name items"
     console.log('Calling Gemini API...')
     const result = await model.generateContent({
       contents: [{
         role: "user",
         parts: [
-          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. Ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image.\n\nFirst, provide a single 'coordinate_system' object with the following properties to help interpret coordinates:\n- 'origin': the corner of the image where the coordinate system starts (e.g., 'top-left', 'top-right', 'bottom-left', 'bottom-right')\n- 'x_axis_direction': the direction the x-axis increases (e.g., 'left-to-right', 'right-to-left')\n- 'y_axis_direction': the direction the y-axis increases (e.g., 'top-to-bottom', 'bottom-to-top')\n\nThen, provide a 'tools' array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Ensure the response is valid JSON with this structure:\n\n{\n  \"coordinate_system\": {\n    \"origin\": \"top-left\",\n    \"x_axis_direction\": \"left-to-right\",\n    \"y_axis_direction\": \"top-to-bottom\"\n  },\n  \"tools\": [\n    {\n      \"label\": \"tool name\",\n      \"box_2d\": [y_min, x_min, y_max, x_max]\n    }\n  ]\n}" },
+          { text: "name items" },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -142,55 +141,17 @@ serve(async (req) => {
       promptTokenCount: result.promptFeedback?.tokenCount || 'unknown'
     })
 
-    // Parse response with improved parsing logic
-    let toolsData = {
-      coordinate_system: {
-        origin: "top-left",
-        x_axis_direction: "left-to-right",
-        y_axis_direction: "top-to-bottom"
-      },
-      tools: []
-    }
-    
-    try {
-      const extractedData = extractJsonFromText(text);
-      
-      // Handle different formats that might be returned
-      if (Array.isArray(extractedData)) {
-        // If we got just an array of tools
-        toolsData.tools = extractedData.filter(item => {
-          return item && 
-                 typeof item.label === 'string' && 
-                 Array.isArray(item.box_2d) && 
-                 item.box_2d.length === 4
-        });
-      } else if (extractedData.tools) {
-        // If we got the expected format with coordinate system and tools
-        toolsData = extractedData;
-        toolsData.tools = toolsData.tools.filter(item => {
-          return item && 
-                 typeof item.label === 'string' && 
-                 Array.isArray(item.box_2d) && 
-                 item.box_2d.length === 4
-        });
-      }
-
-      console.log('\n========== PROCESSED DETECTION RESULTS ==========\n')
-      console.log('Coordinate System:', toolsData.coordinate_system)
-      console.log(`Detected ${toolsData.tools.length} tools:`)
-      
-      // Log summary of each tool once
-      toolsData.tools.forEach((tool, index) => {
-        console.log(`Tool #${index + 1}: "${tool.label}" box: [${tool.box_2d.join(', ')}]`)
-      })
-      console.log('\n=========== END DETECTION RESULTS ===========\n')
-    } catch (e) {
-      console.error('Error parsing response:', e)
-      throw new Error(`Failed to parse tool detection results: ${e.message}`)
-    }
-
+    // Return the raw text response for debugging
     return new Response(
-      JSON.stringify(toolsData),
+      JSON.stringify({
+        raw_response: text,
+        coordinate_system: {
+          origin: "top-left",
+          x_axis_direction: "left-to-right",
+          y_axis_direction: "top-to-bottom"
+        },
+        tools: []  // Empty tools array since we're just testing the raw response
+      }),
       { 
         headers: { 
           ...corsHeaders,
