@@ -66,11 +66,11 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         // Extract coordinate system from response or use default
         const responseCoordinateSystem = data.coordinate_system || defaultCoordinateSystem;
         
-        // Validate the coordinate system
+        // Validate the coordinate system with proper type checking
         const validatedCoordinateSystem: CoordinateSystem = {
           origin: validateOrigin(responseCoordinateSystem.origin),
-          x_axis_direction: validateAxisDirection(responseCoordinateSystem.x_axis_direction),
-          y_axis_direction: validateAxisDirection(responseCoordinateSystem.y_axis_direction)
+          x_axis_direction: validateXAxisDirection(responseCoordinateSystem.x_axis_direction),
+          y_axis_direction: validateYAxisDirection(responseCoordinateSystem.y_axis_direction)
         };
         
         setCoordinateSystem(validatedCoordinateSystem)
@@ -86,15 +86,22 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     }
   }
 
-  // Helper functions to validate coordinate system values
+  // Helper functions to validate coordinate system values with proper type constraints
   const validateOrigin = (origin: any): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' => {
     const validOrigins = ['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const;
     return validOrigins.includes(origin as any) ? origin as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' : 'top-left';
   }
   
-  const validateAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top' => {
-    const validDirections = ['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'] as const;
-    return validDirections.includes(direction as any) ? direction as any : 'left-to-right';
+  // Specifically validate X axis direction
+  const validateXAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' => {
+    const validDirections = ['left-to-right', 'right-to-left'] as const;
+    return validDirections.includes(direction as any) ? direction as 'left-to-right' | 'right-to-left' : 'left-to-right';
+  }
+  
+  // Specifically validate Y axis direction
+  const validateYAxisDirection = (direction: any): 'top-to-bottom' | 'bottom-to-top' => {
+    const validDirections = ['top-to-bottom', 'bottom-to-top'] as const;
+    return validDirections.includes(direction as any) ? direction as 'top-to-bottom' | 'bottom-to-top' : 'top-to-bottom';
   }
 
   const handleToolsConfirmed = async (tools: any[]) => {
