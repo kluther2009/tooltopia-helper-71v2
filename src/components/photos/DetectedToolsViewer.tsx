@@ -28,13 +28,14 @@ interface DetectedToolsViewerProps {
 
 export function DetectedToolsViewer({ 
   imageUrl, 
-  detectedTools, 
+  detectedTools: initialDetectedTools, 
   isOpen, 
   onClose,
   onConfirm 
 }: DetectedToolsViewerProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  const [detectedTools, setDetectedTools] = useState<Tool[]>(initialDetectedTools)
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const { addTool } = useToolManagement()
@@ -92,8 +93,7 @@ export function DetectedToolsViewer({
         
         // Remove the tool from the detected tools list
         const updatedTools = detectedTools.filter(t => t.label !== tool.label);
-        onConfirm(updatedTools);
-        
+        setDetectedTools(updatedTools);
         setSelectedTool(null);
         setIsEditing(false);
         
@@ -106,6 +106,34 @@ export function DetectedToolsViewer({
       console.error("Error saving tool:", error);
       toast.error(`Failed to save tool "${tool.label}"`);
     }
+  };
+
+  const handleRenameTool = (oldLabel: string, newLabel: string) => {
+    const updatedTools = detectedTools.map(tool => 
+      tool.label === oldLabel ? { ...tool, label: newLabel } : tool
+    );
+    
+    setDetectedTools(updatedTools);
+    
+    // If the renamed tool is selected, update the selection
+    if (selectedTool && selectedTool.label === oldLabel) {
+      setSelectedTool({ ...selectedTool, label: newLabel });
+    }
+    
+    toast.success(`Renamed "${oldLabel}" to "${newLabel}"`);
+  };
+
+  const handleDeleteTool = (toolToDelete: Tool) => {
+    const updatedTools = detectedTools.filter(tool => tool.label !== toolToDelete.label);
+    setDetectedTools(updatedTools);
+    
+    // If the deleted tool is selected, clear the selection
+    if (selectedTool && selectedTool.label === toolToDelete.label) {
+      setSelectedTool(null);
+      setIsEditing(false);
+    }
+    
+    toast.success(`Removed tool "${toolToDelete.label}"`);
   };
 
   const handleConfirm = () => {
@@ -132,6 +160,8 @@ export function DetectedToolsViewer({
               onSelectTool={handleSelectTool}
               onSaveTool={handleSaveTool}
               isEditing={isEditing}
+              onRenameTool={handleRenameTool}
+              onDeleteTool={handleDeleteTool}
             />
           </div>
           

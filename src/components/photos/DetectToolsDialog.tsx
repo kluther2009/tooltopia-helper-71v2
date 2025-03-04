@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -57,9 +58,9 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         
         // Ensure coordinate system has the correct type
         const defaultCoordinateSystem: CoordinateSystem = {
-          origin: 'top-left',
-          x_axis_direction: 'left-to-right',
-          y_axis_direction: 'top-to-bottom'
+          origin: 'top-left' as const,
+          x_axis_direction: 'left-to-right' as const,
+          y_axis_direction: 'top-to-bottom' as const
         };
         
         // Extract coordinate system from response or use default
@@ -86,14 +87,14 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   }
 
   // Helper functions to validate coordinate system values
-  const validateOrigin = (origin: any): CoordinateSystem['origin'] => {
-    const validOrigins: CoordinateSystem['origin'][] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    return validOrigins.includes(origin) ? origin : 'top-left';
+  const validateOrigin = (origin: any): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' => {
+    const validOrigins = ['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const;
+    return validOrigins.includes(origin as any) ? origin as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' : 'top-left';
   }
   
   const validateAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top' => {
-    const validDirections = ['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'];
-    return validDirections.includes(direction) ? direction as any : 'left-to-right';
+    const validDirections = ['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'] as const;
+    return validDirections.includes(direction as any) ? direction as any : 'left-to-right';
   }
 
   const handleToolsConfirmed = async (tools: any[]) => {
