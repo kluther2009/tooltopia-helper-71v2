@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
@@ -165,16 +164,31 @@ export function DetectedToolsViewer({
       return { xMin: 0, yMin: 0, width: 0, height: 0 };
     }
 
-    // Gemini's format: box_2d: [y_min, x_min, y_max, x_max] in range 0-1000
-    const [yMin, xMin, yMax, xMax] = box2d;
+    let normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax;
     
-    console.log('Converting normalized coordinates with system:', coordinateSystem, 'box2d:', box2d);
+    // For portrait images, API returns [x_min, y_min, x_max, y_max]
+    // For landscape/square, API returns [y_min, x_min, y_max, x_max]
+    if (orientation === 'portrait') {
+      // Directly use the coordinates as [x_min, y_min, x_max, y_max]
+      [normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax] = box2d.map(coord => coord / 1000);
+    } else {
+      // For landscape/square, use the original format [y_min, x_min, y_max, x_max]
+      const [yMin, xMin, yMax, xMax] = box2d;
+      normalizedXMin = xMin / 1000;
+      normalizedYMin = yMin / 1000;
+      normalizedXMax = xMax / 1000;
+      normalizedYMax = yMax / 1000;
+    }
     
-    // Normalize from 0-1000 to 0-1 and convert to pixel values
-    const normalizedYMin = yMin / 1000;
-    const normalizedXMin = xMin / 1000;
-    const normalizedYMax = yMax / 1000;
-    const normalizedXMax = xMax / 1000;
+    console.log('Processing coordinates for', orientation, 'image:', {
+      original: box2d,
+      normalized: { 
+        xMin: normalizedXMin, 
+        yMin: normalizedYMin, 
+        xMax: normalizedXMax, 
+        yMax: normalizedYMax 
+      }
+    });
     
     // Convert normalized coordinates to pixel values
     const pixelXMin = normalizedXMin * imageDimensions.width;
@@ -191,7 +205,7 @@ export function DetectedToolsViewer({
     const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
     const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
     
-    console.log('Converted coordinates:', {
+    console.log('Converted coordinates for', orientation, 'image:', {
       originalBox2d: box2d,
       normalized: { 
         xMin: normalizedXMin, 
