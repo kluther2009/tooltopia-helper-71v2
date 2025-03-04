@@ -77,17 +77,6 @@ export function DetectedToolsViewer({
     setIsEditing(false);
   };
 
-  const handleUpdateTool = (updatedTool: Tool) => {
-    // Update the tool in the list
-    const updatedTools = detectedTools.map(tool => 
-      tool.label === updatedTool.label ? updatedTool : tool
-    );
-    
-    setDetectedTools(updatedTools);
-    setIsEditing(false);
-    toast.success(`Bounding box updated for "${updatedTool.label}"`);
-  };
-
   const handleDeleteTool = (toolToDelete: Tool) => {
     // Filter out the deleted tool
     const updatedTools = detectedTools.filter(tool => tool.label !== toolToDelete.label);
@@ -217,7 +206,6 @@ export function DetectedToolsViewer({
                       // Only render highlighted box for selected tool or if no tool is selected
                       const isHighlighted = selectedTool ? selectedTool.label === tool.label : false;
                       const isActive = isHighlighted && !isEditing;
-                      const isBeingEdited = isHighlighted && isEditing;
                       const coords = convertCoordinates(tool.box_2d);
                       
                       if (isHighlighted) {
@@ -234,7 +222,6 @@ export function DetectedToolsViewer({
                           coords={coords}
                           isHighlighted={isHighlighted}
                           isActive={isActive}
-                          isEditing={isBeingEdited}
                           onClick={() => setSelectedTool(tool)}
                         />
                       );
@@ -251,7 +238,7 @@ export function DetectedToolsViewer({
                         imageRef={imageRef}
                         selectedTool={selectedTool}
                         orientation={orientation}
-                        onSave={handleUpdateTool}
+                        onSave={handleSaveTool}
                         onCancel={handleCancelEdit}
                       />
                     )}

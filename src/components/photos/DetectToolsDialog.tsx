@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -65,8 +64,8 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         
         const validatedCoordinateSystem: CoordinateSystem = {
           origin: validateOrigin(responseCoordinateSystem.origin),
-          x_axis_direction: validateXAxisDirection(responseCoordinateSystem.x_axis_direction),
-          y_axis_direction: validateYAxisDirection(responseCoordinateSystem.y_axis_direction)
+          x_axis_direction: validateAxisDirection(responseCoordinateSystem.x_axis_direction, true),
+          y_axis_direction: validateAxisDirection(responseCoordinateSystem.y_axis_direction, false)
         };
         
         setCoordinateSystem(validatedCoordinateSystem)
@@ -84,17 +83,17 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const validateOrigin = (origin: any): CoordinateSystem['origin'] => {
     const validOrigins: CoordinateSystem['origin'][] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-    return validOrigins.includes(origin) ? origin as CoordinateSystem['origin'] : 'top-left';
+    return validOrigins.includes(origin) ? origin : 'top-left';
   }
   
-  const validateXAxisDirection = (direction: any): CoordinateSystem['x_axis_direction'] => {
-    const validDirections: CoordinateSystem['x_axis_direction'][] = ['left-to-right', 'right-to-left'];
-    return validDirections.includes(direction) ? direction as CoordinateSystem['x_axis_direction'] : 'left-to-right';
-  }
-  
-  const validateYAxisDirection = (direction: any): CoordinateSystem['y_axis_direction'] => {
-    const validDirections: CoordinateSystem['y_axis_direction'][] = ['top-to-bottom', 'bottom-to-top'];
-    return validDirections.includes(direction) ? direction as CoordinateSystem['y_axis_direction'] : 'top-to-bottom';
+  const validateAxisDirection = (direction: any, isXAxis: boolean): CoordinateSystem['x_axis_direction'] | CoordinateSystem['y_axis_direction'] => {
+    if (isXAxis) {
+      const validXDirections: CoordinateSystem['x_axis_direction'][] = ['left-to-right', 'right-to-left'];
+      return validXDirections.includes(direction) ? direction as CoordinateSystem['x_axis_direction'] : 'left-to-right';
+    } else {
+      const validYDirections: CoordinateSystem['y_axis_direction'][] = ['top-to-bottom', 'bottom-to-top'];
+      return validYDirections.includes(direction) ? direction as CoordinateSystem['y_axis_direction'] : 'top-to-bottom';
+    }
   }
 
   const handleToolsConfirmed = async (tools: any[]) => {
