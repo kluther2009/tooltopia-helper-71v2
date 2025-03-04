@@ -6,17 +6,11 @@ import { DetectedToolsViewer } from "./DetectedToolsViewer"
 import { toast } from "sonner"
 import { LocationPhoto } from "@/types/photos"
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos"
-import { CoordinateSystem, Tool } from "./detected-tools/types"
+import { Tool, CoordinateSystem } from "./detected-tools/types"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
   onClose: () => void
-}
-
-interface CoordinateSystem {
-  origin: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-  x_axis_direction: 'left-to-right' | 'right-to-left';
-  y_axis_direction: 'top-to-bottom' | 'bottom-to-top';
 }
 
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {

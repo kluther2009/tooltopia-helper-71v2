@@ -61,10 +61,14 @@ export function DetectedToolsImage({
         
         {!loading && detectedTools.length > 0 && (
           <div className="absolute inset-0">
-            {console.log('===== DETECTED TOOLS RENDERING =====', {
-              toolsCount: detectedTools.length,
-              coordinateSystem
-            })}
+            {/* Use a separate function to log information, don't embed console.log in JSX */}
+            {(() => {
+              console.log('===== DETECTED TOOLS RENDERING =====', {
+                toolsCount: detectedTools.length,
+                coordinateSystem
+              });
+              return null;
+            })()}
             {detectedTools.map((tool, index) => {
               if (!tool.box_2d || tool.box_2d.length !== 4) {
                 console.error('Invalid bounding box format for tool:', tool);
