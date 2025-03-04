@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -110,7 +109,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       console.log('Saving detected tools:', tools)
       console.log('With coordinate system:', coordinateSystem)
       toast.success('Tool detection data saved')
-      setShowConfirmation(false)
+      resetDetectionState()
       onClose()
     } catch (error) {
       console.error('Error saving tool data:', error)
@@ -118,9 +117,24 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     }
   }
 
+  // Function to handle dialog close (both from X button and Cancel)
+  const handleDialogClose = () => {
+    resetDetectionState()
+    onClose()
+  }
+
+  // Function to reset all detection-related state
+  const resetDetectionState = () => {
+    setSelectedPhotoUrl(null)
+    setDetectedTools([])
+    setCoordinateSystem(null)
+    setShowConfirmation(false)
+    setIsDetecting(false)
+  }
+
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Detect Tools in Photos</DialogTitle>
@@ -139,7 +153,11 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
           imageUrl={selectedPhotoUrl}
           detectedTools={detectedTools}
           isOpen={showConfirmation}
-          onClose={() => setShowConfirmation(false)}
+          onClose={() => {
+            setShowConfirmation(false)
+            // We don't reset everything here to allow the user to select another photo
+            // while keeping the current detection session active
+          }}
           onConfirm={handleToolsConfirmed}
         />
       )}

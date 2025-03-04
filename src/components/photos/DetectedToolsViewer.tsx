@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useImageDimensions } from "@/hooks/useImageDimensions"
@@ -44,6 +44,14 @@ export function DetectedToolsViewer({
     x_axis_direction: 'left-to-right',
     y_axis_direction: 'top-to-bottom'
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      setDetectedTools(initialDetectedTools);
+      setSelectedTool(null);
+      setIsEditing(false);
+    }
+  }, [isOpen, initialDetectedTools]);
 
   const {
     loading,
@@ -137,8 +145,16 @@ export function DetectedToolsViewer({
     onClose()
   }
 
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setSelectedTool(null);
+      setIsEditing(false);
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden p-0">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle>
