@@ -67,6 +67,92 @@ function extractJsonFromText(text: string): any {
   }
 }
 
+function parseToolsFromText(text: string): any[] {
+  // This simple implementation extracts tool names from a list format
+  // It looks for patterns like:
+  // 1. Tool name
+  // - Tool name
+  // * Tool name
+  // • Tool name
+  const tools = [];
+  const lines = text.split('\n');
+  
+  // Regular expression to match list formats
+  const listItemRegex = /^(?:\d+[\.\)]|\-|\*|•)\s+(.+)$/;
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.length > 0) {
+      const match = trimmedLine.match(listItemRegex);
+      if (match) {
+        const toolName = match[1].trim();
+        if (toolName) {
+          tools.push({
+            label: toolName,
+            box_2d: [] // Empty bounding box since we don't have coordinates
+          });
+        }
+      }
+    }
+  });
+  
+  return tools;
+}
+
+function extractToolData(text: string): { tools: any[], raw_response: string } {
+  console.log('Extracting tool data from raw text...');
+  
+  // Keep the raw response for debugging
+  const raw_response = text;
+  let tools = [];
+  
+  // Look for specific patterns in the response
+  // Sometimes Gemini returns a list of items with their normalized coordinates
+  const lines = text.split('\n');
+  const toolPattern = /([^:]+):\s*\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/;
+  
+  lines.forEach(line => {
+    const match = line.trim().match(toolPattern);
+    if (match) {
+      // Extract name and coordinates
+      const [_, name, yMin, xMin, yMax, xMax] = match;
+      
+      // Convert coordinates to numbers and normalize them (they might be already normalized)
+      const coords = [
+        parseFloat(yMin), 
+        parseFloat(xMin), 
+        parseFloat(yMax), 
+        parseFloat(xMax)
+      ];
+      
+      // Determine if coordinates need normalization (using 1000 as the benchmark)
+      // If any coordinate is > 1, we assume they're already in the 0-1000 range
+      const needsNormalization = coords.some(coord => coord > 1);
+      
+      // If already normalized to 0-1000, use as is
+      // Otherwise, multiply by 1000 to normalize to the expected range
+      const normalizedCoords = needsNormalization 
+        ? coords 
+        : coords.map(coord => coord * 1000);
+        
+      tools.push({
+        label: name.trim(),
+        box_2d: normalizedCoords
+      });
+    }
+  });
+  
+  // If we couldn't find coordinates, try to at least extract tool names
+  if (tools.length === 0) {
+    tools = parseToolsFromText(text);
+    console.log(`Extracted ${tools.length} tool names without coordinates`);
+  } else {
+    console.log(`Extracted ${tools.length} tools with normalized coordinates`);
+  }
+  
+  return { tools, raw_response };
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -135,22 +221,19 @@ serve(async (req) => {
     console.log(text)
     console.log('\n=========== END GEMINI API RESPONSE ===========\n')
     
-    // Log response structure once
-    console.log('Gemini Response Structure:', {
-      candidatesCount: result.candidates?.length || 0,
-      promptTokenCount: result.promptFeedback?.tokenCount || 'unknown'
-    })
-
-    // Return the raw text response for debugging
+    // Extract tool data with normalized coordinates
+    const { tools, raw_response } = extractToolData(text);
+    
+    // Return the processed results
     return new Response(
       JSON.stringify({
-        raw_response: text,
+        raw_response,
         coordinate_system: {
           origin: "top-left",
           x_axis_direction: "left-to-right",
           y_axis_direction: "top-to-bottom"
         },
-        tools: []  // Empty tools array since we're just testing the raw response
+        tools
       }),
       { 
         headers: { 
