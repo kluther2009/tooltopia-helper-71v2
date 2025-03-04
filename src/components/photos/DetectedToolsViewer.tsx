@@ -11,6 +11,7 @@ import { DetectedToolList } from "./DetectedToolList"
 import { BoundingBoxEditor } from "./BoundingBoxEditor"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { Save } from "lucide-react"
+import { CoordinateSystem } from "@/hooks/useToolCoordinates"
 
 interface Tool {
   label: string
@@ -38,8 +39,8 @@ export function DetectedToolsViewer({
   const [isEditing, setIsEditing] = useState(false)
   const { addTool } = useToolManagement()
   
-  // Default coordinate system (standard computer vision format)
-  const [coordinateSystem] = useState({
+  // Default coordinate system with proper type literals for origin
+  const [coordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
     y_axis_direction: 'top-to-bottom'

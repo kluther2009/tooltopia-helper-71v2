@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -7,16 +6,11 @@ import { DetectedToolsViewer } from "./DetectedToolsViewer"
 import { toast } from "sonner"
 import { LocationPhoto } from "@/types/photos"
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos"
+import { CoordinateSystem } from "@/hooks/useToolCoordinates"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
   onClose: () => void
-}
-
-interface CoordinateSystem {
-  origin: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-  x_axis_direction: 'left-to-right' | 'right-to-left';
-  y_axis_direction: 'top-to-bottom' | 'bottom-to-top';
 }
 
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
@@ -60,11 +54,25 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
       if (data.tools && data.tools.length > 0) {
         setDetectedTools(data.tools)
-        setCoordinateSystem(data.coordinate_system || {
+        
+        // Ensure coordinate system has the correct type
+        const defaultCoordinateSystem: CoordinateSystem = {
           origin: 'top-left',
           x_axis_direction: 'left-to-right',
           y_axis_direction: 'top-to-bottom'
-        })
+        };
+        
+        // Extract coordinate system from response or use default
+        const responseCoordinateSystem = data.coordinate_system || defaultCoordinateSystem;
+        
+        // Validate the coordinate system
+        const validatedCoordinateSystem: CoordinateSystem = {
+          origin: validateOrigin(responseCoordinateSystem.origin),
+          x_axis_direction: validateAxisDirection(responseCoordinateSystem.x_axis_direction),
+          y_axis_direction: validateAxisDirection(responseCoordinateSystem.y_axis_direction)
+        };
+        
+        setCoordinateSystem(validatedCoordinateSystem)
         setShowConfirmation(true)
       } else {
         toast.info('No tools detected in the image')
@@ -75,6 +83,17 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     } finally {
       setIsDetecting(false)
     }
+  }
+
+  // Helper functions to validate coordinate system values
+  const validateOrigin = (origin: any): CoordinateSystem['origin'] => {
+    const validOrigins: CoordinateSystem['origin'][] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    return validOrigins.includes(origin) ? origin : 'top-left';
+  }
+  
+  const validateAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top' => {
+    const validDirections = ['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'];
+    return validDirections.includes(direction) ? direction as any : 'left-to-right';
   }
 
   const handleToolsConfirmed = async (tools: any[]) => {
