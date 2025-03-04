@@ -44,6 +44,18 @@ export function DetectedToolsViewer({
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
+  // Debug info for the component lifecycle
+  console.log('===== DETECTED TOOLS VIEWER RENDER =====');
+  console.log('Props received:', {
+    toolCount: detectedTools.length,
+    isOpen,
+    coordinateSystem,
+    imageUrlProvided: !!imageUrl
+  });
+  
+  console.log('Current coordinate system:', coordinateSystem);
+  console.log('Detected tools:', detectedTools);
+
   useEffect(() => {
     if (!imageContainerRef.current || !imageRef.current) return
     
@@ -114,7 +126,8 @@ export function DetectedToolsViewer({
     
     setLoading(false)
 
-    console.log('Image loaded - dimensions:', {
+    console.log('===== IMAGE LOADED =====');
+    console.log('Image dimensions:', {
       natural: { width: naturalWidth, height: naturalHeight },
       display: { width: displayWidth, height: displayHeight },
       offset: { left: img.offsetLeft, top: img.offsetTop },
@@ -123,7 +136,7 @@ export function DetectedToolsViewer({
         x: displayWidth / naturalWidth, 
         y: displayHeight / naturalHeight,
       },
-      coordinateSystem: coordinateSystem
+      coordinateSystem
     })
   }
 
@@ -150,7 +163,11 @@ export function DetectedToolsViewer({
     // box_2d: [y_min, x_min, y_max, x_max]
     const [yMin, xMin, yMax, xMax] = box2d;
     
-    console.log('Converting coordinates with system:', coordinateSystem, 'box2d:', box2d);
+    console.log('===== CONVERTING COORDINATES =====');
+    console.log('Input box2d:', box2d);
+    console.log('Using coordinate system:', coordinateSystem);
+    console.log('Image dimensions:', imageDimensions);
+    console.log('Display dimensions:', displayDimensions);
     
     // Check if coordinates are normalized (between 0-1000)
     const isNormalized = box2d.every(val => val >= 0 && val <= 1000);
@@ -162,24 +179,49 @@ export function DetectedToolsViewer({
       pixelYMin = (yMin / 1000) * imageDimensions.height;
       pixelXMax = (xMax / 1000) * imageDimensions.width;
       pixelYMax = (yMax / 1000) * imageDimensions.height;
+      console.log('Normalized coordinates converted to pixels:', {
+        xMin: pixelXMin, 
+        yMin: pixelYMin, 
+        xMax: pixelXMax, 
+        yMax: pixelYMax
+      });
     } else {
       pixelXMin = xMin;
       pixelYMin = yMin;
       pixelXMax = xMax;
       pixelYMax = yMax;
+      console.log('Using raw pixel coordinates:', {
+        xMin: pixelXMin, 
+        yMin: pixelYMin, 
+        xMax: pixelXMax, 
+        yMax: pixelYMax
+      });
     }
     
     // Apply coordinate system transformations based on model-provided info
     if (coordinateSystem.origin !== 'top-left') {
+      console.log('Adjusting for origin:', coordinateSystem.origin);
       // Adjust for origin position
       if (coordinateSystem.origin === 'top-right') {
         const temp = pixelXMin;
         pixelXMin = imageDimensions.width - pixelXMax;
         pixelXMax = imageDimensions.width - temp;
+        console.log('After top-right adjustment:', {
+          xMin: pixelXMin, 
+          yMin: pixelYMin, 
+          xMax: pixelXMax, 
+          yMax: pixelYMax
+        });
       } else if (coordinateSystem.origin === 'bottom-left') {
         const temp = pixelYMin;
         pixelYMin = imageDimensions.height - pixelYMax;
         pixelYMax = imageDimensions.height - temp;
+        console.log('After bottom-left adjustment:', {
+          xMin: pixelXMin, 
+          yMin: pixelYMin, 
+          xMax: pixelXMax, 
+          yMax: pixelYMax
+        });
       } else if (coordinateSystem.origin === 'bottom-right') {
         const tempX = pixelXMin;
         pixelXMin = imageDimensions.width - pixelXMax;
@@ -188,20 +230,40 @@ export function DetectedToolsViewer({
         const tempY = pixelYMin;
         pixelYMin = imageDimensions.height - pixelYMax;
         pixelYMax = imageDimensions.height - tempY;
+        console.log('After bottom-right adjustment:', {
+          xMin: pixelXMin, 
+          yMin: pixelYMin, 
+          xMax: pixelXMax, 
+          yMax: pixelYMax
+        });
       }
     }
     
     // Adjust for axis direction if needed
     if (coordinateSystem.x_axis_direction === 'right-to-left') {
+      console.log('Adjusting for x-axis direction:', coordinateSystem.x_axis_direction);
       const temp = pixelXMin;
       pixelXMin = imageDimensions.width - pixelXMax;
       pixelXMax = imageDimensions.width - temp;
+      console.log('After x-axis direction adjustment:', {
+        xMin: pixelXMin, 
+        yMin: pixelYMin, 
+        xMax: pixelXMax, 
+        yMax: pixelYMax
+      });
     }
     
     if (coordinateSystem.y_axis_direction === 'bottom-to-top') {
+      console.log('Adjusting for y-axis direction:', coordinateSystem.y_axis_direction);
       const temp = pixelYMin;
       pixelYMin = imageDimensions.height - pixelYMax;
       pixelYMax = imageDimensions.height - temp;
+      console.log('After y-axis direction adjustment:', {
+        xMin: pixelXMin, 
+        yMin: pixelYMin, 
+        xMax: pixelXMax, 
+        yMax: pixelYMax
+      });
     }
     
     // Scale to display dimensions
@@ -213,10 +275,12 @@ export function DetectedToolsViewer({
     const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
     const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
     
-    console.log('Converted coordinates:', {
-      originalBox2d: box2d,
-      pixels: { xMin: pixelXMin, yMin: pixelYMin, xMax: pixelXMax, yMax: pixelYMax },
-      scaled: { xMin: scaledXMin, yMin: scaledYMin, width: scaledWidth, height: scaledHeight }
+    console.log('Scaling factors:', { scaleX, scaleY });
+    console.log('Final scaled coordinates:', {
+      xMin: scaledXMin, 
+      yMin: scaledYMin, 
+      width: scaledWidth, 
+      height: scaledHeight
     });
     
     return {
@@ -276,9 +340,8 @@ export function DetectedToolsViewer({
                       return null;
                     }
                     
-                    console.log(`Rendering bounding box for ${tool.label}:`, {
-                      box2d: tool.box_2d,
-                      coordinateSystem: coordinateSystem
+                    console.log(`Rendering bounding box for tool #${index + 1} (${tool.label}):`, {
+                      originalBox2d: tool.box_2d
                     });
                     
                     const coords = convertCoordinates(tool.box_2d);
