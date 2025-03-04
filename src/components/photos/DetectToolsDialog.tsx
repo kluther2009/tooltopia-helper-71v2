@@ -25,6 +25,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     setIsDetecting(true)
     
     try {
+      // Get a signed URL for the photo that expires in 5 minutes
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('location-photos')
         .createSignedUrl(photo.file_path, 300)
@@ -54,18 +55,21 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       if (data.tools && data.tools.length > 0) {
         setDetectedTools(data.tools)
         
+        // Ensure coordinate system has the correct type
         const defaultCoordinateSystem: CoordinateSystem = {
           origin: 'top-left',
           x_axis_direction: 'left-to-right',
           y_axis_direction: 'top-to-bottom'
         };
         
+        // Extract coordinate system from response or use default
         const responseCoordinateSystem = data.coordinate_system || defaultCoordinateSystem;
         
+        // Validate the coordinate system
         const validatedCoordinateSystem: CoordinateSystem = {
           origin: validateOrigin(responseCoordinateSystem.origin),
-          x_axis_direction: validateAxisDirection(responseCoordinateSystem.x_axis_direction, true),
-          y_axis_direction: validateAxisDirection(responseCoordinateSystem.y_axis_direction, false)
+          x_axis_direction: validateAxisDirection(responseCoordinateSystem.x_axis_direction),
+          y_axis_direction: validateAxisDirection(responseCoordinateSystem.y_axis_direction)
         };
         
         setCoordinateSystem(validatedCoordinateSystem)
@@ -81,23 +85,20 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     }
   }
 
+  // Helper functions to validate coordinate system values
   const validateOrigin = (origin: any): CoordinateSystem['origin'] => {
     const validOrigins: CoordinateSystem['origin'][] = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
     return validOrigins.includes(origin) ? origin : 'top-left';
   }
   
-  const validateAxisDirection = (direction: any, isXAxis: boolean): CoordinateSystem['x_axis_direction'] | CoordinateSystem['y_axis_direction'] => {
-    if (isXAxis) {
-      const validXDirections: CoordinateSystem['x_axis_direction'][] = ['left-to-right', 'right-to-left'];
-      return validXDirections.includes(direction) ? direction as CoordinateSystem['x_axis_direction'] : 'left-to-right';
-    } else {
-      const validYDirections: CoordinateSystem['y_axis_direction'][] = ['top-to-bottom', 'bottom-to-top'];
-      return validYDirections.includes(direction) ? direction as CoordinateSystem['y_axis_direction'] : 'top-to-bottom';
-    }
+  const validateAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' | 'top-to-bottom' | 'bottom-to-top' => {
+    const validDirections = ['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'];
+    return validDirections.includes(direction) ? direction as any : 'left-to-right';
   }
 
   const handleToolsConfirmed = async (tools: any[]) => {
     try {
+      // Here you would save the detected tools data to your database
       console.log('Saving detected tools:', tools)
       console.log('With coordinate system:', coordinateSystem)
       toast.success('Tool detection data saved')

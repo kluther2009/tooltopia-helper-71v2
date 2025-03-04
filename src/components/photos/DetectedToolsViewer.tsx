@@ -5,12 +5,13 @@ import { useState, useRef } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useImageDimensions } from "@/hooks/useImageDimensions"
-import { useToolCoordinates, CoordinateSystem } from "@/hooks/useToolCoordinates"
+import { useToolCoordinates } from "@/hooks/useToolCoordinates"
 import { ToolBoundingBox } from "./ToolBoundingBox"
 import { DetectedToolList } from "./DetectedToolList"
 import { BoundingBoxEditor } from "./BoundingBoxEditor"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { Save } from "lucide-react"
+import { CoordinateSystem } from "@/hooks/useToolCoordinates"
 
 interface Tool {
   label: string
@@ -27,14 +28,13 @@ interface DetectedToolsViewerProps {
 
 export function DetectedToolsViewer({ 
   imageUrl, 
-  detectedTools: initialDetectedTools, 
+  detectedTools, 
   isOpen, 
   onClose,
   onConfirm 
 }: DetectedToolsViewerProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
-  const [detectedTools, setDetectedTools] = useState<Tool[]>(initialDetectedTools)
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const { addTool } = useToolManagement()
@@ -77,41 +77,6 @@ export function DetectedToolsViewer({
     setIsEditing(false);
   };
 
-  const handleDeleteTool = (toolToDelete: Tool) => {
-    // Filter out the deleted tool
-    const updatedTools = detectedTools.filter(tool => tool.label !== toolToDelete.label);
-    setDetectedTools(updatedTools);
-    
-    // If the deleted tool is currently selected, clear the selection
-    if (selectedTool && selectedTool.label === toolToDelete.label) {
-      setSelectedTool(null);
-      setIsEditing(false);
-    }
-    
-    toast.success(`Tool "${toolToDelete.label}" removed from detection`);
-  };
-
-  const handleRenameTool = (oldLabel: string, newLabel: string) => {
-    // Check if the new name already exists
-    if (detectedTools.some(tool => tool.label === newLabel && tool.label !== oldLabel)) {
-      toast.error(`A tool with name "${newLabel}" already exists`);
-      return;
-    }
-    
-    // Update the tool name
-    const updatedTools = detectedTools.map(tool => 
-      tool.label === oldLabel ? { ...tool, label: newLabel } : tool
-    );
-    setDetectedTools(updatedTools);
-    
-    // Update selected tool if it's the one being renamed
-    if (selectedTool && selectedTool.label === oldLabel) {
-      setSelectedTool({ ...selectedTool, label: newLabel });
-    }
-    
-    toast.success(`Tool renamed to "${newLabel}"`);
-  };
-
   const handleSaveTool = async (tool: Tool) => {
     try {
       const success = await addTool({
@@ -126,9 +91,13 @@ export function DetectedToolsViewer({
         toast.success(`Tool "${tool.label}" saved to your inventory`);
         
         // Remove the tool from the detected tools list
-        handleDeleteTool(tool);
+        const updatedTools = detectedTools.filter(t => t.label !== tool.label);
+        onConfirm(updatedTools);
         
-        if (detectedTools.length <= 1) {
+        setSelectedTool(null);
+        setIsEditing(false);
+        
+        if (updatedTools.length === 0) {
           toast.success("All tools saved to inventory!");
           onClose();
         }
@@ -162,8 +131,6 @@ export function DetectedToolsViewer({
               selectedTool={selectedTool}
               onSelectTool={handleSelectTool}
               onSaveTool={handleSaveTool}
-              onDeleteTool={handleDeleteTool}
-              onRenameTool={handleRenameTool}
               isEditing={isEditing}
             />
           </div>
