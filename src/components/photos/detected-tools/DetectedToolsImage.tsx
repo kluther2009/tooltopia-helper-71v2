@@ -61,11 +61,15 @@ export function DetectedToolsImage({
         
         {!loading && detectedTools.length > 0 && (
           <div className="absolute inset-0">
-            {/* Use a separate function to log information, don't embed console.log in JSX */}
+            {/* Single log when rendering tools */}
             {(() => {
               console.log('===== DETECTED TOOLS RENDERING =====', {
                 toolsCount: detectedTools.length,
-                coordinateSystem
+                coordinateSystem,
+                dimensions: {
+                  image: imageDimensions,
+                  display: displayDimensions
+                }
               });
               return null;
             })()}

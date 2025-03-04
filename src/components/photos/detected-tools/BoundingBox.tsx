@@ -10,10 +10,10 @@ interface BoundingBoxProps {
 }
 
 export function BoundingBox({ tool, coords, index }: BoundingBoxProps) {
-  console.log(`===== BOUNDING BOX RENDER #${index + 1} =====`);
-  console.log(`Tool: ${tool.label}`);
-  console.log('Original box2d:', tool.box_2d);
-  console.log('Rendered CSS properties:', coords);
+  // Simple log just once when the component renders
+  if (index === 0) {
+    console.log('===== BOUNDING BOXES RENDERING =====');
+  }
 
   return (
     <div key={index}>

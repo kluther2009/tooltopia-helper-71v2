@@ -16,9 +16,6 @@ export const convertCoordinates = (
   // box_2d: [y_min, x_min, y_max, x_max]
   const [yMin, xMin, yMax, xMax] = box2d;
   
-  console.log('===== COORDINATE CONVERSION =====');
-  console.log('Input box2d:', box2d);
-  
   // Check if coordinates are normalized (between 0-1000)
   const isNormalized = box2d.every(val => val >= 0 && val <= 1000);
   
@@ -35,12 +32,6 @@ export const convertCoordinates = (
     pixelXMax = xMax;
     pixelYMax = yMax;
   }
-  
-  const normalizedStatus = isNormalized ? "normalized (0-1000)" : "raw pixels";
-  console.log(`Coordinate format: ${normalizedStatus}`);
-  console.log('Coordinate system:', coordinateSystem);
-  console.log('Original image dimensions:', imageDimensions);
-  console.log('Display dimensions:', displayDimensions);
   
   // Apply coordinate system transformations based on model-provided info
   if (coordinateSystem.origin !== 'top-left') {
@@ -81,31 +72,17 @@ export const convertCoordinates = (
   const scaleX = displayDimensions.width / imageDimensions.width;
   const scaleY = displayDimensions.height / imageDimensions.height;
   
-  console.log('===== SCALING FACTORS =====');
-  console.log('Scale X:', scaleX);
-  console.log('Scale Y:', scaleY);
-  console.log('Pixel coordinates before scaling:', {
-    xMin: pixelXMin, 
-    yMin: pixelYMin, 
-    width: pixelXMax - pixelXMin, 
-    height: pixelYMax - pixelYMin
-  });
-  
   const scaledXMin = pixelXMin * scaleX;
   const scaledYMin = pixelYMin * scaleY;
   const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
   const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
   
-  const result = {
+  return {
     xMin: scaledXMin,
     yMin: scaledYMin,
     width: scaledWidth,
     height: scaledHeight
   };
-  
-  console.log('Final CSS coordinates (scaled):', result);
-  
-  return result;
 };
 
 export const getImageOrientation = (dimensions: ImageDimensions): string => {
