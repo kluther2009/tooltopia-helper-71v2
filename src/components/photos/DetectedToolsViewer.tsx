@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useToolManagement } from "@/hooks/useToolManagement"
 import { CoordinateSystem } from "@/hooks/useToolCoordinates"
-import { DetectedToolList } from "./DetectedToolList"
+import { DetectedToolList } from "./list/DetectedToolList"
 import { ImageDisplay } from "./viewers/ImageDisplay"
 import { ViewerDialogFooter } from "./viewers/ViewerDialogFooter"
 
