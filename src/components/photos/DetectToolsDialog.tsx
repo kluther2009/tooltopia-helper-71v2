@@ -21,11 +21,27 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const [isDetecting, setIsDetecting] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
 
+  const ensureUniqueToolNames = (tools: any[]): any[] => {
+    const nameCount: Record<string, number> = {};
+    
+    return tools.map(tool => {
+      const baseName = tool.label;
+      
+      nameCount[baseName] = (nameCount[baseName] || 0) + 1;
+      
+      if (nameCount[baseName] === 1) {
+        return tool;
+      }
+      
+      const uniqueName = `${baseName} (${nameCount[baseName]})`;
+      return { ...tool, label: uniqueName };
+    });
+  };
+
   const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
     
     try {
-      // Get a signed URL for the photo that expires in 5 minutes
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('location-photos')
         .createSignedUrl(photo.file_path, 300)
@@ -53,19 +69,17 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       console.log('API Response:', data)
 
       if (data.tools && data.tools.length > 0) {
-        setDetectedTools(data.tools)
+        const uniqueNamedTools = ensureUniqueToolNames(data.tools);
+        setDetectedTools(uniqueNamedTools)
         
-        // Ensure coordinate system has the correct type
         const defaultCoordinateSystem: CoordinateSystem = {
           origin: 'top-left' as const,
           x_axis_direction: 'left-to-right' as const,
           y_axis_direction: 'top-to-bottom' as const
         };
         
-        // Extract coordinate system from response or use default
         const responseCoordinateSystem = data.coordinate_system || defaultCoordinateSystem;
         
-        // Validate the coordinate system with proper type checking
         const validatedCoordinateSystem: CoordinateSystem = {
           origin: validateOrigin(responseCoordinateSystem.origin),
           x_axis_direction: validateXAxisDirection(responseCoordinateSystem.x_axis_direction),
@@ -85,19 +99,16 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     }
   }
 
-  // Helper functions to validate coordinate system values with proper type constraints
   const validateOrigin = (origin: any): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' => {
     const validOrigins = ['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const;
     return validOrigins.includes(origin as any) ? origin as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' : 'top-left';
   }
   
-  // Specifically validate X axis direction
   const validateXAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' => {
     const validDirections = ['left-to-right', 'right-to-left'] as const;
     return validDirections.includes(direction as any) ? direction as 'left-to-right' | 'right-to-left' : 'left-to-right';
   }
   
-  // Specifically validate Y axis direction
   const validateYAxisDirection = (direction: any): 'top-to-bottom' | 'bottom-to-top' => {
     const validDirections = ['top-to-bottom', 'bottom-to-top'] as const;
     return validDirections.includes(direction as any) ? direction as 'top-to-bottom' | 'bottom-to-top' : 'top-to-bottom';
@@ -105,7 +116,6 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const handleToolsConfirmed = async (tools: any[]) => {
     try {
-      // Here you would save the detected tools data to your database
       console.log('Saving detected tools:', tools)
       console.log('With coordinate system:', coordinateSystem)
       toast.success('Tool detection data saved')
@@ -117,13 +127,11 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     }
   }
 
-  // Function to handle dialog close (both from X button and Cancel)
   const handleDialogClose = () => {
     resetDetectionState()
     onClose()
   }
 
-  // Function to reset all detection-related state
   const resetDetectionState = () => {
     setSelectedPhotoUrl(null)
     setDetectedTools([])
@@ -155,8 +163,6 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
           isOpen={showConfirmation}
           onClose={() => {
             setShowConfirmation(false)
-            // We don't reset everything here to allow the user to select another photo
-            // while keeping the current detection session active
           }}
           onConfirm={handleToolsConfirmed}
         />
