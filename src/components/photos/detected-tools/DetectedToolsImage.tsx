@@ -43,6 +43,21 @@ export function DetectedToolsImage({
     );
   }
 
+  // Single debug log for the entire component
+  const hasValidDimensions = imageDimensions.width > 0 && displayDimensions.width > 0;
+  if (!loading && hasValidDimensions && detectedTools.length > 0) {
+    console.log('===== TOOLS DETECTION RENDER INFO =====', {
+      imageUrl: imageUrl.substring(0, 50) + '...',
+      toolsCount: detectedTools.length,
+      imageDimensions,
+      displayDimensions,
+      scale: {
+        x: displayDimensions.width / imageDimensions.width,
+        y: displayDimensions.height / imageDimensions.height
+      }
+    });
+  }
+
   return (
     <div 
       className="relative w-full flex justify-center" 
@@ -61,18 +76,6 @@ export function DetectedToolsImage({
         
         {!loading && detectedTools.length > 0 && (
           <div className="absolute inset-0">
-            {/* Single log when rendering tools */}
-            {(() => {
-              console.log('===== DETECTED TOOLS RENDERING =====', {
-                toolsCount: detectedTools.length,
-                coordinateSystem,
-                dimensions: {
-                  image: imageDimensions,
-                  display: displayDimensions
-                }
-              });
-              return null;
-            })()}
             {detectedTools.map((tool, index) => {
               if (!tool.box_2d || tool.box_2d.length !== 4) {
                 console.error('Invalid bounding box format for tool:', tool);
