@@ -35,7 +35,7 @@ export function ViewerDialogFooter({
         <div className="flex gap-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={onConfirm} disabled={loading || !!error}>
-            <Save className="h-4 w-4 mr-2" /> Save All
+            <Save className="h-4 w-4 mr-2" /> Save Changes
           </Button>
         </div>
       </div>

@@ -62,6 +62,19 @@ export function DetectedToolsViewer({
     setIsEditing(false);
   };
 
+  const handleUpdateToolPosition = (updatedTool: Tool) => {
+    // Update the tool's position in the UI without saving to database
+    const updatedTools = detectedTools.map(tool => 
+      tool.label === updatedTool.label ? updatedTool : tool
+    );
+    
+    setDetectedTools(updatedTools);
+    setSelectedTool(updatedTool);
+    setIsEditing(false);
+    
+    toast.success(`Updated position for "${updatedTool.label}"`);
+  };
+
   const handleSaveTool = async (tool: Tool) => {
     try {
       const success = await addTool({
@@ -169,7 +182,7 @@ export function DetectedToolsViewer({
               isEditing={isEditing}
               coordinateSystem={coordinateSystem}
               onSelectTool={handleSelectTool}
-              onSaveTool={handleSaveTool}
+              onSaveTool={handleUpdateToolPosition}
               onCancelEdit={handleCancelEdit}
             />
           </div>

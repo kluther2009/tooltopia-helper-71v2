@@ -176,7 +176,7 @@ export function BoundingBoxEditor({
             <XCircle className="h-4 w-4 mr-1" /> Cancel
           </Button>
           <Button size="sm" onClick={handleSave} className="flex-1">
-            <Save className="h-4 w-4 mr-1" /> Save
+            <Save className="h-4 w-4 mr-1" /> Update Position
           </Button>
         </div>
       </div>

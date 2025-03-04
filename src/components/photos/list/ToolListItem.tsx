@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, Square, Pencil, Trash2 } from "lucide-react";
+import { Check, Square, Pencil, Trash2, Database } from "lucide-react";
 
 interface Tool {
   label: string;
@@ -56,6 +56,11 @@ export function ToolListItem({
     }
   };
 
+  const handleSaveToDBClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSaveTool(tool);
+  };
+
   if (editingLabel === tool.label) {
     return (
       <div 
@@ -100,25 +105,22 @@ export function ToolListItem({
       </div>
       
       <div className="flex items-center gap-1">
-        {isSelected && !isEditing && (
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            className="h-7 px-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSaveTool(tool);
-            }}
-          >
-            <Check className="h-4 w-4" />
-          </Button>
-        )}
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          className="h-7 px-2 text-primary hover:text-primary"
+          onClick={handleSaveToDBClick}
+          title="Save tool to database"
+        >
+          <Database className="h-4 w-4" />
+        </Button>
         
         <Button 
           size="sm" 
           variant="ghost" 
           className="h-7 px-2"
           onClick={handleRenameClick}
+          title="Rename tool"
         >
           <Pencil className="h-4 w-4" />
         </Button>
@@ -128,6 +130,7 @@ export function ToolListItem({
           variant="ghost" 
           className="h-7 px-2 text-destructive hover:text-destructive"
           onClick={handleDeleteClick}
+          title="Delete tool"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
