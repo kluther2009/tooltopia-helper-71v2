@@ -165,41 +165,16 @@ export function DetectedToolsViewer({
       return { xMin: 0, yMin: 0, width: 0, height: 0 };
     }
 
-    // Gemini's format varies by orientation
-    // For landscape: box_2d: [y_min, x_min, y_max, x_max] in range 0-1000
-    // For portrait: box_2d: [x_max, y_max, x_min, y_min] in range 0-1000
-    let normalizedYMin, normalizedXMin, normalizedYMax, normalizedXMax;
+    // Gemini's format: box_2d: [y_min, x_min, y_max, x_max] in range 0-1000
+    const [yMin, xMin, yMax, xMax] = box2d;
     
-    if (orientation === 'portrait') {
-      // For portrait photos, handle the different order: [x_max, y_max, x_min, y_min]
-      const [xMax, yMax, xMin, yMin] = box2d;
-      
-      normalizedYMin = yMin / 1000;
-      normalizedXMin = xMin / 1000;
-      normalizedYMax = yMax / 1000;
-      normalizedXMax = xMax / 1000;
-      
-      console.log('Converting portrait normalized coordinates:', {
-        originalBox2d: box2d,
-        reordered: [yMin, xMin, yMax, xMax],
-        normalized: {
-          xMin: normalizedXMin,
-          yMin: normalizedYMin,
-          xMax: normalizedXMax,
-          yMax: normalizedYMax
-        }
-      });
-    } else {
-      // For landscape, use the original order: [y_min, x_min, y_max, x_max]
-      const [yMin, xMin, yMax, xMax] = box2d;
-      
-      normalizedYMin = yMin / 1000;
-      normalizedXMin = xMin / 1000;
-      normalizedYMax = yMax / 1000;
-      normalizedXMax = xMax / 1000;
-    }
+    console.log('Converting normalized coordinates with system:', coordinateSystem, 'box2d:', box2d);
     
-    console.log('Converting normalized coordinates with system:', coordinateSystem, 'box2d:', box2d, 'orientation:', orientation);
+    // Normalize from 0-1000 to 0-1 and convert to pixel values
+    const normalizedYMin = yMin / 1000;
+    const normalizedXMin = xMin / 1000;
+    const normalizedYMax = yMax / 1000;
+    const normalizedXMax = xMax / 1000;
     
     // Convert normalized coordinates to pixel values
     const pixelXMin = normalizedXMin * imageDimensions.width;
@@ -218,7 +193,6 @@ export function DetectedToolsViewer({
     
     console.log('Converted coordinates:', {
       originalBox2d: box2d,
-      orientation: orientation,
       normalized: { 
         xMin: normalizedXMin, 
         yMin: normalizedYMin, 
