@@ -1,14 +1,12 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-interface CoordinateSystem {
-  origin: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
-  x_axis_direction: 'left-to-right' | 'right-to-left';
-  y_axis_direction: 'top-to-bottom' | 'bottom-to-top';
-}
+import { useImageDimensions } from "@/hooks/useImageDimensions"
+import { useToolCoordinates, CoordinateSystem } from "@/hooks/useToolCoordinates"
+import { ToolBoundingBox } from "./ToolBoundingBox"
 
 interface Tool {
   label: string
@@ -30,11 +28,6 @@ export function DetectedToolsViewer({
   onClose,
   onConfirm 
 }: DetectedToolsViewerProps) {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
-  const [displayDimensions, setDisplayDimensions] = useState({ width: 0, height: 0 })
-  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square'>('landscape')
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   
@@ -45,194 +38,28 @@ export function DetectedToolsViewer({
     y_axis_direction: 'top-to-bottom'
   })
 
-  useEffect(() => {
-    if (!imageContainerRef.current || !imageRef.current) return
-    
-    const updateDisplayDimensions = () => {
-      const img = imageRef.current
-      if (img && img.complete) {
-        setDisplayDimensions({ 
-          width: img.clientWidth, 
-          height: img.clientHeight 
-        })
-        
-        console.log("Updated display dimensions:", {
-          width: img.clientWidth,
-          height: img.clientHeight,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
-          offsetLeft: img.offsetLeft,
-          offsetTop: img.offsetTop
-        })
-      }
-    }
-    
-    const resizeObserver = new ResizeObserver(updateDisplayDimensions)
-    resizeObserver.observe(imageContainerRef.current)
-    
-    updateDisplayDimensions()
-    
-    window.addEventListener('resize', updateDisplayDimensions)
-    
-    return () => {
-      if (imageContainerRef.current) {
-        resizeObserver.unobserve(imageContainerRef.current)
-      }
-      window.removeEventListener('resize', updateDisplayDimensions)
-    }
-  }, [loading])
+  const {
+    loading,
+    error,
+    setError,
+    imageDimensions,
+    displayDimensions,
+    orientation,
+    handleImageLoad,
+    handleImageError
+  } = useImageDimensions(imageRef, imageContainerRef)
 
-  useEffect(() => {
-    if (imageRef.current && imageRef.current.complete) {
-      const width = imageRef.current.naturalWidth;
-      const height = imageRef.current.naturalHeight;
-      
-      setImageDimensions({ width, height });
-      setDisplayDimensions({ 
-        width: imageRef.current.clientWidth, 
-        height: imageRef.current.clientHeight 
-      });
-      
-      if (width > height) {
-        setOrientation('landscape');
-      } else if (height > width) {
-        setOrientation('portrait');
-      } else {
-        setOrientation('square');
-      }
-      
-      setLoading(false);
-    }
-  }, []);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement
-    const naturalWidth = img.naturalWidth
-    const naturalHeight = img.naturalHeight
-    const displayWidth = img.width
-    const displayHeight = img.height
-    
-    setImageDimensions({
-      width: naturalWidth,
-      height: naturalHeight
-    })
-    setDisplayDimensions({
-      width: displayWidth,
-      height: displayHeight
-    })
-    
-    if (naturalWidth > naturalHeight) {
-      setOrientation('landscape');
-    } else if (naturalHeight > naturalWidth) {
-      setOrientation('portrait');
-    } else {
-      setOrientation('square');
-    }
-    
-    setLoading(false)
-
-    console.log('Image loaded - dimensions:', {
-      natural: { width: naturalWidth, height: naturalHeight },
-      display: { width: displayWidth, height: displayHeight },
-      offset: { left: img.offsetLeft, top: img.offsetTop },
-      position: { x: img.x, y: img.y },
-      orientation: naturalWidth > naturalHeight ? 'landscape' : naturalHeight > naturalWidth ? 'portrait' : 'square',
-      scaleFactor: { 
-        x: displayWidth / naturalWidth, 
-        y: displayHeight / naturalHeight,
-      },
-      coordinateSystem: coordinateSystem
-    })
-  }
-
-  const handleImageError = () => {
-    setError('Failed to load image')
-    setLoading(false)
-    toast.error('Failed to load image')
-  }
+  const { convertCoordinates } = useToolCoordinates({
+    imageDimensions,
+    displayDimensions,
+    orientation,
+    coordinateSystem
+  })
 
   const handleConfirm = () => {
     onConfirm(detectedTools)
     toast.success("Tool detection data saved")
     onClose()
-  }
-
-  // Function to convert normalized coordinates to pixel coordinates and adjust for display
-  const convertCoordinates = (box2d: number[]) => {
-    if (!box2d || box2d.length !== 4) {
-      console.error('Invalid bounding box format:', box2d);
-      return { xMin: 0, yMin: 0, width: 0, height: 0 };
-    }
-
-    let normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax;
-    
-    // For portrait images, API returns [x_min, y_min, x_max, y_max]
-    // For landscape/square, API returns [y_min, x_min, y_max, x_max]
-    if (orientation === 'portrait') {
-      // Directly use the coordinates as [x_min, y_min, x_max, y_max]
-      [normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax] = box2d.map(coord => coord / 1000);
-    } else {
-      // For landscape/square, use the original format [y_min, x_min, y_max, x_max]
-      const [yMin, xMin, yMax, xMax] = box2d;
-      normalizedXMin = xMin / 1000;
-      normalizedYMin = yMin / 1000;
-      normalizedXMax = xMax / 1000;
-      normalizedYMax = yMax / 1000;
-    }
-    
-    console.log('Processing coordinates for', orientation, 'image:', {
-      original: box2d,
-      normalized: { 
-        xMin: normalizedXMin, 
-        yMin: normalizedYMin, 
-        xMax: normalizedXMax, 
-        yMax: normalizedYMax 
-      }
-    });
-    
-    // Convert normalized coordinates to pixel values
-    const pixelXMin = normalizedXMin * imageDimensions.width;
-    const pixelYMin = normalizedYMin * imageDimensions.height;
-    const pixelXMax = normalizedXMax * imageDimensions.width;
-    const pixelYMax = normalizedYMax * imageDimensions.height;
-    
-    // Scale to display dimensions
-    const scaleX = displayDimensions.width / imageDimensions.width;
-    const scaleY = displayDimensions.height / imageDimensions.height;
-    
-    const scaledXMin = pixelXMin * scaleX;
-    const scaledYMin = pixelYMin * scaleY;
-    const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
-    const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
-    
-    console.log('Converted coordinates for', orientation, 'image:', {
-      originalBox2d: box2d,
-      normalized: { 
-        xMin: normalizedXMin, 
-        yMin: normalizedYMin, 
-        xMax: normalizedXMax, 
-        yMax: normalizedYMax 
-      },
-      pixels: { 
-        xMin: pixelXMin, 
-        yMin: pixelYMin, 
-        xMax: pixelXMax, 
-        yMax: pixelYMax 
-      },
-      scaled: { 
-        xMin: scaledXMin, 
-        yMin: scaledYMin, 
-        width: scaledWidth, 
-        height: scaledHeight 
-      }
-    });
-    
-    return {
-      xMin: scaledXMin,
-      yMin: scaledYMin,
-      width: scaledWidth,
-      height: scaledHeight
-    };
   }
 
   return (
@@ -267,7 +94,10 @@ export function DetectedToolsViewer({
                     alt="Tool detection"
                     className="rounded-lg shadow-sm max-w-full h-auto object-contain"
                     onLoad={handleImageLoad}
-                    onError={handleImageError}
+                    onError={() => {
+                      handleImageError();
+                      toast.error('Failed to load image');
+                    }}
                   />
                   
                   {!loading && detectedTools.map((tool, index) => {
@@ -285,26 +115,11 @@ export function DetectedToolsViewer({
                     const coords = convertCoordinates(tool.box_2d);
                     
                     return (
-                      <div key={index}>
-                        <div 
-                          className="absolute border-2 border-green-500"
-                          style={{
-                            left: `${coords.xMin}px`,
-                            top: `${coords.yMin}px`,
-                            width: `${coords.width}px`,
-                            height: `${coords.height}px`,
-                          }}
-                        />
-                        <div 
-                          className="absolute px-2 py-1 text-xs text-white bg-black/70 rounded"
-                          style={{
-                            left: `${coords.xMin}px`,
-                            top: `${Math.max(0, coords.yMin - 20)}px`,
-                          }}
-                        >
-                          {tool.label}
-                        </div>
-                      </div>
+                      <ToolBoundingBox 
+                        key={index}
+                        label={tool.label}
+                        coords={coords}
+                      />
                     );
                   })}
 
