@@ -1,7 +1,8 @@
 
-import { useState, useEffect, RefObject } from "react";
+import { useState, useEffect, RefObject, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Save, XCircle } from "lucide-react";
+import { Save, XCircle, Move } from "lucide-react";
+import { ToolBoundingBox } from "./ToolBoundingBox";
 
 interface Tool {
   label: string;
@@ -14,6 +15,12 @@ interface BoundingBoxEditorProps {
   orientation: 'landscape' | 'portrait' | 'square';
   onSave: (tool: Tool) => void;
   onCancel: () => void;
+  convertCoordinates: (box2d: number[]) => {
+    xMin: number;
+    yMin: number;
+    width: number;
+    height: number;
+  };
 }
 
 export function BoundingBoxEditor({
@@ -21,55 +28,116 @@ export function BoundingBoxEditor({
   selectedTool,
   orientation,
   onSave,
-  onCancel
+  onCancel,
+  convertCoordinates
 }: BoundingBoxEditorProps) {
   const [adjustedBox, setAdjustedBox] = useState<number[]>([...selectedTool.box_2d]);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragDirection, setDragDirection] = useState<string | null>(null);
+  const [startPos, setStartPos] = useState<{ x: number, y: number } | null>(null);
+  const [currentCoords, setCurrentCoords] = useState(convertCoordinates(adjustedBox));
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Reset adjusted box when selected tool changes
   useEffect(() => {
     setAdjustedBox([...selectedTool.box_2d]);
-  }, [selectedTool]);
+    setCurrentCoords(convertCoordinates(selectedTool.box_2d));
+  }, [selectedTool, convertCoordinates]);
   
-  const adjustBoundingBox = (direction: 'up' | 'down' | 'left' | 'right', value: number) => {
-    const step = 5; // Adjustment step in normalized units (will be divided by 1000)
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setStartPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleDrag = (e: React.MouseEvent, direction: string) => {
+    if (!isDragging || !startPos) return;
     
-    if (orientation === 'portrait') {
-      // For portrait: [x_min, y_min, x_max, y_max]
-      const [xMin, yMin, xMax, yMax] = adjustedBox;
-      
-      switch (direction) {
-        case 'up':
-          setAdjustedBox([xMin, Math.max(0, yMin - step), xMax, yMax]);
-          break;
-        case 'down':
-          setAdjustedBox([xMin, yMin, xMax, Math.min(1000, yMax + step)]);
-          break;
-        case 'left':
-          setAdjustedBox([Math.max(0, xMin - step), yMin, xMax, yMax]);
-          break;
-        case 'right':
-          setAdjustedBox([xMin, yMin, Math.min(1000, xMax + step), yMax]);
-          break;
-      }
+    e.preventDefault();
+    setDragDirection(direction);
+    
+    const deltaX = e.clientX - startPos.x;
+    const deltaY = e.clientY - startPos.y;
+    
+    // Update the bounding box based on drag direction
+    let newCoords = { ...currentCoords };
+    
+    if (direction === 'move') {
+      // Move the entire box
+      newCoords.xMin += deltaX;
+      newCoords.yMin += deltaY;
     } else {
-      // For landscape/square: [y_min, x_min, y_max, x_max]
-      const [yMin, xMin, yMax, xMax] = adjustedBox;
-      
-      switch (direction) {
-        case 'up':
-          setAdjustedBox([Math.max(0, yMin - step), xMin, yMax, xMax]);
-          break;
-        case 'down':
-          setAdjustedBox([yMin, xMin, Math.min(1000, yMax + step), xMax]);
-          break;
-        case 'left':
-          setAdjustedBox([yMin, Math.max(0, xMin - step), yMax, xMax]);
-          break;
-        case 'right':
-          setAdjustedBox([yMin, xMin, yMax, Math.min(1000, xMax + step)]);
-          break;
+      // Resize based on which corner/edge is being dragged
+      if (direction.includes('top')) {
+        newCoords.yMin += deltaY;
+        newCoords.height -= deltaY;
+      }
+      if (direction.includes('bottom')) {
+        newCoords.height += deltaY;
+      }
+      if (direction.includes('left')) {
+        newCoords.xMin += deltaX;
+        newCoords.width -= deltaX;
+      }
+      if (direction.includes('right')) {
+        newCoords.width += deltaX;
       }
     }
+    
+    // Ensure box has positive dimensions
+    if (newCoords.width < 10) newCoords.width = 10;
+    if (newCoords.height < 10) newCoords.height = 10;
+    
+    setCurrentCoords(newCoords);
+    setStartPos({ x: e.clientX, y: e.clientY });
+    
+    // Convert coordinates back to normalized format for saving
+    updateAdjustedBoxFromCoords(newCoords);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDragDirection(null);
+    setStartPos(null);
+  };
+  
+  // Convert display coordinates back to normalized box_2d format
+  const updateAdjustedBoxFromCoords = (coords: { xMin: number, yMin: number, width: number, height: number }) => {
+    if (!imageRef.current) return;
+    
+    const img = imageRef.current;
+    const { naturalWidth, naturalHeight } = img;
+    const rect = img.getBoundingClientRect();
+    
+    // Convert from screen coordinates to normalized coordinates (0-1000)
+    const normalizedCoords = {
+      xMin: (coords.xMin / rect.width) * 1000,
+      yMin: (coords.yMin / rect.height) * 1000,
+      xMax: ((coords.xMin + coords.width) / rect.width) * 1000,
+      yMax: ((coords.yMin + coords.height) / rect.height) * 1000
+    };
+    
+    // Format based on orientation
+    let newBox: number[];
+    if (orientation === 'portrait') {
+      // For portrait: [x_min, y_min, x_max, y_max]
+      newBox = [
+        Math.max(0, Math.min(1000, normalizedCoords.xMin)),
+        Math.max(0, Math.min(1000, normalizedCoords.yMin)),
+        Math.max(0, Math.min(1000, normalizedCoords.xMax)),
+        Math.max(0, Math.min(1000, normalizedCoords.yMax))
+      ];
+    } else {
+      // For landscape/square: [y_min, x_min, y_max, x_max]
+      newBox = [
+        Math.max(0, Math.min(1000, normalizedCoords.yMin)),
+        Math.max(0, Math.min(1000, normalizedCoords.xMin)),
+        Math.max(0, Math.min(1000, normalizedCoords.yMax)),
+        Math.max(0, Math.min(1000, normalizedCoords.xMax))
+      ];
+    }
+    
+    setAdjustedBox(newBox);
   };
   
   const handleSave = () => {
@@ -80,56 +148,37 @@ export function BoundingBoxEditor({
   };
   
   return (
-    <div className="absolute bottom-4 right-4 bg-background border rounded-lg shadow-lg p-3 space-y-3 z-10">
-      <div className="text-sm font-medium flex justify-between items-center">
-        <span>Adjust: {selectedTool.label}</span>
-      </div>
+    <div ref={containerRef} className="absolute inset-0 z-10">
+      <ToolBoundingBox
+        label={selectedTool.label}
+        coords={currentCoords}
+        isHighlighted={true}
+        isActive={true}
+        isDraggable={true}
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
+      />
       
-      <div className="grid grid-cols-3 gap-2">
-        <div></div>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => adjustBoundingBox('up', -1)}
-        >
-          <ChevronUp className="h-4 w-4" />
-        </Button>
-        <div></div>
+      <div className="absolute bottom-4 right-4 bg-background border rounded-lg shadow-lg p-3 space-y-3 z-10">
+        <div className="text-sm font-medium flex justify-between items-center">
+          <span>Editing: {selectedTool.label}</span>
+        </div>
         
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => adjustBoundingBox('left', -1)}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div></div>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => adjustBoundingBox('right', 1)}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Move className="h-4 w-4 mr-1" /> Drag box or corners to adjust
+          </div>
+        </div>
         
-        <div></div>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => adjustBoundingBox('down', 1)}
-        >
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-        <div></div>
-      </div>
-      
-      <div className="flex justify-between gap-2 pt-1">
-        <Button size="sm" variant="outline" onClick={onCancel} className="flex-1">
-          <XCircle className="h-4 w-4 mr-1" /> Cancel
-        </Button>
-        <Button size="sm" onClick={handleSave} className="flex-1">
-          <Save className="h-4 w-4 mr-1" /> Save
-        </Button>
+        <div className="flex justify-between gap-2 pt-1">
+          <Button size="sm" variant="outline" onClick={onCancel} className="flex-1">
+            <XCircle className="h-4 w-4 mr-1" /> Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} className="flex-1">
+            <Save className="h-4 w-4 mr-1" /> Save
+          </Button>
+        </div>
       </div>
     </div>
   );

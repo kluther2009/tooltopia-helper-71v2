@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useState, useRef } from "react"
@@ -40,7 +39,6 @@ export function DetectedToolsViewer({
   const [isEditing, setIsEditing] = useState(false)
   const { addTool } = useToolManagement()
   
-  // Default coordinate system with proper type literals for origin
   const [coordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
@@ -91,7 +89,6 @@ export function DetectedToolsViewer({
       if (success) {
         toast.success(`Tool "${tool.label}" saved to your inventory`);
         
-        // Remove the tool from the detected tools list
         const updatedTools = detectedTools.filter(t => t.label !== tool.label);
         setDetectedTools(updatedTools);
         setSelectedTool(null);
@@ -115,7 +112,6 @@ export function DetectedToolsViewer({
     
     setDetectedTools(updatedTools);
     
-    // If the renamed tool is selected, update the selection
     if (selectedTool && selectedTool.label === oldLabel) {
       setSelectedTool({ ...selectedTool, label: newLabel });
     }
@@ -127,7 +123,6 @@ export function DetectedToolsViewer({
     const updatedTools = detectedTools.filter(tool => tool.label !== toolToDelete.label);
     setDetectedTools(updatedTools);
     
-    // If the deleted tool is selected, clear the selection
     if (selectedTool && selectedTool.label === toolToDelete.label) {
       setSelectedTool(null);
       setIsEditing(false);
@@ -152,7 +147,6 @@ export function DetectedToolsViewer({
         </DialogHeader>
         
         <div className="flex h-[calc(90vh-120px)]">
-          {/* Tool List Sidebar */}
           <div className="w-1/4 max-w-[250px] border-r">
             <DetectedToolList 
               tools={detectedTools}
@@ -165,7 +159,6 @@ export function DetectedToolsViewer({
             />
           </div>
           
-          {/* Main Image View */}
           <div className="flex-1 relative">
             {error ? (
               <div className="flex items-center justify-center h-full">
@@ -194,23 +187,15 @@ export function DetectedToolsViewer({
                       }}
                     />
                     
-                    {!loading && detectedTools.map((tool, index) => {
+                    {!loading && !isEditing && detectedTools.map((tool, index) => {
                       if (!tool.box_2d || tool.box_2d.length !== 4) {
                         console.error('Invalid bounding box format for tool:', tool);
                         return null;
                       }
                       
-                      // Only render highlighted box for selected tool or if no tool is selected
                       const isHighlighted = selectedTool ? selectedTool.label === tool.label : false;
                       const isActive = isHighlighted && !isEditing;
                       const coords = convertCoordinates(tool.box_2d);
-                      
-                      if (isHighlighted) {
-                        console.log(`Rendering highlighted box for ${tool.label}:`, {
-                          box2d: tool.box_2d,
-                          converted: coords
-                        });
-                      }
                       
                       return (
                         <ToolBoundingBox 
@@ -237,6 +222,7 @@ export function DetectedToolsViewer({
                         orientation={orientation}
                         onSave={handleSaveTool}
                         onCancel={handleCancelEdit}
+                        convertCoordinates={convertCoordinates}
                       />
                     )}
                   </div>
@@ -251,7 +237,7 @@ export function DetectedToolsViewer({
             <div>
               {selectedTool && !isEditing && (
                 <Button variant="outline" onClick={handleEditTool}>
-                  Adjust Bounding Box
+                  Edit Bounding Box
                 </Button>
               )}
             </div>
