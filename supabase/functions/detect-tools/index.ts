@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { GoogleGenerativeAI } from "npm:@google/generative-ai"
 
@@ -67,92 +68,6 @@ function extractJsonFromText(text: string): any {
   }
 }
 
-function parseToolsFromText(text: string): any[] {
-  // This simple implementation extracts tool names from a list format
-  // It looks for patterns like:
-  // 1. Tool name
-  // - Tool name
-  // * Tool name
-  // • Tool name
-  const tools = [];
-  const lines = text.split('\n');
-  
-  // Regular expression to match list formats
-  const listItemRegex = /^(?:\d+[\.\)]|\-|\*|•)\s+(.+)$/;
-  
-  lines.forEach(line => {
-    const trimmedLine = line.trim();
-    if (trimmedLine.length > 0) {
-      const match = trimmedLine.match(listItemRegex);
-      if (match) {
-        const toolName = match[1].trim();
-        if (toolName) {
-          tools.push({
-            label: toolName,
-            box_2d: [] // Empty bounding box since we don't have coordinates
-          });
-        }
-      }
-    }
-  });
-  
-  return tools;
-}
-
-function extractToolData(text: string): { tools: any[], raw_response: string } {
-  console.log('Extracting tool data from raw text...');
-  
-  // Keep the raw response for debugging
-  const raw_response = text;
-  let tools = [];
-  
-  // Look for specific patterns in the response
-  // Sometimes Gemini returns a list of items with their normalized coordinates
-  const lines = text.split('\n');
-  const toolPattern = /([^:]+):\s*\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/;
-  
-  lines.forEach(line => {
-    const match = line.trim().match(toolPattern);
-    if (match) {
-      // Extract name and coordinates
-      const [_, name, yMin, xMin, yMax, xMax] = match;
-      
-      // Convert coordinates to numbers and normalize them (they might be already normalized)
-      const coords = [
-        parseFloat(yMin), 
-        parseFloat(xMin), 
-        parseFloat(yMax), 
-        parseFloat(xMax)
-      ];
-      
-      // Determine if coordinates need normalization (using 1000 as the benchmark)
-      // If any coordinate is > 1, we assume they're already in the 0-1000 range
-      const needsNormalization = coords.some(coord => coord > 1);
-      
-      // If already normalized to 0-1000, use as is
-      // Otherwise, multiply by 1000 to normalize to the expected range
-      const normalizedCoords = needsNormalization 
-        ? coords 
-        : coords.map(coord => coord * 1000);
-        
-      tools.push({
-        label: name.trim(),
-        box_2d: normalizedCoords
-      });
-    }
-  });
-  
-  // If we couldn't find coordinates, try to at least extract tool names
-  if (tools.length === 0) {
-    tools = parseToolsFromText(text);
-    console.log(`Extracted ${tools.length} tool names without coordinates`);
-  } else {
-    console.log(`Extracted ${tools.length} tools with normalized coordinates`);
-  }
-  
-  return { tools, raw_response };
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -196,13 +111,13 @@ serve(async (req) => {
     const base64Image = arrayBufferToBase64(imageBuffer)
     console.log('Image converted to base64')
 
-    // Call Gemini API with simplified prompt - just "name items"
+    // Call Gemini API with updated system prompt that requests coordinate system information
     console.log('Calling Gemini API...')
     const result = await model.generateContent({
       contents: [{
         role: "user",
         parts: [
-          { text: "name items" },
+          { text: "You are a computer vision expert specializing in identifying tools in workshop and garage settings. When presented with an image, carefully analyze it and identify all visible tools. Ensure you don't capture labels on boxes, if you recognize a label on a box try to capture the box and if reading the label on the box label the whole box. For each tool, provide its location in the image.\n\nFirst, provide a single 'coordinate_system' object with the following properties to help interpret coordinates:\n- 'origin': the corner of the image where the coordinate system starts (e.g., 'top-left', 'top-right', 'bottom-left', 'bottom-right')\n- 'x_axis_direction': the direction the x-axis increases (e.g., 'left-to-right', 'right-to-left')\n- 'y_axis_direction': the direction the y-axis increases (e.g., 'top-to-bottom', 'bottom-to-top')\n\nThen, provide a 'tools' array where each object has two properties: 'label' (string with the tool name) and 'box_2d' (array of 4 numbers representing [y_min, x_min, y_max, x_max] coordinates of the tool in the image). Ensure the response is valid JSON with this structure:\n\n{\n  \"coordinate_system\": {\n    \"origin\": \"top-left\",\n    \"x_axis_direction\": \"left-to-right\",\n    \"y_axis_direction\": \"top-to-bottom\"\n  },\n  \"tools\": [\n    {\n      \"label\": \"tool name\",\n      \"box_2d\": [y_min, x_min, y_max, x_max]\n    }\n  ]\n}" },
           {
             inline_data: {
               mime_type: "image/jpeg",
@@ -216,25 +131,61 @@ serve(async (req) => {
     const response = await result.response
     const text = response.text()
     
-    // Log Gemini API response once with clear demarcation
-    console.log('\n========== RAW GEMINI API RESPONSE ==========\n')
-    console.log(text)
-    console.log('\n=========== END GEMINI API RESPONSE ===========\n')
+    // Log the full Gemini API response
+    console.log('Gemini API Response:', JSON.stringify(result, null, 2))
+    console.log('Raw response text:', text)
+
+    // Parse response with improved parsing logic
+    let toolsData = {
+      coordinate_system: {
+        origin: "top-left",
+        x_axis_direction: "left-to-right",
+        y_axis_direction: "top-to-bottom"
+      },
+      tools: []
+    }
     
-    // Extract tool data with normalized coordinates
-    const { tools, raw_response } = extractToolData(text);
-    
-    // Return the processed results
+    try {
+      const extractedData = extractJsonFromText(text);
+      
+      // Handle different formats that might be returned
+      if (Array.isArray(extractedData)) {
+        // If we got just an array of tools
+        toolsData.tools = extractedData.filter(item => {
+          return item && 
+                 typeof item.label === 'string' && 
+                 Array.isArray(item.box_2d) && 
+                 item.box_2d.length === 4
+        });
+      } else if (extractedData.tools) {
+        // If we got the expected format with coordinate system and tools
+        toolsData = extractedData;
+        toolsData.tools = toolsData.tools.filter(item => {
+          return item && 
+                 typeof item.label === 'string' && 
+                 Array.isArray(item.box_2d) && 
+                 item.box_2d.length === 4
+        });
+      }
+
+      console.log('Processed tools data:', toolsData)
+      
+      // Log each tool's bounding box data
+      toolsData.tools.forEach(tool => {
+        console.log(`Tool "${tool.label}" bounding box:`, {
+          format: 'Gemini [y_min, x_min, y_max, x_max]',
+          values: tool.box_2d,
+          normalizedRange: '0-1000',
+          coordinateSystem: toolsData.coordinate_system
+        })
+      })
+    } catch (e) {
+      console.error('Error parsing response:', e)
+      throw new Error(`Failed to parse tool detection results: ${e.message}`)
+    }
+
     return new Response(
-      JSON.stringify({
-        raw_response,
-        coordinate_system: {
-          origin: "top-left",
-          x_axis_direction: "left-to-right",
-          y_axis_direction: "top-to-bottom"
-        },
-        tools
-      }),
+      JSON.stringify(toolsData),
       { 
         headers: { 
           ...corsHeaders,
