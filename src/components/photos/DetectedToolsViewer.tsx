@@ -5,8 +5,12 @@ import { useState, useRef } from "react"
 import { toast } from "sonner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useImageDimensions } from "@/hooks/useImageDimensions"
-import { useToolCoordinates, CoordinateSystem } from "@/hooks/useToolCoordinates"
+import { useToolCoordinates } from "@/hooks/useToolCoordinates"
 import { ToolBoundingBox } from "./ToolBoundingBox"
+import { DetectedToolList } from "./DetectedToolList"
+import { BoundingBoxEditor } from "./BoundingBoxEditor"
+import { useToolManagement } from "@/hooks/useToolManagement"
+import { Save } from "lucide-react"
 
 interface Tool {
   label: string
@@ -30,9 +34,12 @@ export function DetectedToolsViewer({
 }: DetectedToolsViewerProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const { addTool } = useToolManagement()
   
   // Default coordinate system (standard computer vision format)
-  const [coordinateSystem] = useState<CoordinateSystem>({
+  const [coordinateSystem] = useState({
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
     y_axis_direction: 'top-to-bottom'
@@ -56,6 +63,50 @@ export function DetectedToolsViewer({
     coordinateSystem
   })
 
+  const handleSelectTool = (tool: Tool) => {
+    setSelectedTool(tool);
+    setIsEditing(false);
+  };
+
+  const handleEditTool = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleSaveTool = async (tool: Tool) => {
+    try {
+      const success = await addTool({
+        name: tool.label,
+        primaryLocation: "Detection Area",
+        subLocation: "",
+        specificLocation: "",
+        status: "available"
+      });
+
+      if (success) {
+        toast.success(`Tool "${tool.label}" saved to your inventory`);
+        
+        // Remove the tool from the detected tools list
+        const updatedTools = detectedTools.filter(t => t.label !== tool.label);
+        onConfirm(updatedTools);
+        
+        setSelectedTool(null);
+        setIsEditing(false);
+        
+        if (updatedTools.length === 0) {
+          toast.success("All tools saved to inventory!");
+          onClose();
+        }
+      }
+    } catch (error) {
+      console.error("Error saving tool:", error);
+      toast.error(`Failed to save tool "${tool.label}"`);
+    }
+  };
+
   const handleConfirm = () => {
     onConfirm(detectedTools)
     toast.success("Tool detection data saved")
@@ -64,81 +115,122 @@ export function DetectedToolsViewer({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden p-0">
+        <DialogHeader className="p-4 pb-2">
           <DialogTitle>
             Detected Tools ({orientation?.charAt(0).toUpperCase() + orientation?.slice(1) || 'Loading'} Photo)
           </DialogTitle>
         </DialogHeader>
         
-        <div className="w-full flex flex-col items-center p-2">
-          {error ? (
-            <div className="text-red-500 mb-4">
-              <p>{error}</p>
-              <p className="text-xs break-all mt-1">URL: {imageUrl}</p>
-            </div>
-          ) : (
-            <ScrollArea className="w-full rounded-md" style={{ 
-              maxHeight: 'calc(80vh - 100px)',
-              maxWidth: '100%'
-            }}>
-              <div 
-                className="relative w-full flex justify-center" 
-                ref={imageContainerRef}
-              >
-                <div className="relative inline-block">
-                  <img 
-                    id="detected-image"
-                    ref={imageRef}
-                    src={imageUrl}
-                    alt="Tool detection"
-                    className="rounded-lg shadow-sm max-w-full h-auto object-contain"
-                    onLoad={handleImageLoad}
-                    onError={() => {
-                      handleImageError();
-                      toast.error('Failed to load image');
-                    }}
-                  />
-                  
-                  {!loading && detectedTools.map((tool, index) => {
-                    if (!tool.box_2d || tool.box_2d.length !== 4) {
-                      console.error('Invalid bounding box format for tool:', tool);
-                      return null;
-                    }
-                    
-                    console.log(`Rendering bounding box for ${tool.label}:`, {
-                      box2d: tool.box_2d,
-                      orientation: orientation,
-                      coordinateSystem: coordinateSystem
-                    });
-                    
-                    const coords = convertCoordinates(tool.box_2d);
-                    
-                    return (
-                      <ToolBoundingBox 
-                        key={index}
-                        label={tool.label}
-                        coords={coords}
-                      />
-                    );
-                  })}
-
-                  {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-                    </div>
-                  )}
+        <div className="flex h-[calc(90vh-120px)]">
+          {/* Tool List Sidebar */}
+          <div className="w-1/4 max-w-[250px] border-r">
+            <DetectedToolList 
+              tools={detectedTools}
+              selectedTool={selectedTool}
+              onSelectTool={handleSelectTool}
+              onSaveTool={handleSaveTool}
+              isEditing={isEditing}
+            />
+          </div>
+          
+          {/* Main Image View */}
+          <div className="flex-1 relative">
+            {error ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-red-500 p-4">
+                  <p>{error}</p>
+                  <p className="text-xs break-all mt-1">URL: {imageUrl}</p>
                 </div>
               </div>
-            </ScrollArea>
-          )}
+            ) : (
+              <ScrollArea className="h-full w-full rounded-md">
+                <div 
+                  className="relative w-full flex justify-center p-4" 
+                  ref={imageContainerRef}
+                >
+                  <div className="relative inline-block">
+                    <img 
+                      id="detected-image"
+                      ref={imageRef}
+                      src={imageUrl}
+                      alt="Tool detection"
+                      className="rounded-lg shadow-sm max-w-full h-auto object-contain"
+                      onLoad={handleImageLoad}
+                      onError={() => {
+                        handleImageError();
+                        toast.error('Failed to load image');
+                      }}
+                    />
+                    
+                    {!loading && detectedTools.map((tool, index) => {
+                      if (!tool.box_2d || tool.box_2d.length !== 4) {
+                        console.error('Invalid bounding box format for tool:', tool);
+                        return null;
+                      }
+                      
+                      // Only render highlighted box for selected tool or if no tool is selected
+                      const isHighlighted = selectedTool ? selectedTool.label === tool.label : false;
+                      const isActive = isHighlighted && !isEditing;
+                      const coords = convertCoordinates(tool.box_2d);
+                      
+                      if (isHighlighted) {
+                        console.log(`Rendering highlighted box for ${tool.label}:`, {
+                          box2d: tool.box_2d,
+                          converted: coords
+                        });
+                      }
+                      
+                      return (
+                        <ToolBoundingBox 
+                          key={index}
+                          label={tool.label}
+                          coords={coords}
+                          isHighlighted={isHighlighted}
+                          isActive={isActive}
+                          onClick={() => setSelectedTool(tool)}
+                        />
+                      );
+                    })}
+
+                    {loading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                      </div>
+                    )}
+
+                    {selectedTool && isEditing && (
+                      <BoundingBoxEditor 
+                        imageRef={imageRef}
+                        selectedTool={selectedTool}
+                        orientation={orientation}
+                        onSave={handleSaveTool}
+                        onCancel={handleCancelEdit}
+                      />
+                    )}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleConfirm} disabled={loading || !!error}>
-            Confirm Detections
-          </Button>
+        <DialogFooter className="p-4 pt-2">
+          <div className="flex justify-between w-full">
+            <div>
+              {selectedTool && !isEditing && (
+                <Button variant="outline" onClick={handleEditTool}>
+                  Adjust Bounding Box
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button onClick={handleConfirm} disabled={loading || !!error}>
+                <Save className="h-4 w-4 mr-2" /> Save All
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
