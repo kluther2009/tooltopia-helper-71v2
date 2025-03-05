@@ -147,6 +147,10 @@ export function BoundingBoxEditor({
     });
   };
   
+  // Determine the optimal position for the control panel
+  // Position at top if bounding box is in lower half, otherwise at bottom
+  const controlPosition = currentCoords.yMin > (imageRef.current?.clientHeight || 0) / 2 ? 'top' : 'bottom';
+  
   return (
     <div ref={containerRef} className="absolute inset-0 z-10">
       <ToolBoundingBox
@@ -160,15 +164,13 @@ export function BoundingBoxEditor({
         onDragEnd={handleDragEnd}
       />
       
-      <div className="absolute bottom-4 right-4 bg-background border rounded-lg shadow-lg p-3 space-y-3 z-10">
-        <div className="text-sm font-medium flex justify-between items-center">
+      <div className={`absolute ${controlPosition === 'top' ? 'top-4' : 'bottom-4'} left-4 bg-background/90 backdrop-blur-sm border rounded-lg shadow-lg p-3 space-y-2 z-20 max-w-[200px]`}>
+        <div className="text-sm font-medium">
           <span>Editing: {selectedTool.label}</span>
         </div>
         
-        <div className="flex justify-between items-center">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Move className="h-4 w-4 mr-1" /> Drag box or corners to adjust
-          </div>
+        <div className="flex items-center text-xs text-muted-foreground">
+          <Move className="h-4 w-4 mr-1" /> Drag box or corners to adjust
         </div>
         
         <div className="flex justify-between gap-2 pt-1">
@@ -176,7 +178,7 @@ export function BoundingBoxEditor({
             <XCircle className="h-4 w-4 mr-1" /> Cancel
           </Button>
           <Button size="sm" onClick={handleSave} className="flex-1">
-            <Save className="h-4 w-4 mr-1" /> Update Position
+            <Save className="h-4 w-4 mr-1" /> Update
           </Button>
         </div>
       </div>

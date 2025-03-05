@@ -1,5 +1,5 @@
 
-import { useRef } from "react"
+import { useRef, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ToolBoundingBox } from "../ToolBoundingBox"
 import { BoundingBoxEditor } from "../BoundingBoxEditor"
@@ -35,6 +35,7 @@ export function ImageDisplay({
 }: ImageDisplayProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
   
   const {
     loading,
@@ -53,6 +54,27 @@ export function ImageDisplay({
     coordinateSystem
   })
 
+  // If a tool is selected, ensure it's visible in the scroll area
+  useEffect(() => {
+    if (selectedTool && !loading && scrollAreaRef.current && imageRef.current) {
+      const coords = convertCoordinates(selectedTool.box_2d)
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      
+      if (scrollContainer && imageRef.current) {
+        const imgRect = imageRef.current.getBoundingClientRect()
+        const centerX = imgRect.left + coords.xMin + (coords.width / 2)
+        const centerY = imgRect.top + coords.yMin + (coords.height / 2)
+        
+        // Calculate scroll position to center the bounding box
+        scrollContainer.scrollTo({
+          left: centerX - (scrollContainer.clientWidth / 2),
+          top: centerY - (scrollContainer.clientHeight / 2),
+          behavior: 'smooth'
+        })
+      }
+    }
+  }, [selectedTool, isEditing, loading, convertCoordinates])
+
   if (error) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -65,7 +87,7 @@ export function ImageDisplay({
   }
 
   return (
-    <ScrollArea className="h-full w-full rounded-md">
+    <ScrollArea className="h-full w-full rounded-md" ref={scrollAreaRef}>
       <div 
         className="relative w-full flex justify-center p-4" 
         ref={imageContainerRef}
