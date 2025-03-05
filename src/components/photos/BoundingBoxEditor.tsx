@@ -1,4 +1,3 @@
-
 import { useState, useEffect, RefObject, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, XCircle, Move } from "lucide-react";
@@ -38,7 +37,6 @@ export function BoundingBoxEditor({
   const [currentCoords, setCurrentCoords] = useState(convertCoordinates(adjustedBox));
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Reset adjusted box when selected tool changes
   useEffect(() => {
     setAdjustedBox([...selectedTool.box_2d]);
     setCurrentCoords(convertCoordinates(selectedTool.box_2d));
@@ -59,15 +57,12 @@ export function BoundingBoxEditor({
     const deltaX = e.clientX - startPos.x;
     const deltaY = e.clientY - startPos.y;
     
-    // Update the bounding box based on drag direction
     let newCoords = { ...currentCoords };
     
     if (direction === 'move') {
-      // Move the entire box
       newCoords.xMin += deltaX;
       newCoords.yMin += deltaY;
     } else {
-      // Resize based on which corner/edge is being dragged
       if (direction.includes('top')) {
         newCoords.yMin += deltaY;
         newCoords.height -= deltaY;
@@ -84,14 +79,12 @@ export function BoundingBoxEditor({
       }
     }
     
-    // Ensure box has positive dimensions
     if (newCoords.width < 10) newCoords.width = 10;
     if (newCoords.height < 10) newCoords.height = 10;
     
     setCurrentCoords(newCoords);
     setStartPos({ x: e.clientX, y: e.clientY });
     
-    // Convert coordinates back to normalized format for saving
     updateAdjustedBoxFromCoords(newCoords);
   };
 
@@ -101,7 +94,6 @@ export function BoundingBoxEditor({
     setStartPos(null);
   };
   
-  // Convert display coordinates back to normalized box_2d format
   const updateAdjustedBoxFromCoords = (coords: { xMin: number, yMin: number, width: number, height: number }) => {
     if (!imageRef.current) return;
     
@@ -109,7 +101,6 @@ export function BoundingBoxEditor({
     const { naturalWidth, naturalHeight } = img;
     const rect = img.getBoundingClientRect();
     
-    // Convert from screen coordinates to normalized coordinates (0-1000)
     const normalizedCoords = {
       xMin: (coords.xMin / rect.width) * 1000,
       yMin: (coords.yMin / rect.height) * 1000,
@@ -117,10 +108,8 @@ export function BoundingBoxEditor({
       yMax: ((coords.yMin + coords.height) / rect.height) * 1000
     };
     
-    // Format based on orientation
     let newBox: number[];
     if (orientation === 'portrait') {
-      // For portrait: [x_min, y_min, x_max, y_max]
       newBox = [
         Math.max(0, Math.min(1000, normalizedCoords.xMin)),
         Math.max(0, Math.min(1000, normalizedCoords.yMin)),
@@ -128,7 +117,6 @@ export function BoundingBoxEditor({
         Math.max(0, Math.min(1000, normalizedCoords.yMax))
       ];
     } else {
-      // For landscape/square: [y_min, x_min, y_max, x_max]
       newBox = [
         Math.max(0, Math.min(1000, normalizedCoords.yMin)),
         Math.max(0, Math.min(1000, normalizedCoords.xMin)),
@@ -147,10 +135,6 @@ export function BoundingBoxEditor({
     });
   };
   
-  // Determine the optimal position for the control panel
-  // Position at top if bounding box is in lower half, otherwise at bottom
-  const controlPosition = currentCoords.yMin > (imageRef.current?.clientHeight || 0) / 2 ? 'top' : 'bottom';
-  
   return (
     <div ref={containerRef} className="absolute inset-0 z-10">
       <ToolBoundingBox
@@ -164,20 +148,19 @@ export function BoundingBoxEditor({
         onDragEnd={handleDragEnd}
       />
       
-      <div className={`absolute ${controlPosition === 'top' ? 'top-4' : 'bottom-4'} left-4 bg-background/90 backdrop-blur-sm border rounded-lg shadow-lg p-3 space-y-2 z-20 max-w-[200px]`}>
-        <div className="text-sm font-medium">
-          <span>Editing: {selectedTool.label}</span>
+      <div className="fixed bottom-4 left-1/4 right-1/4 mx-auto bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-3 z-50 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium">Editing: {selectedTool.label}</span>
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Move className="h-4 w-4 mr-1" /> Drag box or corners to adjust
+          </div>
         </div>
         
-        <div className="flex items-center text-xs text-muted-foreground">
-          <Move className="h-4 w-4 mr-1" /> Drag box or corners to adjust
-        </div>
-        
-        <div className="flex justify-between gap-2 pt-1">
-          <Button size="sm" variant="outline" onClick={onCancel} className="flex-1">
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={onCancel}>
             <XCircle className="h-4 w-4 mr-1" /> Cancel
           </Button>
-          <Button size="sm" onClick={handleSave} className="flex-1">
+          <Button size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-1" /> Update
           </Button>
         </div>
