@@ -1,4 +1,3 @@
-
 import React from "react"
 
 interface ToolBoundingBoxProps {
@@ -42,9 +41,11 @@ export function ToolBoundingBox({
     handler?.(e);
   };
 
-  const handleCornerEventWrapper = (handler?: (e: React.MouseEvent | React.TouchEvent, direction: string) => void, direction: string) => (e: React.MouseEvent | React.TouchEvent) => {
+  const handleCornerEventWrapper = (handler: ((e: React.MouseEvent | React.TouchEvent, direction: string) => void) | undefined, direction: string) => (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    handler?.(e, direction);
+    if (handler) {
+      handler(e, direction);
+    }
   };
   
   return (
@@ -98,5 +99,5 @@ export function ToolBoundingBox({
         {label}
       </div>
     </>
-  )
+  );
 }
