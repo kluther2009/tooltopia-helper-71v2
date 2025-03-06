@@ -42,20 +42,35 @@ export function BoundingBoxEditor({
     setCurrentCoords(convertCoordinates(selectedTool.box_2d));
   }, [selectedTool, convertCoordinates]);
   
-  const handleDragStart = (e: React.MouseEvent) => {
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    setIsDragging(true);
-    setStartPos({ x: e.clientX, y: e.clientY });
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      setIsDragging(true);
+      setStartPos({ x: touch.clientX, y: touch.clientY });
+    } else {
+      setIsDragging(true);
+      setStartPos({ x: e.clientX, y: e.clientY });
+    }
   };
 
-  const handleDrag = (e: React.MouseEvent, direction: string) => {
+  const handleDrag = (e: React.MouseEvent | React.TouchEvent, direction: string) => {
     if (!isDragging || !startPos) return;
-    
     e.preventDefault();
-    setDragDirection(direction);
     
-    const deltaX = e.clientX - startPos.x;
-    const deltaY = e.clientY - startPos.y;
+    let clientX: number, clientY: number;
+    
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    const deltaX = clientX - startPos.x;
+    const deltaY = clientY - startPos.y;
     
     let newCoords = { ...currentCoords };
     
@@ -83,12 +98,13 @@ export function BoundingBoxEditor({
     if (newCoords.height < 10) newCoords.height = 10;
     
     setCurrentCoords(newCoords);
-    setStartPos({ x: e.clientX, y: e.clientY });
+    setStartPos({ x: clientX, y: clientY });
     
     updateAdjustedBoxFromCoords(newCoords);
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
     setIsDragging(false);
     setDragDirection(null);
     setStartPos(null);
@@ -148,7 +164,7 @@ export function BoundingBoxEditor({
         onDragEnd={handleDragEnd}
       />
       
-      <div className="fixed bottom-4 left-1/4 right-1/4 mx-auto bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-3 z-50 flex items-center justify-between">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-lg p-4 z-50 flex items-center justify-between safe-area-inset-bottom">
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium">Editing: {selectedTool.label}</span>
           <div className="flex items-center text-xs text-muted-foreground">
