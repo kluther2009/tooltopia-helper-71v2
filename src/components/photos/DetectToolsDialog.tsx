@@ -7,6 +7,8 @@ import { toast } from "sonner"
 import { LocationPhoto } from "@/types/photos"
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos"
 import { CoordinateSystem } from "@/hooks/useToolCoordinates"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 
 interface DetectToolsDialogProps {
   isOpen: boolean
@@ -20,6 +22,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem | null>(null)
   const [isDetecting, setIsDetecting] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const isMobile = useIsMobile()
 
   const ensureUniqueToolNames = (tools: any[]): any[] => {
     const nameCount: Record<string, number> = {};
@@ -142,19 +145,37 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Detect Tools in Photos</DialogTitle>
-          </DialogHeader>
-          <PhotoGrid 
-            photos={photos}
-            onPhotoClick={handlePhotoSelect}
-            onDeleteClick={undefined}
-            disabled={isDetecting}
-          />
-        </DialogContent>
-      </Dialog>
+      {isMobile ? (
+        <Sheet open={isOpen} onOpenChange={handleDialogClose}>
+          <SheetContent className="h-[90vh] pt-10">
+            <DialogHeader>
+              <DialogTitle>Detect Tools in Photos</DialogTitle>
+            </DialogHeader>
+            <div className="mt-6">
+              <PhotoGrid 
+                photos={photos}
+                onPhotoClick={handlePhotoSelect}
+                onDeleteClick={undefined}
+                disabled={isDetecting}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Detect Tools in Photos</DialogTitle>
+            </DialogHeader>
+            <PhotoGrid 
+              photos={photos}
+              onPhotoClick={handlePhotoSelect}
+              onDeleteClick={undefined}
+              disabled={isDetecting}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {selectedPhotoUrl && (
         <DetectedToolsViewer

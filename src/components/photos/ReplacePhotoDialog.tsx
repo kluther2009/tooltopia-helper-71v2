@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
@@ -8,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useInitialInventoryPhotos } from "@/hooks/useInitialInventoryPhotos";
 import { PhotoGrid } from "./PhotoGrid";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface ReplacePhotoDialogProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
   const [draggedAnnotation, setDraggedAnnotation] = useState<any | null>(null);
   const [dragPreviewPos, setDragPreviewPos] = useState<{ x: number; y: number } | null>(null);
   const { photos, isLoading, handleDeletePhoto } = useInitialInventoryPhotos();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -92,7 +94,6 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     if (!newPhoto) return;
 
     try {
-      // Get dimensions of both old and new photos
       const oldImg = new Image();
       const newImg = new Image();
       
@@ -104,21 +105,17 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
         new Promise(resolve => newImg.onload = resolve)
       ]);
 
-      // Calculate scale ratio between the two images
       const scaleRatio = newImg.width / oldImg.width;
 
-      // Adjust coordinates and dimensions based on the ratio
       const scaledCoordinates = {
         x: newCoordinates.x,
         y: newCoordinates.y,
-        width: annotation.coordinates.width * scaleRatio,  // Scale width by ratio
-        height: annotation.coordinates.height * scaleRatio  // Scale height by ratio
+        width: annotation.coordinates.width * scaleRatio,
+        height: annotation.coordinates.height * scaleRatio
       };
 
-      // Remove from source annotations
       setAnnotations(prev => prev.filter(a => a.id !== annotation.id));
       
-      // Add to transferred annotations with scaled coordinates
       setTransferredAnnotations(prev => [...prev, {
         ...annotation,
         coordinates: scaledCoordinates
@@ -164,7 +161,6 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     if (!oldPhoto || !newPhoto) return;
 
     try {
-      // First, update all annotations
       for (const annotation of transferredAnnotations) {
         const { error: annotationError } = await supabase
           .from('tool_annotations')
@@ -177,7 +173,6 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
         if (annotationError) throw annotationError;
       }
 
-      // Then, clean up temporary transfer records
       const { error: cleanupError } = await supabase
         .from('temp_annotation_transfers')
         .delete()
@@ -185,11 +180,11 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
 
       if (cleanupError) {
         console.error('Error cleaning up temporary transfers:', cleanupError);
-        // Continue with success message even if cleanup fails
+        toast.success('Photo replacement completed successfully');
+        handleClose();
+      } else {
+        toast.error('Failed to complete photo replacement');
       }
-
-      toast.success('Photo replacement completed successfully');
-      handleClose();
     } catch (error) {
       console.error('Error confirming replacement:', error);
       toast.error('Failed to complete photo replacement');
@@ -205,7 +200,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
             <h2 className="text-lg font-semibold">
               {step === 'select-old' ? 'Select Old Photo to Replace' : 'Select New Photo'}
             </h2>
-            <div className="min-h-[500px]">
+            <div className={isMobile ? "min-h-[300px]" : "min-h-[500px]"}>
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <p>Loading photos...</p>
@@ -228,7 +223,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
       case 'compare':
         return (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 h-[calc(100vh-12rem)]">
+            <div className={`grid ${isMobile ? "grid-cols-1 gap-6" : "grid-cols-2 gap-4"} ${isMobile ? "h-[calc(100vh-14rem)]" : "h-[calc(100vh-12rem)]"}`}>
               <div className="relative h-full">
                 {oldPhoto && (
                   <div className="relative h-full">
@@ -244,7 +239,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                       isReplacingPhoto
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
-                      Old Photo (Drag annotations to transfer)
+                      Old Photo {isMobile && "(Drag annotations to transfer)"}
                     </div>
                   </div>
                 )}
@@ -262,7 +257,7 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
                       isReplacingPhoto
                     />
                     <div className="absolute top-0 left-0 bg-black/50 text-white px-2 py-1 text-sm">
-                      New Photo (Drop annotations here)
+                      New Photo {isMobile && "(Drop annotations here)"}
                     </div>
                   </div>
                 )}
@@ -281,14 +276,20 @@ export function ReplacePhotoDialog({ isOpen, onClose }: ReplacePhotoDialogProps)
     }
   };
 
+  const DialogComponent = isMobile ? Sheet : Dialog;
+  const DialogContentComponent = isMobile ? SheetContent : DialogContent;
+  const contentClass = isMobile 
+    ? "h-[90vh] pt-10" 
+    : "max-w-[95vw] w-full max-h-[95vh]";
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] w-full max-h-[95vh]">
+    <DialogComponent open={isOpen} onOpenChange={handleClose}>
+      <DialogContentComponent className={contentClass}>
         <DialogHeader>
           <DialogTitle>Replace Photo</DialogTitle>
         </DialogHeader>
         {renderContent()}
-      </DialogContent>
-    </Dialog>
+      </DialogContentComponent>
+    </DialogComponent>
   );
 }

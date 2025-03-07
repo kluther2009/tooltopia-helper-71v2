@@ -6,6 +6,7 @@ import { BoundingBoxEditor } from "../BoundingBoxEditor"
 import { useImageDimensions } from "@/hooks/useImageDimensions"
 import { useToolCoordinates } from "@/hooks/useToolCoordinates"
 import { toast } from "sonner"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface Tool {
   label: string
@@ -36,6 +37,7 @@ export function ImageDisplay({
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
   
   const {
     loading,
@@ -98,7 +100,7 @@ export function ImageDisplay({
             ref={imageRef}
             src={imageUrl}
             alt="Tool detection"
-            className="rounded-lg shadow-sm max-w-full h-auto object-contain"
+            className={`rounded-lg shadow-sm max-w-full h-auto object-contain ${isMobile ? "max-h-[70vh]" : ""}`}
             onLoad={handleImageLoad}
             onError={() => {
               handleImageError();

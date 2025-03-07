@@ -1,7 +1,9 @@
+
 import { useState, useEffect, RefObject, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, XCircle, Move } from "lucide-react";
 import { ToolBoundingBox } from "./ToolBoundingBox";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Tool {
   label: string;
@@ -36,6 +38,7 @@ export function BoundingBoxEditor({
   const [startPos, setStartPos] = useState<{ x: number, y: number } | null>(null);
   const [currentCoords, setCurrentCoords] = useState(convertCoordinates(adjustedBox));
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     setAdjustedBox([...selectedTool.box_2d]);
@@ -167,7 +170,7 @@ export function BoundingBoxEditor({
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t shadow-lg p-4 z-50 flex items-center justify-between safe-area-inset-bottom">
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium">Editing: {selectedTool.label}</span>
-          <div className="flex items-center text-xs text-muted-foreground">
+          <div className={`flex items-center text-xs text-muted-foreground ${isMobile ? "hidden sm:flex" : ""}`}>
             <Move className="h-4 w-4 mr-1" /> Drag box or corners to adjust
           </div>
         </div>

@@ -1,4 +1,6 @@
+
 import React from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ToolBoundingBoxProps {
   label: string
@@ -35,6 +37,9 @@ export function ToolBoundingBox({
   const labelColor = isHighlighted
     ? isActive ? "bg-blue-500" : "bg-yellow-500"
     : "bg-black/70";
+    
+  const isMobile = useIsMobile();
+  const cornerSize = isMobile ? 12 : 8; // Larger corner handles on mobile
 
   const handleEventWrapper = (handler?: (e: React.MouseEvent | React.TouchEvent) => void) => (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -72,15 +77,17 @@ export function ToolBoundingBox({
           {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map((corner) => (
             <div 
               key={corner}
-              className={`absolute w-8 h-8 bg-white border-2 border-blue-500 rounded-full cursor-${corner}-resize touch-none -translate-x-1/2 -translate-y-1/2 z-20`}
+              className={`absolute bg-white border-2 border-blue-500 rounded-full cursor-${corner}-resize touch-none -translate-x-1/2 -translate-y-1/2 z-20`}
               style={{
+                width: `${cornerSize * 2}px`,
+                height: `${cornerSize * 2}px`,
                 left: `${coords.xMin + (corner.includes('right') ? coords.width : 0)}px`,
                 top: `${coords.yMin + (corner.includes('bottom') ? coords.height : 0)}px`,
               }}
               onMouseDown={handleEventWrapper((e) => onDragStart?.(e))}
               onTouchStart={handleEventWrapper((e) => onDragStart?.(e))}
-              onMouseMove={handleEventWrapper((e) => onDrag?.(e, corner))}
-              onTouchMove={handleEventWrapper((e) => onDrag?.(e, corner))}
+              onMouseMove={handleCornerEventWrapper(onDrag, corner)}
+              onTouchMove={handleCornerEventWrapper(onDrag, corner)}
               onMouseUp={handleEventWrapper(onDragEnd)}
               onTouchEnd={handleEventWrapper(onDragEnd)}
             />
