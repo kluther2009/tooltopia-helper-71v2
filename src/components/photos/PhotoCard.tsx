@@ -75,6 +75,7 @@ export function PhotoCard({
   }
   
   const handleToolClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Stop event from bubbling to parent card
     if (toolId && onToolIconClick) {
       onToolIconClick(e, toolId)
     }
