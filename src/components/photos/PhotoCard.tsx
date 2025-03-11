@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip"
 import { LocationPhoto } from "@/types/photos"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 
 interface PhotoCardProps {
@@ -34,7 +34,7 @@ export function PhotoCard({
   const [toolId, setToolId] = useState<string | null>(null)
   
   // Fetch the image URL and check for annotations when component mounts
-  useState(() => {
+  useEffect(() => {
     const fetchImageUrl = async () => {
       try {
         // Get the image URL
