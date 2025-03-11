@@ -6,6 +6,7 @@ import { TooltipProvider } from "./ui/tooltip";
 import { ToolCardActions } from "./tool/ToolCardActions";
 import { ToolWarrantyInfo } from "./tool/ToolWarrantyInfo";
 import { ToolDocumentsDialog } from "./tool/ToolDocumentsDialog";
+import { ToolDetailDialog } from "./tool/ToolDetailDialog";
 import { FileText, Book } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -41,6 +42,7 @@ export function ToolCard({
   onEdit
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
 
   const calculateWarrantyMonthsLeft = () => {
     if (!purchaseDate || !warrantyLength) return null;
@@ -81,6 +83,11 @@ export function ToolCard({
     }
   };
 
+  const handleWrenchClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDetailDialogOpen(true);
+  };
+
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
   const hasWarrantyDocs = warrantyFilePath;
 
@@ -102,7 +109,7 @@ export function ToolCard({
       >
         <div className="flex flex-col gap-2">
           <div className="flex items-start gap-2 sm:gap-3">
-            <ToolStatusIcon status={status} />
+            <ToolStatusIcon status={status} onClick={handleWrenchClick} />
             <div className="flex-1 min-w-0">
               {renderLocation()}
             </div>
@@ -174,6 +181,12 @@ export function ToolCard({
         open={isDocumentDialogOpen}
         onOpenChange={setIsDocumentDialogOpen}
         warrantyFilePath={warrantyFilePath}
+      />
+
+      <ToolDetailDialog 
+        toolId={id}
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
       />
     </TooltipProvider>
   );

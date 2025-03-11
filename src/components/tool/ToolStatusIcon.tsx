@@ -1,10 +1,12 @@
+
 import { Wrench } from "lucide-react";
 
 interface ToolStatusIconProps {
   status: "available" | "in-use" | "maintenance" | "loaned";
+  onClick?: (e: React.MouseEvent) => void;
 }
 
-export function ToolStatusIcon({ status }: ToolStatusIconProps) {
+export function ToolStatusIcon({ status, onClick }: ToolStatusIconProps) {
   const getWrenchColor = () => {
     switch (status) {
       case "available":
@@ -21,9 +23,14 @@ export function ToolStatusIcon({ status }: ToolStatusIconProps) {
   };
 
   return (
-    <Wrench 
-      className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-1" 
-      style={{ color: getWrenchColor() }}
-    />
+    <div 
+      onClick={onClick} 
+      className="cursor-pointer"
+    >
+      <Wrench 
+        className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 mt-1" 
+        style={{ color: getWrenchColor() }}
+      />
+    </div>
   );
 }
