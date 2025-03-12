@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,7 @@ import { MaterialForm } from "./materials/MaterialForm";
 import { MaterialList } from "./materials/MaterialList";
 import { useMaterials } from "./materials/useMaterials";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMaterialValidation } from "./materials/hooks/useMaterialValidation";
 
 interface ProjectMaterialsDialogProps {
   project: Project;
@@ -22,6 +24,7 @@ export function ProjectMaterialsDialog({
   onOpenChange,
 }: ProjectMaterialsDialogProps) {
   const queryClient = useQueryClient();
+  const { MAX_MATERIALS } = useMaterialValidation();
   
   const {
     materials,
@@ -42,7 +45,12 @@ export function ProjectMaterialsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Project Materials</DialogTitle>
+          <div className="flex justify-between items-center">
+            <DialogTitle>Project Materials</DialogTitle>
+            <span className="text-sm text-muted-foreground">
+              {materials.length}/{MAX_MATERIALS} materials
+            </span>
+          </div>
         </DialogHeader>
         <div className="space-y-4">
           <MaterialForm

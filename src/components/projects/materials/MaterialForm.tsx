@@ -29,16 +29,9 @@ export function MaterialForm({
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-3 flex justify-between items-center">
-          <div className="grid grid-cols-3 gap-2 w-full">
-            <Label>Name</Label>
-            <Label>Cost ($)</Label>
-            <Label>Quantity</Label>
-          </div>
-          <span className="text-sm text-muted-foreground ml-2 whitespace-nowrap">
-            {materialsCount}/{MAX_MATERIALS} materials
-          </span>
-        </div>
+        <Label>Name</Label>
+        <Label>Cost ($)</Label>
+        <Label>Quantity</Label>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <Input
