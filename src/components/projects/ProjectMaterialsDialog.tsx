@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Project } from "@/types/projects";
 import { MaterialForm } from "./materials/MaterialForm";
@@ -45,11 +46,11 @@ export function ProjectMaterialsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col space-y-1">
             <DialogTitle>Project Materials</DialogTitle>
-            <span className="text-sm text-muted-foreground">
+            <DialogDescription className="text-sm text-muted-foreground">
               {materials.length}/{MAX_MATERIALS} materials
-            </span>
+            </DialogDescription>
           </div>
         </DialogHeader>
         <div className="space-y-4">
