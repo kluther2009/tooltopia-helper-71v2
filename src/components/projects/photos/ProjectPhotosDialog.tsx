@@ -1,13 +1,16 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Camera, Upload } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CameraDialog } from "@/components/photos/CameraDialog"
 import { ProjectPhotosViewer } from "./ProjectPhotosViewer"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CheckCircle2 } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
 
@@ -28,6 +31,17 @@ export function ProjectPhotosDialog({
 }: ProjectPhotosDialogProps) {
   const [isCameraOpen, setIsCameraOpen] = useState(false)
   const [isViewerOpen, setIsViewerOpen] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+
+  // Clear upload success message after 3 seconds
+  useEffect(() => {
+    if (uploadSuccess) {
+      const timer = setTimeout(() => {
+        setUploadSuccess(false)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [uploadSuccess])
 
   const validateFileSize = (file: File): boolean => {
     if (file.size > MAX_FILE_SIZE) {
@@ -82,8 +96,13 @@ export function ProjectPhotosDialog({
         return
       }
 
+      // Show success message but don't close dialog
+      setUploadSuccess(true)
       toast.success('Photo uploaded successfully')
       onUploadPhoto()
+      
+      // Clear the file input for the next upload
+      event.target.value = ''
     } catch (error) {
       console.error('Error in handleFileSelect:', error)
       toast.error('Failed to upload photo')
@@ -129,8 +148,13 @@ export function ProjectPhotosDialog({
         return
       }
 
+      // Show success message but don't close dialog
+      setUploadSuccess(true)
       toast.success('Photo captured and uploaded successfully')
       onUploadPhoto()
+      
+      // Close camera dialog after successful capture
+      setIsCameraOpen(false)
     } catch (error) {
       console.error('Error in handleCameraCapture:', error)
       toast.error('Failed to upload photo')
@@ -159,6 +183,14 @@ export function ProjectPhotosDialog({
 
             <TabsContent value="upload">
               <div className="space-y-4">
+                {uploadSuccess && (
+                  <Alert className="bg-green-50 border-green-200 text-green-800">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                    <AlertDescription>
+                      Photo uploaded successfully! You can upload more photos.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="pt-4 flex gap-2">
                   <Button
                     variant="outline"
