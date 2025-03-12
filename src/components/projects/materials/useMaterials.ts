@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,6 +13,8 @@ export function useMaterials(projectId: string) {
     cost: "",
     quantity: "1",
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingMaterialId, setEditingMaterialId] = useState<string | null>(null);
 
   const { validateNewMaterial, validateMaterialLimit } = useMaterialValidation();
   const { updateProjectTotalCost } = useMaterialCost(projectId);
@@ -37,10 +40,18 @@ export function useMaterials(projectId: string) {
 
   const resetNewMaterialForm = () => {
     setNewMaterial({ name: "", cost: "", quantity: "1" });
+    setIsEditing(false);
+    setEditingMaterialId(null);
   };
 
   const handleAddMaterial = async () => {
     if (!validateNewMaterial(newMaterial)) return;
+
+    if (isEditing && editingMaterialId) {
+      await handleUpdateMaterial();
+      return;
+    }
+
     if (!validateMaterialLimit(materials.length)) return;
 
     const { data, error } = await supabase
@@ -59,6 +70,39 @@ export function useMaterials(projectId: string) {
     }
 
     toast.success("Material added successfully");
+    resetNewMaterialForm();
+    const updatedMaterials = await fetchMaterials();
+    await updateProjectTotalCost(updatedMaterials);
+  };
+
+  const handleEditMaterial = (material: ProjectMaterial) => {
+    setIsEditing(true);
+    setEditingMaterialId(material.id);
+    setNewMaterial({
+      name: material.name,
+      cost: material.cost.toString(),
+      quantity: material.quantity.toString(),
+    });
+  };
+
+  const handleUpdateMaterial = async () => {
+    if (!editingMaterialId) return;
+
+    const { error } = await supabase
+      .from("project_materials")
+      .update({
+        name: newMaterial.name,
+        cost: parseFloat(newMaterial.cost),
+        quantity: parseInt(newMaterial.quantity),
+      })
+      .eq("id", editingMaterialId);
+
+    if (error) {
+      toast.error("Failed to update material");
+      return;
+    }
+
+    toast.success("Material updated successfully");
     resetNewMaterialForm();
     const updatedMaterials = await fetchMaterials();
     await updateProjectTotalCost(updatedMaterials);
@@ -92,8 +136,11 @@ export function useMaterials(projectId: string) {
   return {
     materials,
     newMaterial,
+    isEditing,
     handleMaterialChange,
     handleAddMaterial,
+    handleEditMaterial,
     handleDeleteMaterial,
+    resetNewMaterialForm,
   };
 }

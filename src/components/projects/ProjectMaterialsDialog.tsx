@@ -30,12 +30,16 @@ export function ProjectMaterialsDialog({
   const {
     materials,
     newMaterial,
+    isEditing,
     handleMaterialChange,
     handleAddMaterial,
+    handleEditMaterial,
     handleDeleteMaterial,
+    resetNewMaterialForm,
   } = useMaterials(project.id);
 
   const handleCancel = () => {
+    resetNewMaterialForm();
     onOpenChange(false);
     // Invalidate both projects and project-materials queries
     queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -57,6 +61,7 @@ export function ProjectMaterialsDialog({
           <MaterialForm
             newMaterial={newMaterial}
             materialsCount={materials.length}
+            isEditing={isEditing}
             onMaterialChange={handleMaterialChange}
             onAddMaterial={handleAddMaterial}
             onCancel={handleCancel}
@@ -64,6 +69,7 @@ export function ProjectMaterialsDialog({
           <MaterialList
             materials={materials}
             onDeleteMaterial={handleDeleteMaterial}
+            onEditMaterial={handleEditMaterial}
           />
         </div>
       </DialogContent>

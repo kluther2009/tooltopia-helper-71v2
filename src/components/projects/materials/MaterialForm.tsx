@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, Save, X } from "lucide-react";
 import { useMaterialValidation } from "./hooks/useMaterialValidation";
 
 interface MaterialFormProps {
@@ -12,6 +12,7 @@ interface MaterialFormProps {
     quantity: string;
   };
   materialsCount: number;
+  isEditing: boolean;
   onMaterialChange: (field: string, value: string) => void;
   onAddMaterial: () => void;
   onCancel: () => void;
@@ -20,6 +21,7 @@ interface MaterialFormProps {
 export function MaterialForm({ 
   newMaterial, 
   materialsCount,
+  isEditing,
   onMaterialChange, 
   onAddMaterial,
   onCancel 
@@ -60,12 +62,22 @@ export function MaterialForm({
         <Button 
           onClick={onAddMaterial} 
           className="flex-1"
-          disabled={materialsCount >= MAX_MATERIALS || !newMaterial.name.trim() || newMaterial.name.length > 50}
+          disabled={(materialsCount >= MAX_MATERIALS && !isEditing) || !newMaterial.name.trim() || newMaterial.name.length > 50}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Material
+          {isEditing ? (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Update Material
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Material
+            </>
+          )}
         </Button>
         <Button variant="outline" onClick={onCancel} className="flex-1">
+          <X className="h-4 w-4 mr-2" />
           Cancel
         </Button>
       </div>
