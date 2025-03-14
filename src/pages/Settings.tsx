@@ -12,6 +12,7 @@ export default function Settings() {
   const [language, setLanguage] = useState("en");
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [highlightExpiringWarranties, setHighlightExpiringWarranties] = useState(false);
+  const [highlightMaintenanceDue, setHighlightMaintenanceDue] = useState(false);
   const { toast } = useToast();
 
   // Load settings on component mount
@@ -24,6 +25,7 @@ export default function Settings() {
         setLanguage(settings.language || 'en');
         setEmailNotifications(settings.emailNotifications || false);
         setHighlightExpiringWarranties(settings.highlightExpiringWarranties || false);
+        setHighlightMaintenanceDue(settings.highlightMaintenanceDue || false);
       }
     };
     
@@ -41,6 +43,9 @@ export default function Settings() {
       case "highlightExpiringWarranties":
         setHighlightExpiringWarranties(value as boolean);
         break;
+      case "highlightMaintenanceDue":
+        setHighlightMaintenanceDue(value as boolean);
+        break;
       default:
         break;
     }
@@ -50,6 +55,7 @@ export default function Settings() {
       language,
       emailNotifications,
       highlightExpiringWarranties,
+      highlightMaintenanceDue,
       [setting]: value, // Include the new value that hasn't been set in state yet
     };
     localStorage.setItem('toolTrackerSettings', JSON.stringify(settings));
@@ -96,6 +102,7 @@ export default function Settings() {
         <NotificationsSection 
           emailNotifications={emailNotifications}
           highlightExpiringWarranties={highlightExpiringWarranties}
+          highlightMaintenanceDue={highlightMaintenanceDue}
           onSettingChange={handleSettingChange}
         />
         <ExportDataSection />

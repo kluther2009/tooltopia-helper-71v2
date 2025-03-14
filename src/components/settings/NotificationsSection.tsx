@@ -7,12 +7,14 @@ import { Card } from "@/components/ui/card";
 interface NotificationsSectionProps {
   emailNotifications: boolean;
   highlightExpiringWarranties: boolean;
+  highlightMaintenanceDue: boolean;
   onSettingChange: (setting: string, value: boolean | string) => void;
 }
 
 export function NotificationsSection({ 
   emailNotifications, 
   highlightExpiringWarranties,
+  highlightMaintenanceDue,
   onSettingChange 
 }: NotificationsSectionProps) {
   return (
@@ -48,6 +50,21 @@ export function NotificationsSection({
             checked={highlightExpiringWarranties}
             onCheckedChange={(checked) =>
               onSettingChange("highlightExpiringWarranties", checked)
+            }
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label>Highlight Maintenance Due</Label>
+            <p className="text-sm text-muted-foreground">
+              Highlight tools with less than 1 month until maintenance is due
+            </p>
+          </div>
+          <Switch
+            checked={highlightMaintenanceDue}
+            onCheckedChange={(checked) =>
+              onSettingChange("highlightMaintenanceDue", checked)
             }
           />
         </div>

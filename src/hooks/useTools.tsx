@@ -13,6 +13,8 @@ export interface Tool {
   sub_location_a?: string | null;
   sub_location_b?: string | null;
   purchase_cost?: number | null;
+  last_maintenance_date?: string | null;
+  maintenance_period_months?: number | null;
 }
 
 export function useTools() {
@@ -56,7 +58,9 @@ export function useTools() {
             warranty_file_path: tool.warranty_file_path,
             sub_location_a: tool.sub_location_a,
             sub_location_b: tool.sub_location_b,
-            purchase_cost: tool.purchase_cost
+            purchase_cost: tool.purchase_cost,
+            last_maintenance_date: tool.last_maintenance_date,
+            maintenance_period_months: tool.maintenance_period_months
           };
         });
         console.log('Transformed tools:', transformedTools);

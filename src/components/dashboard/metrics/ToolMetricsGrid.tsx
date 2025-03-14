@@ -39,6 +39,20 @@ export function ToolMetricsGrid({ tools }: ToolMetricsGridProps) {
     return monthsLeft > 0 && monthsLeft <= 1;
   }).length;
 
+  const toolsWithMaintenanceDue = tools.filter(tool => {
+    if (!tool.last_maintenance_date || !tool.maintenance_period_months) {
+      return false;
+    }
+    
+    const maintenanceDate = new Date(tool.last_maintenance_date);
+    const currentDate = new Date();
+    const monthsPassed = differenceInMonths(currentDate, maintenanceDate);
+    const monthsLeft = tool.maintenance_period_months - monthsPassed;
+    
+    // Only count as maintenance due if there's more than 0 but less than or equal to 1 month left
+    return monthsLeft > 0 && monthsLeft <= 1;
+  }).length;
+
   const toolsWithDocuments = tools.filter(tool => {
     return Boolean(tool.warranty_file_path);
   }).length;
@@ -50,6 +64,7 @@ export function ToolMetricsGrid({ tools }: ToolMetricsGridProps) {
     { title: "Tools On Loan", value: toolsOnLoan },
     { title: "Tools Under Warranty", value: toolsUnderWarranty },
     { title: "Expiring Warranties", value: toolsWithExpiringWarranty },
+    { title: "Maintenance Due Soon", value: toolsWithMaintenanceDue },
     { title: "Tools With Documents", value: toolsWithDocuments }
   ];
 

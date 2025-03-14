@@ -1,3 +1,4 @@
+
 import { ToolCard } from "@/components/ToolCard";
 import { Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,8 @@ export default function Index() {
               purchaseCost={tool.purchase_cost}
               warrantyFilePath={tool.warranty_file_path}
               manualId={tool.manual_id}
+              lastMaintenanceDate={tool.last_maintenance_date}
+              maintenancePeriodMonths={tool.maintenance_period_months}
             />
           ))}
           {filteredTools.length === 0 && (

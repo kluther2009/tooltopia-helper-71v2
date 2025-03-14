@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { ToolStatusIcon } from "./tool/ToolStatusIcon";
@@ -28,6 +27,8 @@ interface ToolCardProps {
   purchaseCost?: number | null;
   warrantyFilePath?: string | null;
   manualId?: string | null;
+  lastMaintenanceDate?: string | null;
+  maintenancePeriodMonths?: number | null;
   onEdit?: () => void;
 }
 
@@ -40,19 +41,22 @@ export function ToolCard({
   purchaseCost,
   warrantyFilePath,
   manualId,
+  lastMaintenanceDate,
+  maintenancePeriodMonths,
   onEdit
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [highlightExpiringWarranties, setHighlightExpiringWarranties] = useState(false);
+  const [highlightMaintenanceDue, setHighlightMaintenanceDue] = useState(false);
 
-  // Load user settings on component mount
   useEffect(() => {
     const loadSettings = () => {
       const savedSettings = localStorage.getItem('toolTrackerSettings');
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         setHighlightExpiringWarranties(settings.highlightExpiringWarranties || false);
+        setHighlightMaintenanceDue(settings.highlightMaintenanceDue || false);
       }
     };
     
@@ -66,6 +70,17 @@ export function ToolCard({
     const currentDate = new Date();
     const totalMonthsPassed = differenceInMonths(currentDate, purchaseDateTime);
     const monthsLeft = warrantyLength - totalMonthsPassed;
+    
+    return Math.max(0, monthsLeft);
+  };
+
+  const calculateMaintenanceMonthsLeft = () => {
+    if (!lastMaintenanceDate || !maintenancePeriodMonths) return null;
+    
+    const maintenanceDateTime = new Date(lastMaintenanceDate);
+    const currentDate = new Date();
+    const totalMonthsPassed = differenceInMonths(currentDate, maintenanceDateTime);
+    const monthsLeft = maintenancePeriodMonths - totalMonthsPassed;
     
     return Math.max(0, monthsLeft);
   };
@@ -104,9 +119,19 @@ export function ToolCard({
   };
 
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
+  const maintenanceMonthsLeft = calculateMaintenanceMonthsLeft();
   const hasWarrantyDocs = warrantyFilePath;
   const hasExpiringWarranty = warrantyMonthsLeft !== null && warrantyMonthsLeft > 0 && warrantyMonthsLeft <= 1;
-  const shouldHighlight = highlightExpiringWarranties && hasExpiringWarranty;
+  const hasMaintenanceSoon = maintenanceMonthsLeft !== null && maintenanceMonthsLeft > 0 && maintenanceMonthsLeft <= 1;
+  
+  const shouldHighlightWarranty = highlightExpiringWarranties && hasExpiringWarranty;
+  const shouldHighlightMaintenance = highlightMaintenanceDue && hasMaintenanceSoon;
+
+  const getCardBackgroundColor = () => {
+    if (shouldHighlightWarranty) return "bg-orange-100";
+    if (shouldHighlightMaintenance) return "bg-blue-100";
+    return "bg-white";
+  };
 
   const renderLocation = () => {
     if (typeof name === 'string') {
@@ -123,7 +148,7 @@ export function ToolCard({
     <TooltipProvider>
       <Card 
         className={`p-2 sm:p-3 border-2 border-black hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing ${
-          shouldHighlight ? "bg-orange-100" : "bg-white"
+          getCardBackgroundColor()
         }`}
       >
         <div className="flex flex-col gap-2">
@@ -192,7 +217,9 @@ export function ToolCard({
           <ToolWarrantyInfo
             purchaseCost={purchaseCost}
             warrantyMonthsLeft={warrantyMonthsLeft}
-            isExpiring={hasExpiringWarranty}
+            maintenanceMonthsLeft={maintenanceMonthsLeft}
+            isExpiringWarranty={hasExpiringWarranty}
+            isMaintenanceDue={hasMaintenanceSoon}
           />
         </div>
       </Card>
