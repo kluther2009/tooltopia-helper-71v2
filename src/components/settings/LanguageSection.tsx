@@ -130,6 +130,14 @@ export function LanguageSection({
     }
   };
   
+  const handleLanguageClick = () => {
+    toast({
+      title: "Coming soon!",
+      description: "Additional language options will be available in a future update.",
+      duration: 3000
+    });
+  };
+  
   return (
     <Card className="p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -150,7 +158,10 @@ export function LanguageSection({
               onSettingChange("language", value)
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger 
+              className="w-[180px]"
+              onClick={handleLanguageClick}
+            >
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
             <SelectContent>
