@@ -30,6 +30,7 @@ export function LanguageSelector({ language, onSettingChange }: LanguageSelector
       <Select
         value={language}
         onValueChange={(value) => onSettingChange("language", value)}
+        disabled={true}
       >
         <SelectTrigger 
           className="w-[180px]"
@@ -39,9 +40,6 @@ export function LanguageSelector({ language, onSettingChange }: LanguageSelector
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="en">English</SelectItem>
-          <SelectItem value="es">Spanish</SelectItem>
-          <SelectItem value="fr">French</SelectItem>
-          <SelectItem value="de">German</SelectItem>
         </SelectContent>
       </Select>
     </div>
