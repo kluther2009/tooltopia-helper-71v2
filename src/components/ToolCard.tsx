@@ -1,5 +1,6 @@
+
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ToolStatusIcon } from "./tool/ToolStatusIcon";
 import { differenceInMonths } from "date-fns";
 import { TooltipProvider } from "./ui/tooltip";
@@ -43,6 +44,20 @@ export function ToolCard({
 }: ToolCardProps) {
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [highlightExpiringWarranties, setHighlightExpiringWarranties] = useState(false);
+
+  // Load user settings on component mount
+  useEffect(() => {
+    const loadSettings = () => {
+      const savedSettings = localStorage.getItem('toolTrackerSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setHighlightExpiringWarranties(settings.highlightExpiringWarranties || false);
+      }
+    };
+    
+    loadSettings();
+  }, []);
 
   const calculateWarrantyMonthsLeft = () => {
     if (!purchaseDate || !warrantyLength) return null;
@@ -90,6 +105,8 @@ export function ToolCard({
 
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
   const hasWarrantyDocs = warrantyFilePath;
+  const hasExpiringWarranty = warrantyMonthsLeft !== null && warrantyMonthsLeft <= 1;
+  const shouldHighlight = highlightExpiringWarranties && hasExpiringWarranty;
 
   const renderLocation = () => {
     if (typeof name === 'string') {
@@ -105,7 +122,9 @@ export function ToolCard({
   return (
     <TooltipProvider>
       <Card 
-        className="p-2 sm:p-3 bg-white border-2 border-black hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing"
+        className={`p-2 sm:p-3 border-2 border-black hover:bg-gray-50 transition-colors shadow-sm cursor-grab active:cursor-grabbing ${
+          shouldHighlight ? "bg-orange-100" : "bg-white"
+        }`}
       >
         <div className="flex flex-col gap-2">
           <div className="flex items-start gap-2 sm:gap-3">
@@ -173,6 +192,7 @@ export function ToolCard({
           <ToolWarrantyInfo
             purchaseCost={purchaseCost}
             warrantyMonthsLeft={warrantyMonthsLeft}
+            isExpiring={hasExpiringWarranty}
           />
         </div>
       </Card>

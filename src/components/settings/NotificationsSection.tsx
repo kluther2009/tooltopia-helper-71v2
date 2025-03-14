@@ -1,3 +1,4 @@
+
 import { Bell } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -5,11 +6,13 @@ import { Card } from "@/components/ui/card";
 
 interface NotificationsSectionProps {
   emailNotifications: boolean;
+  highlightExpiringWarranties: boolean;
   onSettingChange: (setting: string, value: boolean | string) => void;
 }
 
 export function NotificationsSection({ 
   emailNotifications, 
+  highlightExpiringWarranties,
   onSettingChange 
 }: NotificationsSectionProps) {
   return (
@@ -30,6 +33,21 @@ export function NotificationsSection({
             checked={emailNotifications}
             onCheckedChange={(checked) =>
               onSettingChange("emailNotifications", checked)
+            }
+          />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label>Highlight Expiring Warranties</Label>
+            <p className="text-sm text-muted-foreground">
+              Highlight tools with less than 1 month warranty remaining
+            </p>
+          </div>
+          <Switch
+            checked={highlightExpiringWarranties}
+            onCheckedChange={(checked) =>
+              onSettingChange("highlightExpiringWarranties", checked)
             }
           />
         </div>

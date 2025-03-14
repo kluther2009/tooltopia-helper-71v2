@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tool } from "@/hooks/useTools";
 import { differenceInMonths } from "date-fns";
@@ -24,6 +25,19 @@ export function ToolMetricsGrid({ tools }: ToolMetricsGridProps) {
     return monthsPassed < tool.warranty_length;
   }).length;
 
+  const toolsWithExpiringWarranty = tools.filter(tool => {
+    if (!tool.purchase_date || !tool.warranty_length) {
+      return false;
+    }
+    
+    const purchaseDate = new Date(tool.purchase_date);
+    const currentDate = new Date();
+    const monthsPassed = differenceInMonths(currentDate, purchaseDate);
+    const monthsLeft = tool.warranty_length - monthsPassed;
+    
+    return monthsLeft > 0 && monthsLeft <= 1;  // 1 month or less remaining
+  }).length;
+
   const toolsWithDocuments = tools.filter(tool => {
     return Boolean(tool.warranty_file_path);
   }).length;
@@ -34,6 +48,7 @@ export function ToolMetricsGrid({ tools }: ToolMetricsGridProps) {
     { title: "Tools In Maintenance", value: toolsInMaintenance },
     { title: "Tools On Loan", value: toolsOnLoan },
     { title: "Tools Under Warranty", value: toolsUnderWarranty },
+    { title: "Expiring Warranties", value: toolsWithExpiringWarranty },
     { title: "Tools With Documents", value: toolsWithDocuments }
   ];
 

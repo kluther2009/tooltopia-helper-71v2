@@ -1,9 +1,15 @@
+
 interface ToolWarrantyInfoProps {
   purchaseCost?: number | null;
   warrantyMonthsLeft: number | null;
+  isExpiring?: boolean;
 }
 
-export function ToolWarrantyInfo({ purchaseCost, warrantyMonthsLeft }: ToolWarrantyInfoProps) {
+export function ToolWarrantyInfo({ 
+  purchaseCost, 
+  warrantyMonthsLeft,
+  isExpiring = false
+}: ToolWarrantyInfoProps) {
   const hasWarrantyInfo = purchaseCost || warrantyMonthsLeft !== null;
 
   if (!hasWarrantyInfo) return null;
@@ -16,7 +22,7 @@ export function ToolWarrantyInfo({ purchaseCost, warrantyMonthsLeft }: ToolWarra
         </div>
       )}
       {warrantyMonthsLeft !== null && (
-        <div>
+        <div className={isExpiring ? "font-bold text-orange-700" : ""}>
           Warranty {warrantyMonthsLeft} months left
         </div>
       )}

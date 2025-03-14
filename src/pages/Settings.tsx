@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { DeleteDataSection } from "@/components/settings/DeleteDataSection";
 import { LanguageSection } from "@/components/settings/LanguageSection";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
@@ -10,7 +11,24 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [language, setLanguage] = useState("en");
   const [emailNotifications, setEmailNotifications] = useState(false);
+  const [highlightExpiringWarranties, setHighlightExpiringWarranties] = useState(false);
   const { toast } = useToast();
+
+  // Load settings on component mount
+  useEffect(() => {
+    const loadSettings = () => {
+      // Load from localStorage if available
+      const savedSettings = localStorage.getItem('toolTrackerSettings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        setLanguage(settings.language || 'en');
+        setEmailNotifications(settings.emailNotifications || false);
+        setHighlightExpiringWarranties(settings.highlightExpiringWarranties || false);
+      }
+    };
+    
+    loadSettings();
+  }, []);
 
   const handleSettingChange = (setting: string, value: boolean | string) => {
     switch (setting) {
@@ -20,9 +38,21 @@ export default function Settings() {
       case "emailNotifications":
         setEmailNotifications(value as boolean);
         break;
+      case "highlightExpiringWarranties":
+        setHighlightExpiringWarranties(value as boolean);
+        break;
       default:
         break;
     }
+    
+    // Save all settings to localStorage whenever a setting changes
+    const settings = {
+      language,
+      emailNotifications,
+      highlightExpiringWarranties,
+      [setting]: value, // Include the new value that hasn't been set in state yet
+    };
+    localStorage.setItem('toolTrackerSettings', JSON.stringify(settings));
   };
 
   const handleDelete = async () => {
@@ -65,6 +95,7 @@ export default function Settings() {
         />
         <NotificationsSection 
           emailNotifications={emailNotifications}
+          highlightExpiringWarranties={highlightExpiringWarranties}
           onSettingChange={handleSettingChange}
         />
         <ExportDataSection />
