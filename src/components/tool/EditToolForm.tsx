@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -119,8 +118,8 @@ export function EditToolForm({ state, onStateChange, onSubmit }: EditToolFormPro
 
       {showMaintenanceFields && (
         <MaintenanceFields
-          lastMaintenanceDate={state.lastMaintenanceDate || ""}
-          maintenancePeriod={state.maintenancePeriod || ""}
+          lastMaintenanceDate={state.lastMaintenanceDate}
+          maintenancePeriod={state.maintenancePeriod}
           onLastMaintenanceDateChange={(value) => onStateChange({ lastMaintenanceDate: value })}
           onMaintenancePeriodChange={(value) => onStateChange({ maintenancePeriod: value })}
         />
