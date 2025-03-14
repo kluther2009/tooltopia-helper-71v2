@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [language, setLanguage] = useState("en");
+  const [country, setCountry] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [highlightExpiringWarranties, setHighlightExpiringWarranties] = useState(false);
   const [highlightMaintenanceDue, setHighlightMaintenanceDue] = useState(false);
@@ -23,6 +24,7 @@ export default function Settings() {
       if (savedSettings) {
         const settings = JSON.parse(savedSettings);
         setLanguage(settings.language || 'en');
+        setCountry(settings.country || '');
         setEmailNotifications(settings.emailNotifications || false);
         setHighlightExpiringWarranties(settings.highlightExpiringWarranties || false);
         setHighlightMaintenanceDue(settings.highlightMaintenanceDue || false);
@@ -36,6 +38,9 @@ export default function Settings() {
     switch (setting) {
       case "language":
         setLanguage(value as string);
+        break;
+      case "country":
+        setCountry(value as string);
         break;
       case "emailNotifications":
         setEmailNotifications(value as boolean);
@@ -53,6 +58,7 @@ export default function Settings() {
     // Save all settings to localStorage whenever a setting changes
     const settings = {
       language,
+      country,
       emailNotifications,
       highlightExpiringWarranties,
       highlightMaintenanceDue,
@@ -97,6 +103,7 @@ export default function Settings() {
       <div className="space-y-6">
         <LanguageSection 
           language={language}
+          country={country}
           onSettingChange={handleSettingChange}
         />
         <NotificationsSection 
