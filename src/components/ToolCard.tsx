@@ -105,7 +105,7 @@ export function ToolCard({
 
   const warrantyMonthsLeft = calculateWarrantyMonthsLeft();
   const hasWarrantyDocs = warrantyFilePath;
-  const hasExpiringWarranty = warrantyMonthsLeft !== null && warrantyMonthsLeft <= 1;
+  const hasExpiringWarranty = warrantyMonthsLeft !== null && warrantyMonthsLeft > 0 && warrantyMonthsLeft <= 1;
   const shouldHighlight = highlightExpiringWarranties && hasExpiringWarranty;
 
   const renderLocation = () => {

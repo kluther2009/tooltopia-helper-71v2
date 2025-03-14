@@ -11,6 +11,9 @@ export function ToolWarrantyInfo({
   isExpiring = false
 }: ToolWarrantyInfoProps) {
   const hasWarrantyInfo = purchaseCost || warrantyMonthsLeft !== null;
+  
+  // Only highlight if warranty is expiring but not yet expired (months left > 0)
+  const shouldHighlight = isExpiring && warrantyMonthsLeft !== null && warrantyMonthsLeft > 0;
 
   if (!hasWarrantyInfo) return null;
 
@@ -22,7 +25,7 @@ export function ToolWarrantyInfo({
         </div>
       )}
       {warrantyMonthsLeft !== null && (
-        <div className={isExpiring ? "font-bold text-orange-700" : ""}>
+        <div className={shouldHighlight ? "font-bold text-orange-700" : ""}>
           Warranty {warrantyMonthsLeft} months left
         </div>
       )}

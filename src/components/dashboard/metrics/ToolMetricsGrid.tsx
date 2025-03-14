@@ -35,7 +35,8 @@ export function ToolMetricsGrid({ tools }: ToolMetricsGridProps) {
     const monthsPassed = differenceInMonths(currentDate, purchaseDate);
     const monthsLeft = tool.warranty_length - monthsPassed;
     
-    return monthsLeft > 0 && monthsLeft <= 1;  // 1 month or less remaining
+    // Only count as expiring if there's more than 0 but less than or equal to 1 month left
+    return monthsLeft > 0 && monthsLeft <= 1;
   }).length;
 
   const toolsWithDocuments = tools.filter(tool => {
