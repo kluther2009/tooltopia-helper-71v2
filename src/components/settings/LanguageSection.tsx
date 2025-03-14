@@ -1,12 +1,14 @@
+
 import { Globe } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 const countries = [
   { label: "United States", value: "us" },
@@ -69,12 +71,63 @@ export function LanguageSection({
     }
     return '';
   });
+  const [postcodeError, setPostcodeError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
+  // Validate postcode based on country selection
+  useEffect(() => {
+    setPostcodeError(null);
+    if (postcode.trim() === '') return;
+    
+    // Reset validation when country changes
+    validatePostcode(postcode);
+  }, [country, postcode]);
+  
+  const validatePostcode = (value: string) => {
+    setPostcodeError(null);
+    
+    // Basic validation only if a value is entered (field is optional)
+    if (value.trim() === '') return true;
+    
+    // Basic country-specific validation
+    switch(country) {
+      case 'us': // United States
+        if (!/^\d{1,5}$/.test(value)) {
+          setPostcodeError('US ZIP should be 1-5 digits');
+          return false;
+        }
+        break;
+      case 'gb': // United Kingdom
+        if (!/^[A-Z]{1,2}[0-9]{1,2}([A-Z])?$/i.test(value)) {
+          setPostcodeError('UK postcode should start with area code');
+          return false;
+        }
+        break;
+      case 'ca': // Canada
+        if (!/^[A-Z][0-9][A-Z]?$/i.test(value)) {
+          setPostcodeError('CA postcode format: A1A');
+          return false;
+        }
+        break;
+      default:
+        // For other countries, just ensure some content
+        if (value.length < 2 || value.length > 8) {
+          setPostcodeError('Postcode should be 2-8 characters');
+          return false;
+        }
+    }
+    
+    return true;
+  };
   
   const handlePostcodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPostcode(value);
     
-    onSettingChange("postcode", value);
+    // Only store value if validation passes
+    if (validatePostcode(value)) {
+      onSettingChange("postcode", value);
+    }
   };
   
   return (
@@ -140,13 +193,19 @@ export function LanguageSection({
               Enter part of your postcode to find nearby stores
             </p>
           </div>
-          <Input 
-            className="w-[180px]" 
-            placeholder="e.g. SW1, 10001"
-            value={postcode}
-            onChange={handlePostcodeChange}
-            maxLength={8}
-          />
+          <div className="flex flex-col">
+            <Input 
+              className={cn("w-[180px]", postcodeError && "border-red-500")} 
+              placeholder="e.g. SW1, 10001"
+              value={postcode}
+              onChange={handlePostcodeChange}
+              maxLength={8}
+              aria-invalid={!!postcodeError}
+            />
+            {postcodeError && (
+              <p className="text-xs text-red-500 mt-1">{postcodeError}</p>
+            )}
+          </div>
         </div>
       </div>
     </Card>
