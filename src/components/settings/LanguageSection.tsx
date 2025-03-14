@@ -1,4 +1,3 @@
-
 import { Globe } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { useState } from "react";
 import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const countries = [
   { label: "United States", value: "us" },
@@ -61,6 +61,21 @@ export function LanguageSection({
   onSettingChange 
 }: LanguageSectionProps) {
   const [open, setOpen] = useState(false);
+  const [postcode, setPostcode] = useState(() => {
+    const savedSettings = localStorage.getItem('toolTrackerSettings');
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      return settings.postcode || '';
+    }
+    return '';
+  });
+  
+  const handlePostcodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPostcode(value);
+    
+    onSettingChange("postcode", value);
+  };
   
   return (
     <Card className="p-6">
@@ -116,6 +131,22 @@ export function LanguageSection({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label>Postcode Area</Label>
+            <p className="text-sm text-muted-foreground">
+              Enter part of your postcode to find nearby stores
+            </p>
+          </div>
+          <Input 
+            className="w-[180px]" 
+            placeholder="e.g. SW1, 10001"
+            value={postcode}
+            onChange={handlePostcodeChange}
+            maxLength={8}
+          />
         </div>
       </div>
     </Card>

@@ -11,6 +11,7 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [language, setLanguage] = useState("en");
   const [country, setCountry] = useState("");
+  const [postcode, setPostcode] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [highlightExpiringWarranties, setHighlightExpiringWarranties] = useState(false);
   const [highlightMaintenanceDue, setHighlightMaintenanceDue] = useState(false);
@@ -25,6 +26,7 @@ export default function Settings() {
         const settings = JSON.parse(savedSettings);
         setLanguage(settings.language || 'en');
         setCountry(settings.country || '');
+        setPostcode(settings.postcode || '');
         setEmailNotifications(settings.emailNotifications || false);
         setHighlightExpiringWarranties(settings.highlightExpiringWarranties || false);
         setHighlightMaintenanceDue(settings.highlightMaintenanceDue || false);
@@ -42,6 +44,9 @@ export default function Settings() {
       case "country":
         setCountry(value as string);
         break;
+      case "postcode":
+        setPostcode(value as string);
+        break;  
       case "emailNotifications":
         setEmailNotifications(value as boolean);
         break;
@@ -59,6 +64,7 @@ export default function Settings() {
     const settings = {
       language,
       country,
+      postcode,
       emailNotifications,
       highlightExpiringWarranties,
       highlightMaintenanceDue,
