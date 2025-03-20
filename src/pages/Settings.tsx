@@ -4,6 +4,7 @@ import { DeleteDataSection } from "@/components/settings/DeleteDataSection";
 import { LanguageSection } from "@/components/settings/LanguageSection";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
 import { ExportDataSection } from "@/components/settings/ExportDataSection";
+import { ImportDataSection } from "@/components/settings/ImportDataSection";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -119,6 +120,7 @@ export default function Settings() {
           onSettingChange={handleSettingChange}
         />
         <ExportDataSection />
+        <ImportDataSection />
         <DeleteDataSection 
           isDeleting={isDeleting}
           onDelete={handleDelete}
