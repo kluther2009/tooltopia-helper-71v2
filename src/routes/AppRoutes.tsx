@@ -1,3 +1,4 @@
+
 import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "@/pages/Dashboard";
 import Index from "@/pages/Index";
@@ -13,12 +14,16 @@ import Settings from "@/pages/Settings";
 import Storage from "@/pages/Storage";
 import InitialInventory from "@/pages/InitialInventory";
 import AddManual from "@/pages/AddManual";
+import Landing from "@/pages/Landing";
 import { Layout } from "@/components/Layout";
 import { Outlet } from "react-router-dom";
 
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<Landing />} />
+      
       {/* Auth routes without Layout */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
@@ -26,7 +31,7 @@ export function AppRoutes() {
 
       {/* Protected routes wrapped in Layout */}
       <Route element={<Layout><Outlet /></Layout>}>
-        <Route index element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/tool-overview" element={<Index />} />
         <Route path="/add-tool" element={<AddTool />} />
         <Route path="/edit-tool/:id" element={<EditTool />} />
@@ -39,7 +44,7 @@ export function AppRoutes() {
         <Route path="/add-manual" element={<AddManual />} />
       </Route>
 
-      {/* Catch all route - redirect to dashboard */}
+      {/* Catch all route - redirect to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

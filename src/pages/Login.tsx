@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +21,7 @@ export default function Login() {
         }
 
         if (session) {
-          navigate("/");
+          navigate("/dashboard");
         }
       } catch (error) {
         console.error("Session check error:", error);
@@ -33,7 +34,7 @@ export default function Login() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        navigate("/");
+        navigate("/dashboard");
       } else if (event === 'SIGNED_OUT') {
         localStorage.clear();
         navigate("/login");
@@ -47,7 +48,7 @@ export default function Login() {
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-card px-4 sm:px-6">
       <div className="w-full max-w-sm space-y-8">
         <LoginHeader />
-        <LoginForm onLoginSuccess={() => navigate("/")} />
+        <LoginForm onLoginSuccess={() => navigate("/dashboard")} />
       </div>
     </div>
   );

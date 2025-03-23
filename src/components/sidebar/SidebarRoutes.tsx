@@ -1,3 +1,4 @@
+
 import {
   LayoutDashboard,
   Settings,
@@ -14,7 +15,7 @@ export const sidebarRoutes = [
   {
     label: "Dashboard",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/dashboard",
   },
   {
     label: "Tool Overview",
