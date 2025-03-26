@@ -1,9 +1,11 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { useDetectedTools } from "@/hooks/useDetectedTools"
-import { DetectedToolsContent } from "./viewers/DetectedToolsContent"
+import { useToolManagement } from "@/hooks/useToolManagement"
+import { CoordinateSystem } from "@/hooks/useToolCoordinates"
+import { DetectedToolList } from "./list/DetectedToolList"
+import { ImageDisplay } from "./viewers/ImageDisplay"
 import { ViewerDialogFooter } from "./viewers/ViewerDialogFooter"
 
 interface Tool {
@@ -17,7 +19,6 @@ interface DetectedToolsViewerProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: (tools: Tool[]) => void
-  photoId?: string
 }
 
 export function DetectedToolsViewer({ 
@@ -25,23 +26,109 @@ export function DetectedToolsViewer({
   detectedTools: initialDetectedTools, 
   isOpen, 
   onClose,
-  onConfirm,
-  photoId 
+  onConfirm 
 }: DetectedToolsViewerProps) {
-  const {
-    detectedTools,
-    selectedTool,
-    isEditing,
-    loading,
-    error,
-    handleSelectTool,
-    handleEditTool,
-    handleCancelEdit,
-    handleUpdateToolPosition,
-    handleSaveTool,
-    handleRenameTool,
-    handleDeleteTool
-  } = useDetectedTools(initialDetectedTools, photoId)
+  const [detectedTools, setDetectedTools] = useState<Tool[]>(initialDetectedTools)
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { addTool } = useToolManagement()
+  
+  const [coordinateSystem] = useState<CoordinateSystem>({
+    origin: 'top-left',
+    x_axis_direction: 'left-to-right',
+    y_axis_direction: 'top-to-bottom'
+  })
+
+  useEffect(() => {
+    if (isOpen) {
+      setDetectedTools(initialDetectedTools);
+      setSelectedTool(null);
+      setIsEditing(false);
+    }
+  }, [isOpen, initialDetectedTools]);
+
+  const handleSelectTool = (tool: Tool) => {
+    setSelectedTool(tool);
+    setIsEditing(false);
+  };
+
+  const handleEditTool = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleUpdateToolPosition = (updatedTool: Tool) => {
+    // Update the tool's position in the UI without saving to database
+    const updatedTools = detectedTools.map(tool => 
+      tool.label === updatedTool.label ? updatedTool : tool
+    );
+    
+    setDetectedTools(updatedTools);
+    setSelectedTool(updatedTool);
+    setIsEditing(false);
+    
+    toast.success(`Updated position for "${updatedTool.label}"`);
+  };
+
+  const handleSaveTool = async (tool: Tool) => {
+    try {
+      const success = await addTool({
+        name: tool.label,
+        primaryLocation: "Detection Area",
+        subLocation: "",
+        specificLocation: "",
+        status: "available"
+      });
+
+      if (success) {
+        toast.success(`Tool "${tool.label}" saved to your inventory`);
+        
+        const updatedTools = detectedTools.filter(t => t.label !== tool.label);
+        setDetectedTools(updatedTools);
+        setSelectedTool(null);
+        setIsEditing(false);
+        
+        if (updatedTools.length === 0) {
+          toast.success("All tools saved to inventory!");
+          onClose();
+        }
+      }
+    } catch (error) {
+      console.error("Error saving tool:", error);
+      toast.error(`Failed to save tool "${tool.label}"`);
+    }
+  };
+
+  const handleRenameTool = (oldLabel: string, newLabel: string) => {
+    const updatedTools = detectedTools.map(tool => 
+      tool.label === oldLabel ? { ...tool, label: newLabel } : tool
+    );
+    
+    setDetectedTools(updatedTools);
+    
+    if (selectedTool && selectedTool.label === oldLabel) {
+      setSelectedTool({ ...selectedTool, label: newLabel });
+    }
+    
+    toast.success(`Renamed "${oldLabel}" to "${newLabel}"`);
+  };
+
+  const handleDeleteTool = (toolToDelete: Tool) => {
+    const updatedTools = detectedTools.filter(tool => tool.label !== toolToDelete.label);
+    setDetectedTools(updatedTools);
+    
+    if (selectedTool && selectedTool.label === toolToDelete.label) {
+      setSelectedTool(null);
+      setIsEditing(false);
+    }
+    
+    toast.success(`Removed tool "${toolToDelete.label}"`);
+  };
 
   const handleConfirm = () => {
     onConfirm(detectedTools)
@@ -51,9 +138,19 @@ export function DetectedToolsViewer({
 
   const handleDialogClose = (open: boolean) => {
     if (!open) {
+      setSelectedTool(null);
+      setIsEditing(false);
       onClose();
     }
   };
+
+  const updateLoadingState = (isLoading: boolean) => {
+    setLoading(isLoading);
+  }
+
+  const updateErrorState = (errorMessage: string | null) => {
+    setError(errorMessage);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
@@ -64,17 +161,32 @@ export function DetectedToolsViewer({
           </DialogTitle>
         </DialogHeader>
         
-        <DetectedToolsContent
-          imageUrl={imageUrl}
-          detectedTools={detectedTools}
-          selectedTool={selectedTool}
-          isEditing={isEditing}
-          onSelectTool={handleSelectTool}
-          onSaveTool={handleUpdateToolPosition}
-          onCancelEdit={handleCancelEdit}
-          onRenameTool={handleRenameTool}
-          onDeleteTool={handleDeleteTool}
-        />
+        <div className="flex h-[calc(90vh-120px)]">
+          <div className="w-1/4 max-w-[250px] border-r">
+            <DetectedToolList 
+              tools={detectedTools}
+              selectedTool={selectedTool}
+              onSelectTool={handleSelectTool}
+              onSaveTool={handleSaveTool}
+              isEditing={isEditing}
+              onRenameTool={handleRenameTool}
+              onDeleteTool={handleDeleteTool}
+            />
+          </div>
+          
+          <div className="flex-1 relative">
+            <ImageDisplay
+              imageUrl={imageUrl}
+              detectedTools={detectedTools}
+              selectedTool={selectedTool}
+              isEditing={isEditing}
+              coordinateSystem={coordinateSystem}
+              onSelectTool={handleSelectTool}
+              onSaveTool={handleUpdateToolPosition}
+              onCancelEdit={handleCancelEdit}
+            />
+          </div>
+        </div>
 
         <ViewerDialogFooter
           loading={loading}
