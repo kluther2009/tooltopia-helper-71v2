@@ -221,6 +221,8 @@ export function DetectedToolsViewer({
         </div>
 
         <ViewerDialogFooter
+          loading={loading}
+          error={error}
           selectedTool={selectedTool}
           isEditing={isEditing}
           onEditTool={handleEditTool}
