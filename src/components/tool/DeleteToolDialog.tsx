@@ -1,3 +1,4 @@
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,34 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
         return;
       }
 
+      // First, get all annotations for this tool
+      const { data: annotations, error: annotationError } = await supabase
+        .from('tool_annotations')
+        .select('id')
+        .eq('tool_id', id);
+
+      if (annotationError) {
+        console.error('Error fetching tool annotations:', annotationError);
+        throw annotationError;
+      }
+
+      // If there are annotations, clean up any temp_annotation_transfers referencing them
+      if (annotations && annotations.length > 0) {
+        const annotationIds = annotations.map(a => a.id);
+        
+        // Delete any temporary annotation transfers that reference these annotations
+        const { error: transferError } = await supabase
+          .from('temp_annotation_transfers')
+          .delete()
+          .in('original_annotation_id', annotationIds);
+
+        if (transferError) {
+          console.error('Error deleting temp annotation transfers:', transferError);
+          throw transferError;
+        }
+      }
+
+      // Now we can safely delete the tool
       const { error } = await supabase
         .from('tools')
         .delete()
@@ -66,6 +95,8 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
         window.location.reload();
       } else if (location.pathname === '/tool-overview') {
         window.location.reload();
+      } else {
+        navigate('/tool-overview');
       }
       
     } catch (error) {
