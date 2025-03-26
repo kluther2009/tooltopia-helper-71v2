@@ -89,13 +89,32 @@ export function useDetectedTools(initialDetectedTools: Tool[], photoId?: string)
 
   const handleSaveTool = async (tool: Tool) => {
     try {
+      if (!photoId) {
+        toast.error("Cannot save annotation: Missing photo ID");
+        return false;
+      }
+
+      // Prepare annotation data
+      const annotationData = {
+        photoId: photoId,
+        coordinates: {
+          x: tool.box_2d[0],
+          y: tool.box_2d[1],
+          width: tool.box_2d[2] - tool.box_2d[0],
+          height: tool.box_2d[3] - tool.box_2d[1]
+        },
+        location: photoLocation.location,
+        subLocation: photoLocation.subLocation
+      };
+
       // Use the photo location instead of hardcoded "Detection Area"
       const success = await addTool({
         name: tool.label,
         primaryLocation: photoLocation.location,
         subLocation: photoLocation.subLocation || "",
         specificLocation: "",
-        status: "available"
+        status: "available",
+        annotationData: annotationData
       });
 
       if (success) {
@@ -110,9 +129,12 @@ export function useDetectedTools(initialDetectedTools: Tool[], photoId?: string)
           toast.success("All tools saved to inventory!");
         }
       }
+      
+      return success;
     } catch (error) {
       console.error("Error saving tool:", error);
       toast.error(`Failed to save tool "${tool.label}"`);
+      return false;
     }
   };
 
