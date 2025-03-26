@@ -35,7 +35,7 @@ export function useToolManagement() {
     warrantyLength,
     purchaseCost,
     warrantyFile,
-    annotationData
+    receiptFile
   }: {
     name: string;
     primaryLocation: string;
@@ -46,7 +46,7 @@ export function useToolManagement() {
     warrantyLength?: number;
     purchaseCost?: number;
     warrantyFile?: File;
-    annotationData?: any;
+    receiptFile?: File;
   }) => {
     setIsLoading(true);
     
@@ -69,8 +69,7 @@ export function useToolManagement() {
         return false;
       }
 
-      // Create the tool first
-      const { data: newTool, error } = await supabase
+      const { error } = await supabase
         .from('tools')
         .insert([{
           name: name.trim(),
@@ -82,36 +81,9 @@ export function useToolManagement() {
           purchase_date: purchaseDate || null,
           warranty_length: warrantyLength || null,
           purchase_cost: purchaseCost || null
-        }])
-        .select()
-        .single();
+        }]);
 
       if (error) throw error;
-
-      // Create annotation if data exists
-      if (annotationData && newTool) {
-        console.log('Creating annotation with data:', {
-          photoId: annotationData.photoId,
-          toolId: newTool.id,
-          coordinates: annotationData.coordinates
-        });
-
-        const { error: annotationError } = await supabase
-          .from('tool_annotations')
-          .insert({
-            photo_id: annotationData.photoId,
-            tool_id: newTool.id,
-            coordinates: annotationData.coordinates,
-            user_id: user.id
-          });
-
-        if (annotationError) {
-          console.error('Error creating annotation:', annotationError);
-          toast.error("Tool added but annotation failed to save");
-        } else {
-          console.log('Annotation created successfully');
-        }
-      }
 
       toast.success("Tool added successfully");
       return true;

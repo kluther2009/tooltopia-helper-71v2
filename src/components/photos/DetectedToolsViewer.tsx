@@ -34,7 +34,6 @@ export function DetectedToolsViewer({
     isEditing,
     loading,
     error,
-    photoLocation,
     handleSelectTool,
     handleEditTool,
     handleCancelEdit,
