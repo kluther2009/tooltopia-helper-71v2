@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,6 +13,9 @@ interface Annotation {
   photo: {
     file_path: string;
   } | null;
+  tool?: {
+    name: string;
+  };
 }
 
 export function useToolAnnotation(toolId: string) {
@@ -33,6 +37,9 @@ export function useToolAnnotation(toolId: string) {
           coordinates,
           photo:location_photos (
             file_path
+          ),
+          tool:tools (
+            name
           )
         `)
         .eq('tool_id', toolId)

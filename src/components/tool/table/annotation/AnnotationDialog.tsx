@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { AnnotationImage } from "./AnnotationImage";
@@ -12,6 +13,9 @@ interface Annotation {
   photo: {
     file_path: string;
   } | null;
+  tool?: {
+    name: string;
+  };
 }
 
 interface AnnotationDialogProps {
@@ -27,7 +31,12 @@ export function AnnotationDialog({ isOpen, onOpenChange, annotation }: Annotatio
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
-        <DialogTitle>Tool Location</DialogTitle>
+        <DialogTitle>
+          {annotation?.tool?.name 
+            ? `Tool: ${annotation.tool.name}` 
+            : 'Tool Location'
+          }
+        </DialogTitle>
         {isImageLoading && (
           <div className="text-center py-4">Loading image...</div>
         )}
