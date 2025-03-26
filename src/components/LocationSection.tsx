@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { ToolList } from "@/components/ToolList";
 import { Tool } from "@/hooks/useTools";
@@ -7,8 +6,6 @@ import { useState } from "react";
 import { LocationPhotoViewer } from "./photos/LocationPhotoViewer";
 import { Button } from "./ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { LocationPhoto } from "@/types/photos";
 
 interface LocationSectionProps {
   mainLocation: string;
@@ -26,8 +23,6 @@ export function LocationSection({
   isDraggingOver 
 }: LocationSectionProps) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  const [locationPhoto, setLocationPhoto] = useState<LocationPhoto | null>(null);
-  const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -35,30 +30,6 @@ export function LocationSection({
     navigate(`/edit-tool/${toolId}`, {
       state: { from: location.pathname }
     });
-  };
-
-  const handleViewLocationPhoto = async (locationName: string) => {
-    try {
-      // Fetch the most recent photo for this location
-      const { data } = await supabase
-        .from('location_photos')
-        .select('*')
-        .eq('location', locationName)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (data) {
-        setLocationPhoto(data as LocationPhoto);
-        setIsPhotoDialogOpen(true);
-      } else {
-        setLocationPhoto(null);
-      }
-      setSelectedLocation(locationName);
-    } catch (error) {
-      console.error("Error fetching location photo:", error);
-      setLocationPhoto(null);
-    }
   };
 
   return (
@@ -69,7 +40,7 @@ export function LocationSection({
           variant="ghost"
           size="icon"
           className="text-black hover:text-black/80"
-          onClick={() => handleViewLocationPhoto(mainLocation)}
+          onClick={() => setSelectedLocation(mainLocation)}
         >
           <Image className="h-5 w-5" />
         </Button>
@@ -104,13 +75,11 @@ export function LocationSection({
         })}
       </div>
 
-      {locationPhoto && (
-        <LocationPhotoViewer
-          photo={locationPhoto}
-          isOpen={isPhotoDialogOpen}
-          onClose={() => setIsPhotoDialogOpen(false)}
-        />
-      )}
+      <LocationPhotoViewer
+        location={selectedLocation}
+        isOpen={!!selectedLocation}
+        onClose={() => setSelectedLocation(null)}
+      />
     </Card>
   );
 }

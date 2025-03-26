@@ -89,61 +89,35 @@ export function useDetectedTools(initialDetectedTools: Tool[], photoId?: string)
 
   const handleSaveTool = async (tool: Tool) => {
     try {
+      if (!photoId) {
+        toast.error("Cannot save annotation: Missing photo ID");
+        return false;
+      }
+
+      // Prepare annotation data
+      const annotationData = {
+        photoId: photoId,
+        coordinates: {
+          x: tool.box_2d[0],
+          y: tool.box_2d[1],
+          width: tool.box_2d[2] - tool.box_2d[0],
+          height: tool.box_2d[3] - tool.box_2d[1]
+        },
+        location: photoLocation.location,
+        subLocation: photoLocation.subLocation
+      };
+
       // Use the photo location instead of hardcoded "Detection Area"
       const success = await addTool({
         name: tool.label,
         primaryLocation: photoLocation.location,
         subLocation: photoLocation.subLocation || "",
         specificLocation: "",
-        status: "available"
+        status: "available",
+        annotationData: annotationData
       });
 
       if (success) {
-        // Get the newly created tool's ID
-        const { data: toolData, error: toolError } = await supabase
-          .from('tools')
-          .select('id')
-          .eq('name', tool.label)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-          
-        if (toolError) {
-          console.error('Error fetching tool ID:', toolError);
-          toast.error(`Failed to save annotation for "${tool.label}"`);
-          return;
-        }
-        
-        if (toolData && photoId) {
-          // Save the annotation with the tool ID and photo ID
-          const coordinates = {
-            x: tool.box_2d[1],
-            y: tool.box_2d[0],
-            width: tool.box_2d[3] - tool.box_2d[1],
-            height: tool.box_2d[2] - tool.box_2d[0]
-          };
-          
-          const { error: annotationError } = await supabase
-            .from('tool_annotations')
-            .insert({
-              tool_id: toolData.id,
-              photo_id: photoId,
-              coordinates: coordinates,
-              user_id: (await supabase.auth.getUser()).data.user?.id
-            });
-            
-          if (annotationError) {
-            console.error('Error saving annotation:', annotationError);
-            toast.error(`Failed to save annotation for "${tool.label}"`);
-          } else {
-            console.log('Annotation saved successfully', {
-              tool_id: toolData.id,
-              photo_id: photoId,
-              coordinates
-            });
-          }
-        }
-        
         toast.success(`Tool "${tool.label}" saved to your inventory`);
         
         const updatedTools = detectedTools.filter(t => t.label !== tool.label);
@@ -155,9 +129,12 @@ export function useDetectedTools(initialDetectedTools: Tool[], photoId?: string)
           toast.success("All tools saved to inventory!");
         }
       }
+      
+      return success;
     } catch (error) {
       console.error("Error saving tool:", error);
       toast.error(`Failed to save tool "${tool.label}"`);
+      return false;
     }
   };
 

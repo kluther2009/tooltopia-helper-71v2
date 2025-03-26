@@ -13,9 +13,6 @@ interface Annotation {
   photo: {
     file_path: string;
   } | null;
-  tool?: {
-    name: string;
-  };
 }
 
 interface AnnotationDialogProps {
@@ -31,12 +28,7 @@ export function AnnotationDialog({ isOpen, onOpenChange, annotation }: Annotatio
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
-        <DialogTitle>
-          {annotation?.tool?.name 
-            ? `Tool: ${annotation.tool.name}` 
-            : 'Tool Location'
-          }
-        </DialogTitle>
+        <DialogTitle>Tool Location</DialogTitle>
         {isImageLoading && (
           <div className="text-center py-4">Loading image...</div>
         )}
