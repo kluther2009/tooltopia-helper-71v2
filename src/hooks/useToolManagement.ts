@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,6 +57,11 @@ export function useToolManagement() {
         toast.error("You must be logged in to add a tool");
         return false;
       }
+
+      console.log('Adding tool with location:', {
+        primaryLocation,
+        subLocation
+      });
 
       const exists = await checkToolExists(name);
       if (exists) {

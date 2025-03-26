@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -18,6 +19,7 @@ interface DetectToolsDialogProps {
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const { photos } = useInitialInventoryPhotos()
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
+  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null)
   const [detectedTools, setDetectedTools] = useState<any[]>([])
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem | null>(null)
   const [isDetecting, setIsDetecting] = useState(false)
@@ -58,6 +60,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       const photoUrl = signedUrlData.signedUrl
       console.log('Selected photo URL (signed):', photoUrl)
       setSelectedPhotoUrl(photoUrl)
+      setSelectedPhotoId(photo.id) // Store the photo ID for location information
 
       const { data, error } = await supabase.functions.invoke('detect-tools', {
         body: { imageUrl: photoUrl }
@@ -137,6 +140,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const resetDetectionState = () => {
     setSelectedPhotoUrl(null)
+    setSelectedPhotoId(null)
     setDetectedTools([])
     setCoordinateSystem(null)
     setShowConfirmation(false)
@@ -186,6 +190,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
             setShowConfirmation(false)
           }}
           onConfirm={handleToolsConfirmed}
+          photoId={selectedPhotoId}
         />
       )}
     </>

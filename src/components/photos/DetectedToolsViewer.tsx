@@ -7,6 +7,7 @@ import { CoordinateSystem } from "@/hooks/useToolCoordinates"
 import { DetectedToolList } from "./list/DetectedToolList"
 import { ImageDisplay } from "./viewers/ImageDisplay"
 import { ViewerDialogFooter } from "./viewers/ViewerDialogFooter"
+import { supabase } from "@/integrations/supabase/client"
 
 interface Tool {
   label: string
@@ -19,6 +20,7 @@ interface DetectedToolsViewerProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: (tools: Tool[]) => void
+  photoId?: string // Add photoId to access photo location data
 }
 
 export function DetectedToolsViewer({ 
@@ -26,7 +28,8 @@ export function DetectedToolsViewer({
   detectedTools: initialDetectedTools, 
   isOpen, 
   onClose,
-  onConfirm 
+  onConfirm,
+  photoId 
 }: DetectedToolsViewerProps) {
   const [detectedTools, setDetectedTools] = useState<Tool[]>(initialDetectedTools)
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
@@ -34,12 +37,48 @@ export function DetectedToolsViewer({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { addTool } = useToolManagement()
+  const [photoLocation, setPhotoLocation] = useState<{ location: string, subLocation: string | null }>({ 
+    location: "Detection Area", 
+    subLocation: null 
+  })
   
   const [coordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
     y_axis_direction: 'top-to-bottom'
   })
+
+  // Fetch photo location when the component mounts or photoId changes
+  useEffect(() => {
+    const fetchPhotoLocation = async () => {
+      if (!photoId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('location_photos')
+          .select('location, sub_location')
+          .eq('id', photoId)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching photo location:', error);
+          return;
+        }
+        
+        if (data) {
+          console.log('Found photo location data:', data);
+          setPhotoLocation({
+            location: data.location,
+            subLocation: data.sub_location
+          });
+        }
+      } catch (error) {
+        console.error('Error in fetchPhotoLocation:', error);
+      }
+    };
+    
+    fetchPhotoLocation();
+  }, [photoId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -77,10 +116,11 @@ export function DetectedToolsViewer({
 
   const handleSaveTool = async (tool: Tool) => {
     try {
+      // Use the photo location instead of hardcoded "Detection Area"
       const success = await addTool({
         name: tool.label,
-        primaryLocation: "Detection Area",
-        subLocation: "",
+        primaryLocation: photoLocation.location,
+        subLocation: photoLocation.subLocation || "",
         specificLocation: "",
         status: "available"
       });
@@ -144,14 +184,6 @@ export function DetectedToolsViewer({
     }
   };
 
-  const updateLoadingState = (isLoading: boolean) => {
-    setLoading(isLoading);
-  }
-
-  const updateErrorState = (errorMessage: string | null) => {
-    setError(errorMessage);
-  }
-
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-hidden p-0">
@@ -189,8 +221,6 @@ export function DetectedToolsViewer({
         </div>
 
         <ViewerDialogFooter
-          loading={loading}
-          error={error}
           selectedTool={selectedTool}
           isEditing={isEditing}
           onEditTool={handleEditTool}
