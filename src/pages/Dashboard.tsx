@@ -1,19 +1,32 @@
+
 import { useTools } from "@/hooks/useTools";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Wrench, FolderKanban } from "lucide-react";
+import { Loader2, Wrench, FolderKanban, AlertCircle } from "lucide-react";
 import { ToolsOverview } from "@/components/dashboard/ToolsOverview";
 import { ProjectsOverview } from "@/components/dashboard/ProjectsOverview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const { tools, fetchTools } = useTools();
+  const { tools, fetchTools, isLoading: toolsLoading } = useTools();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch tools on component mount
-  useQuery({
-    queryKey: ['tools'],
-    queryFn: fetchTools
-  });
+  useEffect(() => {
+    fetchTools();
+  }, [fetchTools]);
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchTools();
+    setIsRefreshing(false);
+  };
 
   const { data: projects, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['projects'],
@@ -42,7 +55,7 @@ export default function Dashboard() {
 
   const toolsInUse = tools.filter(t => t.status === 'in-use').length;
 
-  if (isLoadingProjects) {
+  if (isLoadingProjects || toolsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -52,7 +65,40 @@ export default function Dashboard() {
 
   return (
     <div className="container py-6">
-      <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Button 
+          onClick={handleRefresh}
+          variant="outline"
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Refreshing...
+            </>
+          ) : (
+            'Refresh Data'
+          )}
+        </Button>
+      </div>
+      
+      {tools.length === 0 && (
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No tools found</AlertTitle>
+          <AlertDescription>
+            You don't have any tools in your inventory yet. 
+            <Button 
+              variant="link" 
+              className="p-0 h-auto ml-2"
+              onClick={() => navigate('/add-tool')}
+            >
+              Add your first tool
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Tabs defaultValue="tools" className="space-y-8">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px]">

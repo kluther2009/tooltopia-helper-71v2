@@ -44,6 +44,8 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
         return;
       }
 
+      console.log(`Attempting to delete tool with ID: ${id}`);
+
       // First, get all annotations for this tool
       const { data: annotations, error: annotationError } = await supabase
         .from('tool_annotations')
@@ -55,9 +57,12 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
         throw annotationError;
       }
 
+      console.log(`Found ${annotations?.length || 0} annotations for this tool`);
+
       // If there are annotations, clean up any temp_annotation_transfers referencing them
       if (annotations && annotations.length > 0) {
         const annotationIds = annotations.map(a => a.id);
+        console.log('Annotation IDs to clean up:', annotationIds);
         
         // Delete any temporary annotation transfers that reference these annotations
         const { error: transferError } = await supabase
@@ -69,6 +74,8 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
           console.error('Error deleting temp annotation transfers:', transferError);
           throw transferError;
         }
+        
+        console.log('Successfully cleaned up annotation transfers');
       }
 
       // Now we can safely delete the tool
@@ -78,9 +85,12 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
         .eq('id', id);
 
       if (error) {
+        console.error('Error during tool deletion:', error);
         throw error;
       }
 
+      console.log(`Successfully deleted tool with ID: ${id}`);
+      
       toast({
         title: "Success",
         description: "Tool deleted successfully",
@@ -88,13 +98,12 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
 
       setIsOpen(false);
       
-      // Refresh the current page instead of redirecting to dashboard
-      if (location.pathname === '/tool-list') {
-        window.location.reload();
-      } else if (location.pathname === '/storage') {
-        window.location.reload();
-      } else if (location.pathname === '/tool-overview') {
-        window.location.reload();
+      // Improve refresh logic to prevent issues
+      if (location.pathname.includes('/tool-list') || 
+          location.pathname.includes('/storage') ||
+          location.pathname.includes('/tool-overview')) {
+        // Instead of hard reload, redirect to ensure proper state refresh
+        navigate(location.pathname, { replace: true });
       } else {
         navigate('/tool-overview');
       }
