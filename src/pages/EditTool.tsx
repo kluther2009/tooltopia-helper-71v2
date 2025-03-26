@@ -65,7 +65,7 @@ export default function EditTool() {
     e.preventDefault();
     console.log('[EditTool] Starting submission with annotation data:', annotationData);
     
-    const success = await updateTool();
+    const success = await updateTool(state, annotationData);
     
     if (success && annotationData) {
       console.log('[EditTool] Tool updated, handling annotation');
