@@ -40,6 +40,7 @@ export const useToolSubmission = (toolId: string | undefined) => {
         last_maintenance_date: state.lastMaintenanceDate || null,
         maintenance_period_months: state.maintenancePeriod ? parseInt(state.maintenancePeriod) : null,
         manual_id: state.manualId || null,
+        warranty_file_path: null  // Initialize with null, will be updated if needed
       };
       
       // Override location from annotation data if available

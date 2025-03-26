@@ -12,7 +12,7 @@ export const useToolUpdate = (toolId: string | undefined) => {
   const navigate = useNavigate();
   const { uploadFile } = useToolFileUpload();
 
-  const updateTool = async (state: ToolEditorState): Promise<boolean> => {
+  const updateTool = async (state: ToolEditorState, annotationData: any = null): Promise<boolean> => {
     setIsUpdating(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -24,8 +24,19 @@ export const useToolUpdate = (toolId: string | undefined) => {
       }
 
       console.log('Updating tool with state:', state);
+      console.log('Annotation data for location update:', annotationData);
 
       const updateData = mapToolStateToApiData(state, toolId);
+
+      // Override location from annotation data if available
+      if (annotationData && annotationData.location) {
+        console.log('Overriding location with annotation data:', annotationData.location);
+        updateData.location = annotationData.location;
+        
+        if (annotationData.sub_location) {
+          updateData.sub_location_a = annotationData.sub_location;
+        }
+      }
 
       if (state.showAdditionalInfo && state.warrantyFile) {
         const warrantyPath = await uploadFile(state.warrantyFile, toolId!, 'warranty');
