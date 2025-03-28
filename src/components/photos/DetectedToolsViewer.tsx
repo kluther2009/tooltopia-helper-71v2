@@ -7,6 +7,7 @@ import { CoordinateSystem } from "@/hooks/useToolCoordinates"
 import { DetectedToolList } from "./list/DetectedToolList"
 import { ImageDisplay } from "./viewers/ImageDisplay"
 import { ViewerDialogFooter } from "./viewers/ViewerDialogFooter"
+import { supabase } from "@/integrations/supabase/client"
 
 interface Tool {
   label: string
@@ -34,6 +35,7 @@ export function DetectedToolsViewer({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { addTool } = useToolManagement()
+  const [photoLocation, setPhotoLocation] = useState({ location: "", subLocation: "" })
   
   const [coordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
@@ -46,8 +48,50 @@ export function DetectedToolsViewer({
       setDetectedTools(initialDetectedTools);
       setSelectedTool(null);
       setIsEditing(false);
+      fetchPhotoLocation();
     }
   }, [isOpen, initialDetectedTools]);
+
+  // Extract photo ID from the signed URL (if available)
+  const fetchPhotoLocation = async () => {
+    try {
+      // Try to extract the photo path from the URL
+      // This assumes the URL is from Supabase storage
+      const photoPath = extractPhotoPathFromUrl(imageUrl);
+      
+      if (photoPath) {
+        // Find the photo in the database
+        const { data, error } = await supabase
+          .from('location_photos')
+          .select('location, sub_location')
+          .eq('file_path', photoPath)
+          .single();
+          
+        if (data && !error) {
+          setPhotoLocation({ 
+            location: data.location || "", 
+            subLocation: data.sub_location || "" 
+          });
+          console.log("Found photo location:", data.location, data.sub_location);
+        } else {
+          console.log("Could not find photo location:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching photo location:", error);
+    }
+  };
+  
+  const extractPhotoPathFromUrl = (url: string): string | null => {
+    try {
+      // For signed URLs, extract the path
+      const match = url.match(/location-photos\/([^?]+)/);
+      return match ? match[1] : null;
+    } catch (e) {
+      console.error("Error extracting photo path:", e);
+      return null;
+    }
+  };
 
   const handleSelectTool = (tool: Tool) => {
     setSelectedTool(tool);
@@ -79,8 +123,8 @@ export function DetectedToolsViewer({
     try {
       const success = await addTool({
         name: tool.label,
-        primaryLocation: "Detection Area",
-        subLocation: "",
+        primaryLocation: photoLocation.location || "Detection Area",
+        subLocation: photoLocation.subLocation || "",
         specificLocation: "",
         status: "available"
       });
