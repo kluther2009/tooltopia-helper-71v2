@@ -36,6 +36,7 @@ export function DetectedToolsViewer({
   const [error, setError] = useState<string | null>(null)
   const { addTool } = useToolManagement()
   const [photoLocation, setPhotoLocation] = useState({ location: "", subLocation: "" })
+  const [photoId, setPhotoId] = useState<string | null>(null)
   
   const [coordinateSystem] = useState<CoordinateSystem>({
     origin: 'top-left',
@@ -63,7 +64,7 @@ export function DetectedToolsViewer({
         // Find the photo in the database
         const { data, error } = await supabase
           .from('location_photos')
-          .select('location, sub_location')
+          .select('id, location, sub_location')
           .eq('file_path', photoPath)
           .single();
           
@@ -72,7 +73,9 @@ export function DetectedToolsViewer({
             location: data.location || "", 
             subLocation: data.sub_location || "" 
           });
+          setPhotoId(data.id);
           console.log("Found photo location:", data.location, data.sub_location);
+          console.log("Photo ID:", data.id);
         } else {
           console.log("Could not find photo location:", error);
         }
@@ -121,6 +124,13 @@ export function DetectedToolsViewer({
 
   const handleSaveTool = async (tool: Tool) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to add a tool");
+        return false;
+      }
+
+      // Add the tool to the database
       const success = await addTool({
         name: tool.label,
         primaryLocation: photoLocation.location || "Detection Area",
@@ -130,6 +140,45 @@ export function DetectedToolsViewer({
       });
 
       if (success) {
+        // Get the newly created tool to get its ID for the annotation
+        const { data: newTool, error: toolError } = await supabase
+          .from('tools')
+          .select('id')
+          .eq('name', tool.label)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (toolError || !newTool) {
+          console.error("Error fetching new tool ID:", toolError);
+          toast.error("Tool saved but annotation could not be saved");
+        } else if (photoId) {
+          // Save the annotation with the tool ID and photo ID
+          const coordinates = {
+            x: tool.box_2d[0] / 1000, // Normalize coordinates
+            y: tool.box_2d[1] / 1000,
+            width: (tool.box_2d[2] - tool.box_2d[0]) / 1000,
+            height: (tool.box_2d[3] - tool.box_2d[1]) / 1000
+          };
+
+          const { error: annotationError } = await supabase
+            .from('tool_annotations')
+            .insert({
+              tool_id: newTool.id,
+              photo_id: photoId,
+              coordinates: coordinates,
+              user_id: user.id
+            });
+
+          if (annotationError) {
+            console.error("Error saving annotation:", annotationError);
+            toast.error("Tool saved but annotation could not be saved");
+          } else {
+            console.log("Tool annotation saved successfully");
+          }
+        }
+
         toast.success(`Tool "${tool.label}" saved to your inventory`);
         
         const updatedTools = detectedTools.filter(t => t.label !== tool.label);
@@ -141,10 +190,15 @@ export function DetectedToolsViewer({
           toast.success("All tools saved to inventory!");
           onClose();
         }
+        
+        return true;
       }
+      
+      return false;
     } catch (error) {
       console.error("Error saving tool:", error);
       toast.error(`Failed to save tool "${tool.label}"`);
+      return false;
     }
   };
 
