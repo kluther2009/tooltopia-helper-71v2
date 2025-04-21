@@ -118,25 +118,23 @@ export function usePhotoManager() {
   }
 
   const moderateImage = async (url: string): Promise<boolean> => {
-     // I am ignoring the moderation becasue I have to pay so returning true
-      return true
-    //try {
-    //  const { data, error } = await supabase.functions.invoke('moderate-image', {
-    //    body: { imageUrl: url }
-    //  })
-      // The code below won't run due to the return above
-      //if (error) throw error
+    try {
+      const { data, error } = await supabase.functions.invoke('moderate-image', {
+        body: { imageUrl: url }
+      })
+       The code below won't run due to the return above
+      if (error) throw error
 
-      //if (!data.isSafe) {
-      //  const violations = data.details.violations.join('\n')
-      //  toast.error(`Image contains inappropriate content:\n${violations}`)
-      //}
+      if (!data.isSafe) {
+        const violations = data.details.violations.join('\n')
+        toast.error(`Image contains inappropriate content:\n${violations}`)
+      }
 
-      //return data.isSafe
-   // } catch (error) {
-   //   console.error('Moderation error:', error)
-   //   throw new Error('Failed to moderate image')
-   // }
+      return data.isSafe
+    } catch (error) {
+      console.error('Moderation error:', error)
+      throw new Error('Failed to moderate image')
+    }
   }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
