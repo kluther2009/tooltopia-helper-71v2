@@ -1,6 +1,6 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { ProjectData, Tool } from '../chat-with-project-helper/types.ts'
+import { ProjectData, Tool } from './types.ts'
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
