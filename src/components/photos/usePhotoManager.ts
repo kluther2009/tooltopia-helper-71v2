@@ -122,11 +122,11 @@ export function usePhotoManager() {
       const { data, error } = await supabase.functions.invoke('moderate-image', {
         body: { imageUrl: url }
       })
-       The code below won't run due to the return above
+      
       if (error) throw error
 
       if (!data.isSafe) {
-        const violations = data.details.violations.join('\n')
+        const violations = data.details.violations?.join('\n') || 'Unknown violation'
         toast.error(`Image contains inappropriate content:\n${violations}`)
       }
 

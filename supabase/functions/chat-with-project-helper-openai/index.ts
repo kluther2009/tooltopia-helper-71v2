@@ -1,7 +1,8 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { fetchProjectData, fetchUserTools, formatProjectDetails, formatToolInventory, getSystemPrompt } from '../chat-with-project-helper/utils.ts'
+import { fetchProjectData, fetchUserTools, formatProjectDetails, formatToolInventory, getSystemPrompt } from './utils.ts'
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
