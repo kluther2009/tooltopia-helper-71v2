@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+
 import { useEffect, useState } from "react";
 
 interface Annotation {
@@ -15,33 +15,19 @@ interface Annotation {
 
 interface AnnotationImageProps {
   annotation: Annotation;
+  photoUrl: string;
   onLoadingChange: (loading: boolean) => void;
   onError: (error: string | null) => void;
 }
 
-export function AnnotationImage({ annotation, onLoadingChange, onError }: AnnotationImageProps) {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-
+export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError }: AnnotationImageProps) {
   useEffect(() => {
     const loadImage = async () => {
-      if (!annotation.photo?.file_path) {
-        console.log('No photo file path available');
-        return;
-      }
-
       onLoadingChange(true);
       onError(null);
 
       try {
-        console.log('Getting public URL for:', annotation.photo.file_path);
-        const { data } = supabase.storage
-          .from('location-photos')
-          .getPublicUrl(annotation.photo.file_path);
-
-        if (data.publicUrl) {
-          console.log('Public URL obtained:', data.publicUrl);
-          setImageUrl(data.publicUrl);
-        }
+        console.log('Using photo URL:', photoUrl);
       } catch (error) {
         console.error('Error getting image URL:', error);
         onError('Failed to load image');
@@ -51,31 +37,38 @@ export function AnnotationImage({ annotation, onLoadingChange, onError }: Annota
     };
 
     loadImage();
-  }, [annotation.photo?.file_path, onError, onLoadingChange]);
+  }, [photoUrl, onError, onLoadingChange]);
 
-  if (!imageUrl) return null;
+  if (!photoUrl) return null;
 
   return (
     <div 
       className="relative overflow-hidden border border-gray-200 rounded-lg"
       style={{
-        width: `${annotation.coordinates.width}px`,
-        height: `${annotation.coordinates.height}px`,
+        maxWidth: '100%',
+        maxHeight: '70vh',
       }}
     >
-      <img 
-        src={imageUrl} 
-        alt="Tool annotation"
-        className="absolute max-w-none"
-        style={{
-          left: `-${annotation.coordinates.x}px`,
-          top: `-${annotation.coordinates.y}px`,
-        }}
-        onError={(e) => {
-          console.error('Image failed to load:', e);
-          onError('Failed to load image');
-        }}
-      />
+      <div className="relative">
+        <img 
+          src={photoUrl} 
+          alt="Tool annotation"
+          className="max-w-full h-auto"
+          onError={(e) => {
+            console.error('Image failed to load:', e);
+            onError('Failed to load image');
+          }}
+        />
+        <div 
+          className="absolute border-2 border-green-500"
+          style={{
+            left: `${annotation.coordinates.x}px`,
+            top: `${annotation.coordinates.y}px`,
+            width: `${annotation.coordinates.width}px`,
+            height: `${annotation.coordinates.height}px`,
+          }}
+        ></div>
+      </div>
     </div>
   );
 }

@@ -76,8 +76,19 @@ export const drawAnnotation = (
     return;
   }
 
-  // Ensure we have a tool name to display
-  const toolName = annotation.tool?.name || "Unknown Tool";
+  // Get tool name, ensuring we have a fallback
+  let toolName = "Unknown Tool";
+  
+  if (annotation.tool && typeof annotation.tool === 'object' && 'name' in annotation.tool) {
+    toolName = annotation.tool.name || "Unknown Tool";
+  }
+  
+  // Log the annotation details for debugging
+  console.log('Drawing annotation:', {
+    toolName,
+    coordinates: annotation.coordinates,
+    imageMetrics
+  });
   
   // Calculate the position based on the image metrics
   const x = annotation.coordinates.x * imageMetrics.scale + imageMetrics.x;

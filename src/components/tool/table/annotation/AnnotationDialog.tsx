@@ -1,7 +1,8 @@
 
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnnotationImage } from "./AnnotationImage";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Annotation {
   coordinates: {
@@ -24,6 +25,21 @@ interface AnnotationDialogProps {
 export function AnnotationDialog({ isOpen, onOpenChange, annotation }: AnnotationDialogProps) {
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (annotation?.photo?.file_path && isOpen) {
+      const { data } = supabase.storage
+        .from('location-photos')
+        .getPublicUrl(annotation.photo.file_path);
+      
+      if (data.publicUrl) {
+        setPhotoUrl(data.publicUrl);
+      }
+    } else {
+      setPhotoUrl(null);
+    }
+  }, [annotation, isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -38,9 +54,10 @@ export function AnnotationDialog({ isOpen, onOpenChange, annotation }: Annotatio
         {imageError && (
           <div className="text-center text-red-500 py-4">{imageError}</div>
         )}
-        {annotation && (
+        {annotation && photoUrl && (
           <AnnotationImage 
             annotation={annotation}
+            photoUrl={photoUrl}
             onLoadingChange={setIsImageLoading}
             onError={setImageError}
           />

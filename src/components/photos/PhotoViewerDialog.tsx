@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
 import { toast } from "sonner";
+import { Annotation } from "./canvas/types";
 
 interface PhotoViewerDialogProps {
   photo: LocationPhoto | null;
@@ -21,13 +22,15 @@ export function PhotoViewerDialog({
   onPhotoSelect,
   selectionMode = false 
 }: PhotoViewerDialogProps) {
-  const [annotations, setAnnotations] = useState<any[]>([]);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (photo?.id && isOpen) {
       fetchAnnotations();
+    } else {
+      setAnnotations([]);
     }
   }, [photo?.id, isOpen]);
 
@@ -56,10 +59,11 @@ export function PhotoViewerDialog({
 
       console.log('Raw annotation data:', data);
       
-      // Transform data to ensure 'moved' property exists
+      // Transform data to ensure proper format for display
       const transformedData = data?.map(annotation => ({
         ...annotation,
-        moved: annotation.moved || false
+        moved: annotation.moved || false,
+        tool: annotation.tool || { id: annotation.tool_id || '', name: 'Unknown Tool' }
       })) || [];
       
       console.log('Transformed annotations:', transformedData);

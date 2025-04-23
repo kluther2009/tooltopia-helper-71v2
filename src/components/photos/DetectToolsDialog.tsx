@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -17,6 +18,7 @@ interface DetectToolsDialogProps {
 
 export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const { photos } = useInitialInventoryPhotos()
+  const [selectedPhoto, setSelectedPhoto] = useState<LocationPhoto | null>(null)
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null)
   const [detectedTools, setDetectedTools] = useState<any[]>([])
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem | null>(null)
@@ -43,6 +45,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
+    setSelectedPhoto(photo)
     
     try {
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -119,16 +122,106 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const handleToolsConfirmed = async (tools: any[]) => {
     try {
-      console.log('Saving detected tools:', tools)
-      console.log('With coordinate system:', coordinateSystem)
-      toast.success('Tool detection data saved')
-      resetDetectionState()
-      onClose()
+      console.log('Saving detected tools:', tools);
+      
+      if (selectedPhoto) {
+        toast.success(`Saving ${tools.length} detected tools`);
+        
+        // Process each tool and save its annotation
+        for (const tool of tools) {
+          console.log('Processing tool:', tool);
+          
+          // Format coordinates to match expected format
+          if (!tool.box_2d || tool.box_2d.length !== 4) {
+            console.error('Invalid bounding box format for tool:', tool);
+            continue;
+          }
+          
+          // Create/update tool record and save annotation
+          await saveToolAnnotation(tool, selectedPhoto);
+        }
+        
+        toast.success('All tool annotations saved successfully');
+      }
+      
+      resetDetectionState();
+      onClose();
     } catch (error) {
-      console.error('Error saving tool data:', error)
-      toast.error('Failed to save tool data')
+      console.error('Error saving tool data:', error);
+      toast.error('Failed to save tool data');
     }
-  }
+  };
+
+  const saveToolAnnotation = async (tool: any, photo: LocationPhoto) => {
+    try {
+      // First, check if the tool exists or needs to be created
+      let toolId: string;
+      
+      const { data: existingTools, error: toolQueryError } = await supabase
+        .from('tools')
+        .select('id')
+        .eq('name', tool.label)
+        .limit(1);
+      
+      if (toolQueryError) {
+        throw toolQueryError;
+      }
+      
+      if (existingTools && existingTools.length > 0) {
+        toolId = existingTools[0].id;
+        console.log(`Using existing tool: ${tool.label} (${toolId})`);
+      } else {
+        // Create a new tool record
+        const { data: newTool, error: createToolError } = await supabase
+          .from('tools')
+          .insert({
+            name: tool.label,
+            status: 'available',
+            location: photo.location || 'Unknown'
+          })
+          .select('id')
+          .single();
+        
+        if (createToolError) {
+          throw createToolError;
+        }
+        
+        toolId = newTool.id;
+        console.log(`Created new tool: ${tool.label} (${toolId})`);
+      }
+      
+      // Now create the tool annotation
+      // Calculate the bounding box coordinates
+      const [yMin, xMin, yMax, xMax] = tool.box_2d;
+      
+      const coordinates = {
+        x: xMin,
+        y: yMin,
+        width: xMax - xMin,
+        height: yMax - yMin
+      };
+      
+      console.log(`Saving annotation with coordinates:`, coordinates);
+      
+      // Insert the annotation
+      const { error: annotationError } = await supabase
+        .from('tool_annotations')
+        .insert({
+          tool_id: toolId,
+          photo_id: photo.id,
+          coordinates
+        });
+      
+      if (annotationError) {
+        throw annotationError;
+      }
+      
+      console.log(`Saved annotation for tool: ${tool.label}`);
+    } catch (error) {
+      console.error(`Error saving tool annotation for ${tool.label}:`, error);
+      throw error;
+    }
+  };
 
   const handleDialogClose = () => {
     resetDetectionState()
@@ -136,6 +229,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   }
 
   const resetDetectionState = () => {
+    setSelectedPhoto(null)
     setSelectedPhotoUrl(null)
     setDetectedTools([])
     setCoordinateSystem(null)
@@ -186,6 +280,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
             setShowConfirmation(false)
           }}
           onConfirm={handleToolsConfirmed}
+          coordinateSystem={coordinateSystem}
         />
       )}
     </>
