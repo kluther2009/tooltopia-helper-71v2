@@ -1,9 +1,10 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { LocationPhoto } from "@/types/photos";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { AnnotationCanvas } from "./canvas/AnnotationCanvas";
+import { toast } from "sonner";
 
 interface PhotoViewerDialogProps {
   photo: LocationPhoto | null;
@@ -22,6 +23,7 @@ export function PhotoViewerDialog({
 }: PhotoViewerDialogProps) {
   const [annotations, setAnnotations] = useState<any[]>([]);
   const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (photo?.id && isOpen) {
@@ -32,20 +34,41 @@ export function PhotoViewerDialog({
   const fetchAnnotations = async () => {
     if (!photo?.id) return;
 
-    const { data, error } = await supabase
-      .from('tool_annotations')
-      .select(`
-        id,
-        coordinates,
-        tool_id,
-        tool:tools (
-          name
-        )
-      `)
-      .eq('photo_id', photo.id);
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('tool_annotations')
+        .select(`
+          id,
+          coordinates,
+          tool_id,
+          moved,
+          tool:tools (
+            id,
+            name
+          )
+        `)
+        .eq('photo_id', photo.id);
 
-    if (!error && data) {
-      setAnnotations(data);
+      if (error) {
+        throw error;
+      }
+
+      console.log('Raw annotation data:', data);
+      
+      // Transform data to ensure 'moved' property exists
+      const transformedData = data?.map(annotation => ({
+        ...annotation,
+        moved: annotation.moved || false
+      })) || [];
+      
+      console.log('Transformed annotations:', transformedData);
+      setAnnotations(transformedData);
+    } catch (error) {
+      console.error('Error fetching annotations:', error);
+      toast.error('Failed to load tool annotations');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -81,15 +104,22 @@ export function PhotoViewerDialog({
             {photo?.location || "Select a Photo"}
             {orientation && <span className="ml-2 text-sm text-gray-500">({orientation})</span>}
           </DialogTitle>
+          <DialogDescription>
+            {annotations.length > 0 ? `Showing ${annotations.length} tool annotations` : "No tool annotations found for this photo"}
+          </DialogDescription>
         </DialogHeader>
         <div className="relative aspect-video" onClick={handlePhotoClick}>
-          {photo && (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            </div>
+          ) : photo ? (
             <AnnotationCanvas
               imageUrl={`${supabase.storage.from('location-photos').getPublicUrl(photo.file_path).data.publicUrl}`}
               existingAnnotations={annotations}
               onImageLoad={handleImageLoad}
             />
-          )}
+          ) : null}
         </div>
         {photo && (
           <div className="mt-4">

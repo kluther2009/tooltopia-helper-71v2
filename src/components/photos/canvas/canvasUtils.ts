@@ -46,7 +46,7 @@ export const drawImageOnCanvas = (
     y,
     scaledWidth,
     scaledHeight,
-    originalWidth: image.width,  // Add original dimensions
+    originalWidth: image.width,
     originalHeight: image.height
   };
 };
@@ -71,20 +71,22 @@ export const drawAnnotation = (
   annotation: Annotation,
   imageMetrics: { scale: number; x: number; y: number; originalWidth: number; originalHeight: number }
 ) => {
-  if (!annotation.coordinates || !annotation.tool?.name) {
-    console.log('Missing coordinates or tool name for annotation:', annotation);
+  if (!annotation.coordinates) {
+    console.log('Missing coordinates for annotation:', annotation);
     return;
   }
 
-  const { coordinates, tool, moved } = annotation;
+  // Ensure we have a tool name to display
+  const toolName = annotation.tool?.name || "Unknown Tool";
   
-  // Calculate the ratio of original dimensions to maintain consistent size
-  const x = coordinates.x * imageMetrics.scale + imageMetrics.x;
-  const y = coordinates.y * imageMetrics.scale + imageMetrics.y;
-  const width = coordinates.width * imageMetrics.scale;
-  const height = coordinates.height * imageMetrics.scale;
+  // Calculate the position based on the image metrics
+  const x = annotation.coordinates.x * imageMetrics.scale + imageMetrics.x;
+  const y = annotation.coordinates.y * imageMetrics.scale + imageMetrics.y;
+  const width = annotation.coordinates.width * imageMetrics.scale;
+  const height = annotation.coordinates.height * imageMetrics.scale;
 
-  if (moved) {
+  // Draw differently if the tool has been moved
+  if (annotation.moved) {
     ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
     ctx.fillRect(x, y, width, height);
     
@@ -94,7 +96,7 @@ export const drawAnnotation = (
     ctx.strokeRect(x, y, width, height);
     ctx.setLineDash([]);
     
-    const movedText = `${tool.name} (MOVED)`;
+    const movedText = `${toolName} (MOVED)`;
     ctx.font = 'bold 14px Arial';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
@@ -117,7 +119,7 @@ export const drawAnnotation = (
     ctx.strokeRect(x, y, width, height);
 
     ctx.font = '14px Arial';
-    const textMetrics = ctx.measureText(tool.name);
+    const textMetrics = ctx.measureText(toolName);
     const padding = 4;
     const textHeight = 16;
     
@@ -132,7 +134,7 @@ export const drawAnnotation = (
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
     ctx.fillText(
-      tool.name,
+      toolName,
       x + padding,
       y - padding
     );
