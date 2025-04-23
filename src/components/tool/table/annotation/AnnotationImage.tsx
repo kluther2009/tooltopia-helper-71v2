@@ -28,6 +28,7 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
 
       try {
         console.log('Using photo URL:', photoUrl);
+        console.log('Annotation coordinates:', annotation.coordinates);
       } catch (error) {
         console.error('Error getting image URL:', error);
         onError('Failed to load image');
@@ -37,9 +38,15 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
     };
 
     loadImage();
-  }, [photoUrl, onError, onLoadingChange]);
+  }, [photoUrl, onError, onLoadingChange, annotation]);
 
   if (!photoUrl) return null;
+
+  // Ensure coordinates are numbers
+  const x = typeof annotation.coordinates.x === 'number' ? annotation.coordinates.x : 0;
+  const y = typeof annotation.coordinates.y === 'number' ? annotation.coordinates.y : 0;
+  const width = typeof annotation.coordinates.width === 'number' ? annotation.coordinates.width : 0;
+  const height = typeof annotation.coordinates.height === 'number' ? annotation.coordinates.height : 0;
 
   return (
     <div 
@@ -62,10 +69,10 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
         <div 
           className="absolute border-2 border-green-500"
           style={{
-            left: `${annotation.coordinates.x}px`,
-            top: `${annotation.coordinates.y}px`,
-            width: `${annotation.coordinates.width}px`,
-            height: `${annotation.coordinates.height}px`,
+            left: `${x * 1000}px`,
+            top: `${y * 1000}px`,
+            width: `${width * 1000}px`,
+            height: `${height * 1000}px`,
           }}
         ></div>
       </div>

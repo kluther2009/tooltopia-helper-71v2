@@ -60,11 +60,24 @@ export function PhotoViewerDialog({
       console.log('Raw annotation data:', data);
       
       // Transform data to ensure proper format for display
-      const transformedData = data?.map(annotation => ({
-        ...annotation,
-        moved: annotation.moved || false,
-        tool: annotation.tool || { id: annotation.tool_id || '', name: 'Unknown Tool' }
-      })) || [];
+      const transformedData = data?.map(annotation => {
+        // Ensure coordinates have the correct structure
+        const rawCoordinates = annotation.coordinates as any;
+        const formattedCoordinates = {
+          x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
+          y: typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0,
+          width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
+          height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
+        };
+        
+        return {
+          id: annotation.id,
+          coordinates: formattedCoordinates,
+          tool_id: annotation.tool_id,
+          moved: annotation.moved || false,
+          tool: annotation.tool || { id: annotation.tool_id || '', name: 'Unknown Tool' }
+        } as Annotation;
+      }) || [];
       
       console.log('Transformed annotations:', transformedData);
       setAnnotations(transformedData);

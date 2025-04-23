@@ -20,6 +20,7 @@ interface DetectedToolsViewerProps {
   isOpen: boolean
   onClose: () => void
   onConfirm: (tools: Tool[]) => void
+  coordinateSystem?: CoordinateSystem
 }
 
 export function DetectedToolsViewer({ 
@@ -27,7 +28,8 @@ export function DetectedToolsViewer({
   detectedTools: initialDetectedTools, 
   isOpen, 
   onClose,
-  onConfirm 
+  onConfirm,
+  coordinateSystem: providedCoordinateSystem
 }: DetectedToolsViewerProps) {
   const [detectedTools, setDetectedTools] = useState<Tool[]>(initialDetectedTools)
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null)
@@ -38,7 +40,7 @@ export function DetectedToolsViewer({
   const [photoLocation, setPhotoLocation] = useState({ location: "", subLocation: "" })
   const [photoId, setPhotoId] = useState<string | null>(null)
   
-  const [coordinateSystem] = useState<CoordinateSystem>({
+  const [coordinateSystem] = useState<CoordinateSystem>(providedCoordinateSystem || {
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
     y_axis_direction: 'top-to-bottom'
