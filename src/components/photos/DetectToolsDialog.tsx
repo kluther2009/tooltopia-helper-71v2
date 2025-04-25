@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { PhotoGrid } from "./PhotoGrid"
 import { useState } from "react"
@@ -191,15 +190,21 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       }
       
       // Now create the tool annotation
-      // Calculate the bounding box coordinates - IMPORTANT: normalize the values to 0-1 scale
+      // Get the bounding box coordinates from the tool
       const [yMin, xMin, yMax, xMax] = tool.box_2d;
       
-      // Convert from 0-1000 range to 0-1 range
+      // Convert from 0-1000 scale to 0-1 scale (normalized coordinates)
+      const normalizedX = xMin / 1000;
+      const normalizedY = yMin / 1000;
+      const normalizedWidth = (xMax - xMin) / 1000;
+      const normalizedHeight = (yMax - yMin) / 1000;
+      
+      // Store the coordinates in the database
       const coordinates = {
-        x: xMin / 1000,
-        y: yMin / 1000,
-        width: (xMax - xMin) / 1000,
-        height: (yMax - yMin) / 1000
+        x: normalizedX,
+        y: normalizedY,
+        width: normalizedWidth,
+        height: normalizedHeight
       };
       
       console.log(`Saving annotation with coordinates:`, coordinates);

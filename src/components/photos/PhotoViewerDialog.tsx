@@ -65,7 +65,7 @@ export function PhotoViewerDialog({
         const rawCoordinates = annotation.coordinates;
         let formattedCoordinates;
         
-        if (rawCoordinates) {
+        if (rawCoordinates && typeof rawCoordinates === 'object') {
           // Ensure coordinates have the correct structure with all required fields
           formattedCoordinates = {
             x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
@@ -73,13 +73,10 @@ export function PhotoViewerDialog({
             width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
             height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
           };
-          
-          // Handle any normalized coordinates (0-1 range)
-          // No need to multiply by 1000 here as the components handle the scaling
         } else {
           // If no coordinates, provide defaults
           formattedCoordinates = { x: 0, y: 0, width: 0, height: 0 };
-          console.error('Missing coordinates for annotation:', annotation.id);
+          console.error('Missing or invalid coordinates for annotation:', annotation.id);
         }
         
         return {

@@ -54,14 +54,14 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
 
   if (!photoUrl) return null;
 
-  // Ensure coordinates are numbers
+  // Ensure coordinates are numbers and normalized (between 0 and 1)
   const x = typeof annotation.coordinates.x === 'number' ? annotation.coordinates.x : 0;
   const y = typeof annotation.coordinates.y === 'number' ? annotation.coordinates.y : 0;
   const width = typeof annotation.coordinates.width === 'number' ? annotation.coordinates.width : 0;
   const height = typeof annotation.coordinates.height === 'number' ? annotation.coordinates.height : 0;
   
-  // Coordinates are normalized (0-1), so multiply by image dimensions to get pixel values
-  // We display them as percentage of container for responsive sizing
+  // Convert the coordinates to percentages for responsive display
+  // Assuming coordinates are already normalized (0-1 range)
   const xPercent = x * 100;
   const yPercent = y * 100;
   const widthPercent = width * 100;

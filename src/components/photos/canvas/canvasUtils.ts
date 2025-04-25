@@ -90,46 +90,56 @@ export const drawAnnotation = (
     imageMetrics
   });
   
-  // Handle both normalized (0-1) and pixel coordinates
-  // Convert normalized coordinates to pixels based on image dimensions if needed
-  let x = annotation.coordinates.x;
-  let y = annotation.coordinates.y;
-  let width = annotation.coordinates.width;
-  let height = annotation.coordinates.height;
+  // Get the coordinates from the annotation
+  const x = annotation.coordinates.x;
+  const y = annotation.coordinates.y;
+  const width = annotation.coordinates.width;
+  const height = annotation.coordinates.height;
   
-  // If coordinates appear to be normalized (all values between 0-1)
-  const isNormalized = x <= 1 && y <= 1 && width <= 1 && height <= 1;
-  
-  if (isNormalized && imageMetrics.originalWidth && imageMetrics.originalHeight) {
-    // Convert from normalized to pixels
-    x = x * imageMetrics.originalWidth;
-    y = y * imageMetrics.originalHeight;
-    width = width * imageMetrics.originalWidth;
-    height = height * imageMetrics.originalHeight;
+  // Verify all values are numbers for calculation
+  if (typeof x !== 'number' || typeof y !== 'number' || 
+      typeof width !== 'number' || typeof height !== 'number') {
+    console.error('Invalid coordinate values in annotation:', annotation.coordinates);
+    return;
   }
   
+  // Determine if coordinates are already normalized (between 0-1)
+  const isNormalized = x <= 1 && y <= 1 && width <= 1 && height <= 1;
+  
   // Calculate the position based on the image metrics
-  const scaledX = x * imageMetrics.scale + imageMetrics.x;
-  const scaledY = y * imageMetrics.scale + imageMetrics.y;
-  const scaledWidth = width * imageMetrics.scale;
-  const scaledHeight = height * imageMetrics.scale;
+  let scaledX, scaledY, scaledWidth, scaledHeight;
+  
+  if (isNormalized && imageMetrics.originalWidth && imageMetrics.originalHeight) {
+    // For normalized coordinates (0-1)
+    scaledX = (x * imageMetrics.originalWidth * imageMetrics.scale) + imageMetrics.x;
+    scaledY = (y * imageMetrics.originalHeight * imageMetrics.scale) + imageMetrics.y;
+    scaledWidth = width * imageMetrics.originalWidth * imageMetrics.scale;
+    scaledHeight = height * imageMetrics.originalHeight * imageMetrics.scale;
+  } else {
+    // For pixel coordinates
+    scaledX = x * imageMetrics.scale + imageMetrics.x;
+    scaledY = y * imageMetrics.scale + imageMetrics.y;
+    scaledWidth = width * imageMetrics.scale;
+    scaledHeight = height * imageMetrics.scale;
+  }
 
   console.log('Scaled annotation coordinates:', {
     x: scaledX,
     y: scaledY,
     width: scaledWidth,
-    height: scaledHeight
+    height: scaledHeight,
+    isNormalized
   });
 
   // Draw differently if the tool has been moved
   if (annotation.moved) {
     ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
-    ctx.fillRect(x, y, width, height);
+    ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
     
     ctx.strokeStyle = '#808080';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 3]);
-    ctx.strokeRect(x, y, width, height);
+    ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
     ctx.setLineDash([]);
     
     const movedText = `${toolName} (MOVED)`;
@@ -141,14 +151,14 @@ export const drawAnnotation = (
     const textPadding = 4;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(
-      x + width/2 - textMetrics.width/2 - textPadding,
-      y + height/2 - 10,
+      scaledX + scaledWidth/2 - textMetrics.width/2 - textPadding,
+      scaledY + scaledHeight/2 - 10,
       textMetrics.width + textPadding * 2,
       20
     );
     
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(movedText, x + width/2, y + height/2 + 5);
+    ctx.fillText(movedText, scaledX + scaledWidth/2, scaledY + scaledHeight/2 + 5);
   } else {
     ctx.strokeStyle = '#00ff00';
     ctx.lineWidth = 2;
