@@ -290,5 +290,5 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         />
       )}
     </>
-  )
+  );
 }

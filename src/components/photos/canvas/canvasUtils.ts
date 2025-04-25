@@ -91,20 +91,30 @@ export const drawAnnotation = (
   });
   
   // Get the coordinates from the annotation
-  const x = annotation.coordinates.x;
-  const y = annotation.coordinates.y;
-  const width = annotation.coordinates.width;
-  const height = annotation.coordinates.height;
+  const coords = annotation.coordinates;
+  
+  // Check if coordinates is an object with the expected properties
+  if (!coords || typeof coords !== 'object' || !('x' in coords) || 
+      !('y' in coords) || !('width' in coords) || !('height' in coords)) {
+    console.error('Invalid coordinate structure:', coords);
+    return;
+  }
+  
+  const x = coords.x;
+  const y = coords.y;
+  const width = coords.width;
+  const height = coords.height;
   
   // Verify all values are numbers for calculation
   if (typeof x !== 'number' || typeof y !== 'number' || 
       typeof width !== 'number' || typeof height !== 'number') {
-    console.error('Invalid coordinate values in annotation:', annotation.coordinates);
+    console.error('Invalid coordinate values in annotation:', coords);
     return;
   }
   
   // Determine if coordinates are already normalized (between 0-1)
-  const isNormalized = x <= 1 && y <= 1 && width <= 1 && height <= 1;
+  // We consider coordinates normalized if ALL values are between 0-1
+  const isNormalized = x >= 0 && x <= 1 && y >= 0 && y <= 1 && width >= 0 && width <= 1 && height >= 0 && height <= 1;
   
   // Calculate the position based on the image metrics
   let scaledX, scaledY, scaledWidth, scaledHeight;

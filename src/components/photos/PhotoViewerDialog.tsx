@@ -66,18 +66,33 @@ export function PhotoViewerDialog({
         let formattedCoordinates;
         
         if (rawCoordinates && typeof rawCoordinates === 'object') {
-          // Check if coordinates is an object with x, y, width, height properties
-          if ('x' in rawCoordinates && 
+          // Check if this is an object with properties or an array
+          if (!Array.isArray(rawCoordinates) && 
+              'x' in rawCoordinates && 
               'y' in rawCoordinates && 
               'width' in rawCoordinates && 
               'height' in rawCoordinates) {
             
-            formattedCoordinates = {
-              x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
-              y: typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0,
-              width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
-              height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
-            };
+            // Extract coordinate values, ensuring they are numbers
+            const x = typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0;
+            const y = typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0;
+            const width = typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0;
+            const height = typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0;
+            
+            formattedCoordinates = { x, y, width, height };
+            
+            // If coordinates seem to use Gemini's format (0-1000 range instead of 0-1),
+            // normalize them to the expected 0-1 range
+            if (x > 1 || y > 1 || width > 1 || height > 1) {
+              formattedCoordinates = {
+                x: x / 1000,
+                y: y / 1000,
+                width: width / 1000,
+                height: height / 1000
+              };
+              
+              console.log('Normalized coordinates from 0-1000 range:', formattedCoordinates);
+            }
           } else {
             // Handle case where coordinates might have a different structure
             console.error('Coordinates object does not have expected properties:', rawCoordinates);
