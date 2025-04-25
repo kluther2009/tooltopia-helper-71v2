@@ -26,6 +26,7 @@ export function AnnotationDialog({ isOpen, onOpenChange, annotation }: Annotatio
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [processedAnnotation, setProcessedAnnotation] = useState<Annotation | null>(null);
 
   useEffect(() => {
     if (annotation?.photo?.file_path && isOpen) {
@@ -35,9 +36,32 @@ export function AnnotationDialog({ isOpen, onOpenChange, annotation }: Annotatio
       
       if (data.publicUrl) {
         setPhotoUrl(data.publicUrl);
+        
+        // Process the annotation to ensure coordinates are valid
+        const rawCoords = annotation.coordinates;
+        const processedCoords = {
+          x: typeof rawCoords.x === 'number' ? rawCoords.x : 0,
+          y: typeof rawCoords.y === 'number' ? rawCoords.y : 0,
+          width: typeof rawCoords.width === 'number' ? rawCoords.width : 0,
+          height: typeof rawCoords.height === 'number' ? rawCoords.height : 0
+        };
+        
+        setProcessedAnnotation({
+          ...annotation,
+          coordinates: processedCoords
+        });
+        
+        console.log("Processed annotation:", {
+          raw: annotation,
+          processed: {
+            ...annotation,
+            coordinates: processedCoords
+          }
+        });
       }
     } else {
       setPhotoUrl(null);
+      setProcessedAnnotation(null);
     }
   }, [annotation, isOpen]);
 
@@ -54,9 +78,9 @@ export function AnnotationDialog({ isOpen, onOpenChange, annotation }: Annotatio
         {imageError && (
           <div className="text-center text-red-500 py-4">{imageError}</div>
         )}
-        {annotation && photoUrl && (
+        {processedAnnotation && photoUrl && (
           <AnnotationImage 
-            annotation={annotation}
+            annotation={processedAnnotation}
             photoUrl={photoUrl}
             onLoadingChange={setIsImageLoading}
             onError={setImageError}

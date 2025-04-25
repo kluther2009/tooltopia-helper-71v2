@@ -69,7 +69,7 @@ export const drawRectangle = (
 export const drawAnnotation = (
   ctx: CanvasRenderingContext2D,
   annotation: Annotation,
-  imageMetrics: { scale: number; x: number; y: number; originalWidth: number; originalHeight: number }
+  imageMetrics: { scale: number; x: number; y: number; originalWidth?: number; originalHeight?: number }
 ) => {
   if (!annotation.coordinates) {
     console.log('Missing coordinates for annotation:', annotation);

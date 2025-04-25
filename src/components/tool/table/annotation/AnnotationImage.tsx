@@ -21,6 +21,8 @@ interface AnnotationImageProps {
 }
 
 export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError }: AnnotationImageProps) {
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  
   useEffect(() => {
     const loadImage = async () => {
       onLoadingChange(true);
@@ -29,6 +31,16 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
       try {
         console.log('Using photo URL:', photoUrl);
         console.log('Annotation coordinates:', annotation.coordinates);
+        
+        // Create an image to get its dimensions
+        const img = new Image();
+        img.onload = () => {
+          setImageSize({ width: img.width, height: img.height });
+        };
+        img.onerror = () => {
+          onError('Failed to load image dimensions');
+        };
+        img.src = photoUrl;
       } catch (error) {
         console.error('Error getting image URL:', error);
         onError('Failed to load image');
@@ -47,6 +59,14 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
   const y = typeof annotation.coordinates.y === 'number' ? annotation.coordinates.y : 0;
   const width = typeof annotation.coordinates.width === 'number' ? annotation.coordinates.width : 0;
   const height = typeof annotation.coordinates.height === 'number' ? annotation.coordinates.height : 0;
+  
+  console.log('Rendering annotation box with dimensions:', {
+    x: `${x * 1000}px`,
+    y: `${y * 1000}px`, 
+    width: `${width * 1000}px`, 
+    height: `${height * 1000}px`,
+    imageSize
+  });
 
   return (
     <div 
