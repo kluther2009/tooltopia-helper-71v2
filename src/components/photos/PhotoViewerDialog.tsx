@@ -66,13 +66,23 @@ export function PhotoViewerDialog({
         let formattedCoordinates;
         
         if (rawCoordinates && typeof rawCoordinates === 'object') {
-          // Ensure coordinates have the correct structure with all required fields
-          formattedCoordinates = {
-            x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
-            y: typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0,
-            width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
-            height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
-          };
+          // Check if coordinates is an object with x, y, width, height properties
+          if ('x' in rawCoordinates && 
+              'y' in rawCoordinates && 
+              'width' in rawCoordinates && 
+              'height' in rawCoordinates) {
+            
+            formattedCoordinates = {
+              x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
+              y: typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0,
+              width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
+              height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
+            };
+          } else {
+            // Handle case where coordinates might have a different structure
+            console.error('Coordinates object does not have expected properties:', rawCoordinates);
+            formattedCoordinates = { x: 0, y: 0, width: 0, height: 0 };
+          }
         } else {
           // If no coordinates, provide defaults
           formattedCoordinates = { x: 0, y: 0, width: 0, height: 0 };
