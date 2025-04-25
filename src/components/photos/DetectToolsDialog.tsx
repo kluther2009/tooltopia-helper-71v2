@@ -191,14 +191,15 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       }
       
       // Now create the tool annotation
-      // Calculate the bounding box coordinates
+      // Calculate the bounding box coordinates - IMPORTANT: normalize the values to 0-1 scale
       const [yMin, xMin, yMax, xMax] = tool.box_2d;
       
+      // Convert from 0-1000 range to 0-1 range
       const coordinates = {
-        x: xMin,
-        y: yMin,
-        width: xMax - xMin,
-        height: yMax - yMin
+        x: xMin / 1000,
+        y: yMin / 1000,
+        width: (xMax - xMin) / 1000,
+        height: (yMax - yMin) / 1000
       };
       
       console.log(`Saving annotation with coordinates:`, coordinates);

@@ -61,14 +61,26 @@ export function PhotoViewerDialog({
       
       // Transform data to ensure proper format for display
       const transformedData = data?.map(annotation => {
-        // Ensure coordinates have the correct structure
-        const rawCoordinates = annotation.coordinates as any;
-        const formattedCoordinates = {
-          x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
-          y: typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0,
-          width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
-          height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
-        };
+        // Get the raw coordinates
+        const rawCoordinates = annotation.coordinates;
+        let formattedCoordinates;
+        
+        if (rawCoordinates) {
+          // Ensure coordinates have the correct structure with all required fields
+          formattedCoordinates = {
+            x: typeof rawCoordinates.x === 'number' ? rawCoordinates.x : 0,
+            y: typeof rawCoordinates.y === 'number' ? rawCoordinates.y : 0,
+            width: typeof rawCoordinates.width === 'number' ? rawCoordinates.width : 0,
+            height: typeof rawCoordinates.height === 'number' ? rawCoordinates.height : 0
+          };
+          
+          // Handle any normalized coordinates (0-1 range)
+          // No need to multiply by 1000 here as the components handle the scaling
+        } else {
+          // If no coordinates, provide defaults
+          formattedCoordinates = { x: 0, y: 0, width: 0, height: 0 };
+          console.error('Missing coordinates for annotation:', annotation.id);
+        }
         
         return {
           id: annotation.id,

@@ -60,11 +60,18 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
   const width = typeof annotation.coordinates.width === 'number' ? annotation.coordinates.width : 0;
   const height = typeof annotation.coordinates.height === 'number' ? annotation.coordinates.height : 0;
   
+  // Coordinates are normalized (0-1), so multiply by image dimensions to get pixel values
+  // We display them as percentage of container for responsive sizing
+  const xPercent = x * 100;
+  const yPercent = y * 100;
+  const widthPercent = width * 100;
+  const heightPercent = height * 100;
+  
   console.log('Rendering annotation box with dimensions:', {
-    x: `${x * 1000}px`,
-    y: `${y * 1000}px`, 
-    width: `${width * 1000}px`, 
-    height: `${height * 1000}px`,
+    x: `${xPercent}%`,
+    y: `${yPercent}%`, 
+    width: `${widthPercent}%`, 
+    height: `${heightPercent}%`,
     imageSize
   });
 
@@ -89,10 +96,10 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
         <div 
           className="absolute border-2 border-green-500"
           style={{
-            left: `${x * 1000}px`,
-            top: `${y * 1000}px`,
-            width: `${width * 1000}px`,
-            height: `${height * 1000}px`,
+            left: `${xPercent}%`,
+            top: `${yPercent}%`,
+            width: `${widthPercent}%`,
+            height: `${heightPercent}%`,
           }}
         ></div>
       </div>

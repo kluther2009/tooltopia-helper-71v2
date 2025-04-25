@@ -90,11 +90,36 @@ export const drawAnnotation = (
     imageMetrics
   });
   
+  // Handle both normalized (0-1) and pixel coordinates
+  // Convert normalized coordinates to pixels based on image dimensions if needed
+  let x = annotation.coordinates.x;
+  let y = annotation.coordinates.y;
+  let width = annotation.coordinates.width;
+  let height = annotation.coordinates.height;
+  
+  // If coordinates appear to be normalized (all values between 0-1)
+  const isNormalized = x <= 1 && y <= 1 && width <= 1 && height <= 1;
+  
+  if (isNormalized && imageMetrics.originalWidth && imageMetrics.originalHeight) {
+    // Convert from normalized to pixels
+    x = x * imageMetrics.originalWidth;
+    y = y * imageMetrics.originalHeight;
+    width = width * imageMetrics.originalWidth;
+    height = height * imageMetrics.originalHeight;
+  }
+  
   // Calculate the position based on the image metrics
-  const x = annotation.coordinates.x * imageMetrics.scale + imageMetrics.x;
-  const y = annotation.coordinates.y * imageMetrics.scale + imageMetrics.y;
-  const width = annotation.coordinates.width * imageMetrics.scale;
-  const height = annotation.coordinates.height * imageMetrics.scale;
+  const scaledX = x * imageMetrics.scale + imageMetrics.x;
+  const scaledY = y * imageMetrics.scale + imageMetrics.y;
+  const scaledWidth = width * imageMetrics.scale;
+  const scaledHeight = height * imageMetrics.scale;
+
+  console.log('Scaled annotation coordinates:', {
+    x: scaledX,
+    y: scaledY,
+    width: scaledWidth,
+    height: scaledHeight
+  });
 
   // Draw differently if the tool has been moved
   if (annotation.moved) {
@@ -127,7 +152,7 @@ export const drawAnnotation = (
   } else {
     ctx.strokeStyle = '#00ff00';
     ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, width, height);
+    ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
 
     ctx.font = '14px Arial';
     const textMetrics = ctx.measureText(toolName);
@@ -136,8 +161,8 @@ export const drawAnnotation = (
     
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(
-      x,
-      y - textHeight - padding * 2,
+      scaledX,
+      scaledY - textHeight - padding * 2,
       textMetrics.width + padding * 2,
       textHeight + padding * 2
     );
@@ -146,8 +171,8 @@ export const drawAnnotation = (
     ctx.textAlign = 'left';
     ctx.fillText(
       toolName,
-      x + padding,
-      y - padding
+      scaledX + padding,
+      scaledY - padding
     );
   }
 };
