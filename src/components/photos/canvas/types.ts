@@ -1,4 +1,3 @@
-
 export interface Annotation {
   id: string;
   coordinates: {
@@ -20,4 +19,15 @@ export interface CanvasCoordinates {
   y: number;
   width: number;
   height: number;
+}
+
+export interface DetectedTool {
+  label: string;
+  box_2d: number[];
+}
+
+export interface CoordinateSystem {
+  origin: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  x_axis_direction: 'left-to-right' | 'right-to-left';
+  y_axis_direction: 'top-to-bottom' | 'bottom-to-top';
 }
