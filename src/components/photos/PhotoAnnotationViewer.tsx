@@ -17,6 +17,13 @@ interface PhotoAnnotationViewerProps {
   onClose: () => void
 }
 
+interface CoordinateData {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotationViewerProps) {
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [isDetecting, setIsDetecting] = useState(false)
@@ -62,11 +69,26 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       if (data) {
         console.log('Raw annotation data:', data)
         const transformedAnnotations = data.map(item => {
-          let coordinates = item.coordinates
+          let coordinates: CoordinateData
           
-          // Ensure coordinates are parsed if they're stored as string
-          if (typeof coordinates === 'string') {
-            coordinates = JSON.parse(coordinates)
+          // Handle coordinates parsing from Json type
+          if (typeof item.coordinates === 'string') {
+            try {
+              coordinates = JSON.parse(item.coordinates) as CoordinateData
+            } catch (e) {
+              console.error('Failed to parse coordinates string:', item.coordinates)
+              coordinates = { x: 0, y: 0, width: 0, height: 0 }
+            }
+          } else if (item.coordinates && typeof item.coordinates === 'object') {
+            const coords = item.coordinates as any
+            coordinates = {
+              x: typeof coords.x === 'number' ? coords.x : 0,
+              y: typeof coords.y === 'number' ? coords.y : 0,
+              width: typeof coords.width === 'number' ? coords.width : 0,
+              height: typeof coords.height === 'number' ? coords.height : 0
+            }
+          } else {
+            coordinates = { x: 0, y: 0, width: 0, height: 0 }
           }
           
           // Normalize coordinates to ensure they're in 0-1 range
@@ -85,7 +107,7 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
             tool_id: item.tool_id,
             tool: item.tool,
             moved: item.moved
-          }
+          } as Annotation
         })
         
         console.log('Transformed annotations:', transformedAnnotations)
