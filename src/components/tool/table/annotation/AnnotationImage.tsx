@@ -32,7 +32,6 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
         console.log('Using photo URL:', photoUrl);
         console.log('Annotation coordinates:', annotation.coordinates);
         
-        // Create an image to get its dimensions
         const img = new Image();
         img.onload = () => {
           setImageSize({ width: img.width, height: img.height });
@@ -54,20 +53,18 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
 
   if (!photoUrl) return null;
 
-  // Ensure coordinates are numbers
+  // Ensure coordinates are numbers and normalized
   const x = typeof annotation.coordinates.x === 'number' ? annotation.coordinates.x : 0;
   const y = typeof annotation.coordinates.y === 'number' ? annotation.coordinates.y : 0;
   const width = typeof annotation.coordinates.width === 'number' ? annotation.coordinates.width : 0;
   const height = typeof annotation.coordinates.height === 'number' ? annotation.coordinates.height : 0;
   
-  // Determine if coordinates are normalized (between 0-1)
-  const isNormalized = x >= 0 && x <= 1 && y >= 0 && y <= 1 && width <= 1 && height <= 1;
-  
+  // All coordinates should be normalized (0-1) when retrieved from database
   // Convert to percentages for responsive display
-  const xPercent = isNormalized ? x * 100 : (x / imageSize.width) * 100;
-  const yPercent = isNormalized ? y * 100 : (y / imageSize.height) * 100;
-  const widthPercent = isNormalized ? width * 100 : (width / imageSize.width) * 100;
-  const heightPercent = isNormalized ? height * 100 : (height / imageSize.height) * 100;
+  const xPercent = x * 100;
+  const yPercent = y * 100;
+  const widthPercent = width * 100;
+  const heightPercent = height * 100;
   
   console.log('Rendering annotation box with dimensions:', {
     x: `${xPercent}%`,
@@ -75,7 +72,7 @@ export function AnnotationImage({ annotation, photoUrl, onLoadingChange, onError
     width: `${widthPercent}%`, 
     height: `${heightPercent}%`,
     imageSize,
-    isNormalized
+    originalCoords: { x, y, width, height }
   });
 
   return (

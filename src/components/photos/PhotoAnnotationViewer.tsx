@@ -61,15 +61,32 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
 
       if (data) {
         console.log('Raw annotation data:', data)
-        const transformedAnnotations = data.map(item => ({
-          id: item.id,
-          coordinates: typeof item.coordinates === 'string' 
-            ? JSON.parse(item.coordinates) 
-            : item.coordinates,
-          tool_id: item.tool_id,
-          tool: item.tool,
-          moved: item.moved
-        }))
+        const transformedAnnotations = data.map(item => {
+          let coordinates = item.coordinates
+          
+          // Ensure coordinates are parsed if they're stored as string
+          if (typeof coordinates === 'string') {
+            coordinates = JSON.parse(coordinates)
+          }
+          
+          // Normalize coordinates to ensure they're in 0-1 range
+          if (coordinates.x > 1 || coordinates.y > 1 || coordinates.width > 1 || coordinates.height > 1) {
+            coordinates = {
+              x: coordinates.x / 1000,
+              y: coordinates.y / 1000,
+              width: coordinates.width / 1000,
+              height: coordinates.height / 1000
+            }
+          }
+          
+          return {
+            id: item.id,
+            coordinates,
+            tool_id: item.tool_id,
+            tool: item.tool,
+            moved: item.moved
+          }
+        })
         
         console.log('Transformed annotations:', transformedAnnotations)
         setAnnotations(transformedAnnotations)
@@ -145,7 +162,6 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
 
   const saveToolAnnotation = async (tool: any, photo: LocationPhoto) => {
     try {
-      // First, check if the tool exists or needs to be created
       let toolId: string;
       
       const { data: existingTools, error: toolQueryError } = await supabase
@@ -162,7 +178,6 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         toolId = existingTools[0].id;
         console.log(`Using existing tool: ${tool.label} (${toolId})`);
       } else {
-        // Create a new tool record
         const { data: newTool, error: createToolError } = await supabase
           .from('tools')
           .insert({
@@ -181,27 +196,24 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         console.log(`Created new tool: ${tool.label} (${toolId})`);
       }
       
-      // Now create the tool annotation
-      // Get the bounding box coordinates from the tool
+      // Process coordinates correctly based on the coordinate system from AI
+      // The AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
       const [yMin, xMin, yMax, xMax] = tool.box_2d;
       
-      // Convert from 0-1000 scale to 0-1 scale (normalized coordinates)
-      const normalizedX = xMin / 1000;
-      const normalizedY = yMin / 1000;
-      const normalizedWidth = (xMax - xMin) / 1000;
-      const normalizedHeight = (yMax - yMin) / 1000;
-      
-      // Store the coordinates in the database
+      // Store coordinates in normalized 0-1 range for consistency
       const coordinates = {
-        x: normalizedX,
-        y: normalizedY,
-        width: normalizedWidth,
-        height: normalizedHeight
+        x: xMin / 1000,
+        y: yMin / 1000,
+        width: (xMax - xMin) / 1000,
+        height: (yMax - yMin) / 1000
       };
       
-      console.log(`Saving annotation with coordinates:`, coordinates);
+      console.log(`Saving annotation with normalized coordinates:`, {
+        tool: tool.label,
+        originalBox: tool.box_2d,
+        normalized: coordinates
+      });
       
-      // Insert the annotation
       const { error: annotationError } = await supabase
         .from('tool_annotations')
         .insert({
