@@ -219,38 +219,23 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
       }
       
       // AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
-      // To rotate 90 degrees anticlockwise around center, we need to transform coordinates
+      // Store coordinates in the same format as DetectedToolsDialog expects them
       const [yMin, xMin, yMax, xMax] = tool.box_2d;
       
-      // Normalize to 0-1 range first
-      const normalizedYMin = yMin / 1000;
-      const normalizedXMin = xMin / 1000;
-      const normalizedYMax = yMax / 1000;
-      const normalizedXMax = xMax / 1000;
-      
-      // For 90-degree anticlockwise rotation around center (0.5, 0.5):
-      // new_x = 1 - old_y
-      // new_y = old_x
-      // This transforms the coordinate system to match the expected display
-      const rotatedX1 = 1 - normalizedYMax;  // Left edge after rotation
-      const rotatedY1 = normalizedXMin;      // Top edge after rotation
-      const rotatedX2 = 1 - normalizedYMin;  // Right edge after rotation
-      const rotatedY2 = normalizedXMax;      // Bottom edge after rotation
-      
+      // Convert from 0-1000 scale to 0-1 scale (normalized coordinates)
+      // Store in the format: {x: xMin/1000, y: yMin/1000, width: (xMax-xMin)/1000, height: (yMax-yMin)/1000}
       const coordinates = {
-        x: rotatedX1,                        // left position after rotation
-        y: rotatedY1,                        // top position after rotation
-        width: rotatedX2 - rotatedX1,        // width after rotation
-        height: rotatedY2 - rotatedY1        // height after rotation
+        x: xMin / 1000,
+        y: yMin / 1000,
+        width: (xMax - xMin) / 1000,
+        height: (yMax - yMin) / 1000
       };
       
-      console.log(`Saving annotation with 90° anticlockwise rotation:`, {
+      console.log(`Saving annotation with normalized coordinates:`, {
         tool: tool.label,
         originalBox: tool.box_2d,
-        normalized: { yMin: normalizedYMin, xMin: normalizedXMin, yMax: normalizedYMax, xMax: normalizedXMax },
-        rotated: { x1: rotatedX1, y1: rotatedY1, x2: rotatedX2, y2: rotatedY2 },
-        finalCoords: coordinates,
-        note: 'Coordinates rotated 90° anticlockwise around center'
+        normalized: coordinates,
+        note: 'Stored in format matching DetectedToolsDialog'
       });
       
       const { error: annotationError } = await supabase
