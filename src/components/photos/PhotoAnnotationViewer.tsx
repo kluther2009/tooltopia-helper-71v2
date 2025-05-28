@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { LocationPhoto } from "@/types/photos"
 import { supabase } from "@/integrations/supabase/client"
@@ -218,22 +219,24 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         console.log(`Created new tool: ${tool.label} (${toolId})`);
       }
       
-      // Process coordinates correctly based on the coordinate system from AI
-      // The AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
+      // Process coordinates correctly - AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
       const [yMin, xMin, yMax, xMax] = tool.box_2d;
       
-      // Store coordinates in normalized 0-1 range for consistency
+      // Convert to our coordinate system: {x, y, width, height} in normalized 0-1 range
+      // x corresponds to xMin, y corresponds to yMin
       const coordinates = {
-        x: xMin / 1000,
-        y: yMin / 1000,
-        width: (xMax - xMin) / 1000,
-        height: (yMax - yMin) / 1000
+        x: xMin / 1000,        // x position (left edge)
+        y: yMin / 1000,        // y position (top edge)
+        width: (xMax - xMin) / 1000,   // width
+        height: (yMax - yMin) / 1000   // height
       };
       
-      console.log(`Saving annotation with normalized coordinates:`, {
+      console.log(`Saving annotation with corrected coordinates:`, {
         tool: tool.label,
         originalBox: tool.box_2d,
-        normalized: coordinates
+        aiFormat: '[y_min, x_min, y_max, x_max]',
+        converted: coordinates,
+        explanation: 'x=xMin/1000, y=yMin/1000, width=(xMax-xMin)/1000, height=(yMax-yMin)/1000'
       });
       
       const { error: annotationError } = await supabase
