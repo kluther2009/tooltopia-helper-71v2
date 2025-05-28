@@ -219,24 +219,25 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         console.log(`Created new tool: ${tool.label} (${toolId})`);
       }
       
-      // Process coordinates correctly - AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
+      // AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
+      // But for display, we need to match how DetectedToolsViewer processes coordinates
       const [yMin, xMin, yMax, xMax] = tool.box_2d;
       
-      // Convert to our coordinate system: {x, y, width, height} in normalized 0-1 range
-      // x corresponds to xMin, y corresponds to yMin
+      // Convert to our coordinate system for storage (normalized 0-1)
+      // This should match exactly how DetectedToolsViewer displays them
       const coordinates = {
-        x: xMin / 1000,        // x position (left edge)
-        y: yMin / 1000,        // y position (top edge)
+        x: xMin / 1000,        // left position
+        y: yMin / 1000,        // top position  
         width: (xMax - xMin) / 1000,   // width
         height: (yMax - yMin) / 1000   // height
       };
       
-      console.log(`Saving annotation with corrected coordinates:`, {
+      console.log(`Saving annotation coordinates:`, {
         tool: tool.label,
         originalBox: tool.box_2d,
-        aiFormat: '[y_min, x_min, y_max, x_max]',
-        converted: coordinates,
-        explanation: 'x=xMin/1000, y=yMin/1000, width=(xMax-xMin)/1000, height=(yMax-yMin)/1000'
+        aiFormat: '[y_min, x_min, y_max, x_max] (0-1000)',
+        storedCoords: coordinates,
+        note: 'Should match DetectedToolsViewer display'
       });
       
       const { error: annotationError } = await supabase
