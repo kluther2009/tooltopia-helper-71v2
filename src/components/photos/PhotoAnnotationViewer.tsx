@@ -218,9 +218,9 @@ export function PhotoAnnotationViewer({ photo, isOpen, onClose }: PhotoAnnotatio
         console.log(`Created new tool: ${tool.label} (${toolId})`);
       }
       
-      // AI returns [y_min, x_min, y_max, x_max] in 0-1000 range
+      // Gemini returns [x_min, y_min, x_max, y_max] in 0-1000 range despite the prompt instructions
       // Store coordinates in the same format as DetectedToolsDialog expects them
-      const [yMin, xMin, yMax, xMax] = tool.box_2d;
+      const [xMin, yMin, xMax, yMax] = tool.box_2d;
       
       // Convert from 0-1000 scale to 0-1 scale (normalized coordinates)
       // Store in the format: {x: xMin/1000, y: yMin/1000, width: (xMax-xMin)/1000, height: (yMax-yMin)/1000}
