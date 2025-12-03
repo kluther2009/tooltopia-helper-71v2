@@ -3,37 +3,12 @@ import { ToolCard } from "@/components/ToolCard";
 import { Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { useTools } from "@/hooks/useTools";
 
 export default function Index() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [tools, setTools] = useState<any[]>([]);
-
-  const fetchTools = async () => {
-    try {
-      console.log('Fetching tools...');
-      const { data, error } = await supabase
-        .from('tools')
-        .select('*');
-      
-      if (error) {
-        console.error('Error fetching tools:', error);
-        return;
-      }
-      
-      if (data) {
-        console.log('Tools fetched successfully:', data);
-        setTools(data);
-      }
-    } catch (error) {
-      console.error('Error in fetchTools:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchTools();
-  }, []);
+  const { tools } = useTools();
 
   const formatLocationDisplay = (tool: any) => {
     return (
@@ -62,7 +37,7 @@ export default function Index() {
   };
 
   const filteredTools = tools
-    .filter(tool => 
+    .filter(tool =>
       tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tool.location.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -83,7 +58,7 @@ export default function Index() {
             />
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
           {filteredTools.map((tool) => (
             <ToolCard
