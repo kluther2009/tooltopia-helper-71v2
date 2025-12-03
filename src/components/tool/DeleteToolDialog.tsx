@@ -16,6 +16,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DeleteToolDialogProps {
   id: string;
@@ -26,6 +27,7 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -33,7 +35,7 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
     setIsDeleting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         toast({
           title: "Error",
@@ -63,7 +65,7 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
       if (annotations && annotations.length > 0) {
         const annotationIds = annotations.map(a => a.id);
         console.log('Annotation IDs to clean up:', annotationIds);
-        
+
         // Delete any temporary annotation transfers that reference these annotations
         const { error: transferError } = await supabase
           .from('temp_annotation_transfers')
@@ -74,7 +76,7 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
           console.error('Error deleting temp annotation transfers:', transferError);
           throw transferError;
         }
-        
+
         console.log('Successfully cleaned up annotation transfers');
       }
 
@@ -90,24 +92,17 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
       }
 
       console.log(`Successfully deleted tool with ID: ${id}`);
-      
+
       toast({
         title: "Success",
         description: "Tool deleted successfully",
       });
 
       setIsOpen(false);
-      
-      // Improve refresh logic to prevent issues
-      if (location.pathname.includes('/tool-list') || 
-          location.pathname.includes('/storage') ||
-          location.pathname.includes('/tool-overview')) {
-        // Instead of hard reload, redirect to ensure proper state refresh
-        navigate(location.pathname, { replace: true });
-      } else {
-        navigate('/tool-overview');
-      }
-      
+
+      // Invalidate the tools query to trigger a refresh in all components using useTools
+      queryClient.invalidateQueries({ queryKey: ["tools"] });
+
     } catch (error) {
       console.error('Error deleting tool:', error);
       toast({
@@ -128,13 +123,13 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
           size="icon"
           className="h-6 w-6 sm:h-8 sm:w-8 min-w-[1.5rem] sm:min-w-[2rem] !p-0 hover:bg-transparent bg-transparent"
         >
-          <Trash2 
-            className="h-3 w-3 sm:h-4 sm:w-4" 
-            style={{ 
+          <Trash2
+            className="h-3 w-3 sm:h-4 sm:w-4"
+            style={{
               color: '#EF4444',
               fill: 'none',
               strokeWidth: 2.5
-            }} 
+            }}
           />
         </Button>
       </AlertDialogTrigger>
@@ -147,8 +142,8 @@ export function DeleteToolDialog({ id, name }: DeleteToolDialogProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={handleDelete} 
+          <AlertDialogAction
+            onClick={handleDelete}
             className="bg-red-600 hover:bg-red-700"
             disabled={isDeleting}
           >

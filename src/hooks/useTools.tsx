@@ -1,8 +1,7 @@
-
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface Tool {
   id: string;
@@ -20,83 +19,64 @@ export interface Tool {
 }
 
 export function useTools() {
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const fetchTools = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchToolsData = async () => {
+    console.log('Fetching tools...');
+    const { data, error } = await supabase
+      .from('tools')
+      .select('*');
 
-    try {
-      console.log('Fetching tools...');
-      const { data, error } = await supabase
-        .from('tools')
-        .select('*');
-
-      if (error) {
-        console.error('Error fetching tools:', error);
-        setError(new Error(error.message));
-        toast({
-          title: "Error",
-          description: "Failed to fetch tools",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (data) {
-        const transformedTools = data.map(tool => {
-          // Construct location string only if sub-locations exist
-          let location = tool.location;
-          if (tool.sub_location_a) {
-            location += ` > ${tool.sub_location_a}`;
-          }
-          if (tool.sub_location_b) {
-            location += ` > ${tool.sub_location_b}`;
-          }
-
-          return {
-            id: tool.id,
-            name: tool.name,
-            location: location,
-            status: tool.status as "available" | "in-use" | "maintenance" | "loaned",
-            purchase_date: tool.purchase_date,
-            warranty_length: tool.warranty_length,
-            warranty_file_path: tool.warranty_file_path,
-            sub_location_a: tool.sub_location_a,
-            sub_location_b: tool.sub_location_b,
-            purchase_cost: tool.purchase_cost,
-            last_maintenance_date: tool.last_maintenance_date,
-            maintenance_period_months: tool.maintenance_period_months
-          };
-        });
-        console.log('Tools fetched successfully:', transformedTools);
-        setTools(transformedTools);
-      } else {
-        console.log('No tools data returned');
-        setTools([]);
-      }
-    } catch (error) {
-      console.error('Error in fetchTools:', error);
-      setError(error instanceof Error ? error : new Error(String(error)));
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while fetching tools",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      console.error('Error fetching tools:', error);
+      throw error;
     }
-  }, [toast]);
 
-  // Initial fetch on mount
+    if (data) {
+      const transformedTools = data.map(tool => {
+        // Construct location string only if sub-locations exist
+        let location = tool.location;
+        if (tool.sub_location_a) {
+          location += ` > ${tool.sub_location_a}`;
+        }
+        if (tool.sub_location_b) {
+          location += ` > ${tool.sub_location_b}`;
+        }
+
+        return {
+          id: tool.id,
+          name: tool.name,
+          location: location,
+          status: tool.status as "available" | "in-use" | "maintenance" | "loaned",
+          purchase_date: tool.purchase_date,
+          warranty_length: tool.warranty_length,
+          warranty_file_path: tool.warranty_file_path,
+          sub_location_a: tool.sub_location_a,
+          sub_location_b: tool.sub_location_b,
+          purchase_cost: tool.purchase_cost,
+          last_maintenance_date: tool.last_maintenance_date,
+          maintenance_period_months: tool.maintenance_period_months
+        };
+      });
+      console.log('Tools fetched successfully:', transformedTools);
+      return transformedTools;
+    }
+    return [];
+  };
+
+  const { data: tools = [], isLoading, error, refetch } = useQuery({
+    queryKey: ["tools"],
+    queryFn: fetchToolsData,
+    meta: {
+      errorMessage: "Failed to fetch tools"
+    }
+  });
+
+  // Set up a subscription to tool changes
+  // We use useEffect here to set up the subscription once
+  // When a change happens, we invalidate the query to trigger a refetch
   useEffect(() => {
-    fetchTools();
-
-    // Set up a subscription to tool changes
     const toolsSubscription = supabase
       .channel('tools-changes')
       .on('postgres_changes', {
@@ -105,14 +85,14 @@ export function useTools() {
         table: 'tools'
       }, () => {
         console.log('Tools table changed, refreshing data...');
-        fetchTools();
+        queryClient.invalidateQueries({ queryKey: ["tools"] });
       })
       .subscribe();
 
     return () => {
       toolsSubscription.unsubscribe();
     };
-  }, [fetchTools]);
+  }, [queryClient]);
 
   /**
    * Updates the location of a tool in the database.
@@ -161,9 +141,7 @@ export function useTools() {
         description: `Moved ${tool.name} to ${destinationLocation}`,
       });
 
-      // Refresh tools data after update
-      fetchTools();
-      // Invalidate any related queries
+      // Invalidate query to refresh data
       queryClient.invalidateQueries({ queryKey: ["tools"] });
     } catch (error) {
       console.error('Error in updateToolLocation:', error);
@@ -173,21 +151,20 @@ export function useTools() {
         variant: "destructive"
       });
     }
-  }, [tools, fetchTools, queryClient, toast]);
+  }, [tools, queryClient, toast]);
 
   /**
    * Manually invalidates the tools query to force a refresh.
    */
   const invalidateTools = useCallback(() => {
-    fetchTools();
     queryClient.invalidateQueries({ queryKey: ["tools"] });
-  }, [fetchTools, queryClient]);
+  }, [queryClient]);
 
   return {
     tools,
     isLoading,
     error,
-    fetchTools,
+    fetchTools: refetch, // Alias refetch to fetchTools for compatibility
     updateToolLocation,
     invalidateTools
   };
