@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
+import { useEffect, useState, useMemo } from "react";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { MoveToolDialog } from "@/components/MoveToolDialog";
 import { useTools, Tool } from "@/hooks/useTools";
 import { LocationSection } from "@/components/LocationSection";
@@ -43,7 +43,7 @@ export default function Storage() {
 
   const checkSession = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error("Session error:", error);
       toast.error("Authentication error. Please log in again.");
@@ -60,18 +60,18 @@ export default function Storage() {
     fetchTools();
   };
 
-  const handleDragEnd = async (result: any) => {
+  const handleDragEnd = async (result: DropResult) => {
     setDraggingOver(null);
     if (!result.destination) return;
 
     const sourceLocation = result.source.droppableId;
     const destinationLocation = result.destination.droppableId;
-    
+
     if (sourceLocation === destinationLocation) return;
 
     const toolId = result.draggableId;
     const tool = tools.find(t => t.id === toolId);
-    
+
     if (!tool) return;
 
     if (tool.location.includes(">")) {
@@ -87,38 +87,40 @@ export default function Storage() {
   };
 
   // Group tools by main location and sub-location
-  const groupedTools = tools.reduce((acc: GroupedTools, tool) => {
-    // Extract location parts and trim any whitespace
-    const locationParts = tool.location.split(">").map(part => part.trim());
-    const mainLocation = locationParts[0];
-    
-    // Initialize the main location if it doesn't exist
-    if (!acc[mainLocation]) {
-      acc[mainLocation] = {
-        mainTools: [],
-        subLocations: {}
-      };
-    }
+  const groupedTools = useMemo(() => {
+    return tools.reduce((acc: GroupedTools, tool) => {
+      // Extract location parts and trim any whitespace
+      const locationParts = tool.location.split(">").map(part => part.trim());
+      const mainLocation = locationParts[0];
 
-    // If there's only one part in locationParts, it means there's no sub-location
-    if (locationParts.length === 1) {
-      acc[mainLocation].mainTools.push(tool);
-    } else {
-      // If there's a sub-location, add it to the appropriate sub-location array
-      const subLocation = locationParts[1];
-      if (!acc[mainLocation].subLocations[subLocation]) {
-        acc[mainLocation].subLocations[subLocation] = [];
+      // Initialize the main location if it doesn't exist
+      if (!acc[mainLocation]) {
+        acc[mainLocation] = {
+          mainTools: [],
+          subLocations: {}
+        };
       }
-      acc[mainLocation].subLocations[subLocation].push(tool);
-    }
-    
-    return acc;
-  }, {});
+
+      // If there's only one part in locationParts, it means there's no sub-location
+      if (locationParts.length === 1) {
+        acc[mainLocation].mainTools.push(tool);
+      } else {
+        // If there's a sub-location, add it to the appropriate sub-location array
+        const subLocation = locationParts[1];
+        if (!acc[mainLocation].subLocations[subLocation]) {
+          acc[mainLocation].subLocations[subLocation] = [];
+        }
+        acc[mainLocation].subLocations[subLocation].push(tool);
+      }
+
+      return acc;
+    }, {});
+  }, [tools]);
 
   return (
     <Card className="max-w-7xl mx-auto p-6 bg-white">
       <h1 className="text-3xl font-bold mb-8 text-gray-900">Storage Locations</h1>
-      <DragDropContext 
+      <DragDropContext
         onDragEnd={handleDragEnd}
         onDragUpdate={(update) => {
           if (update.destination) {

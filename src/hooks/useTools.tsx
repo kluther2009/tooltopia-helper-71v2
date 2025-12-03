@@ -29,13 +29,13 @@ export function useTools() {
   const fetchTools = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       console.log('Fetching tools...');
       const { data, error } = await supabase
         .from('tools')
         .select('*');
-      
+
       if (error) {
         console.error('Error fetching tools:', error);
         setError(new Error(error.message));
@@ -57,7 +57,7 @@ export function useTools() {
           if (tool.sub_location_b) {
             location += ` > ${tool.sub_location_b}`;
           }
-          
+
           return {
             id: tool.id,
             name: tool.name,
@@ -95,26 +95,31 @@ export function useTools() {
   // Initial fetch on mount
   useEffect(() => {
     fetchTools();
-    
+
     // Set up a subscription to tool changes
     const toolsSubscription = supabase
       .channel('tools-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'tools' 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tools'
       }, () => {
         console.log('Tools table changed, refreshing data...');
         fetchTools();
       })
       .subscribe();
-      
+
     return () => {
       toolsSubscription.unsubscribe();
     };
   }, [fetchTools]);
 
-  const updateToolLocation = async (toolId: string, destinationLocation: string) => {
+  /**
+   * Updates the location of a tool in the database.
+   * @param toolId The ID of the tool to update.
+   * @param destinationLocation The new location string (e.g., "Garage > Shelf A").
+   */
+  const updateToolLocation = useCallback(async (toolId: string, destinationLocation: string) => {
     try {
       const tool = tools.find(t => t.id === toolId);
       if (!tool) return;
@@ -134,7 +139,7 @@ export function useTools() {
 
       const { error } = await supabase
         .from('tools')
-        .update({ 
+        .update({
           location: mainLocation,
           sub_location_a: subLocationA,
           sub_location_b: subLocationB
@@ -168,12 +173,15 @@ export function useTools() {
         variant: "destructive"
       });
     }
-  };
+  }, [tools, fetchTools, queryClient, toast]);
 
-  const invalidateTools = () => {
+  /**
+   * Manually invalidates the tools query to force a refresh.
+   */
+  const invalidateTools = useCallback(() => {
     fetchTools();
     queryClient.invalidateQueries({ queryKey: ["tools"] });
-  };
+  }, [fetchTools, queryClient]);
 
   return {
     tools,

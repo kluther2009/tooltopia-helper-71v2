@@ -235,6 +235,10 @@ export function DetectedToolsViewer({
   const handleConfirm = () => {
     // Normalize all tools to [xMin, yMin, xMax, yMax] format (0-1000)
     // This ensures consistent coordinates regardless of orientation
+    // The API returns coordinates in different orders based on orientation:
+    // - Portrait: [x, y, x, y]
+    // - Landscape/Square: [y, x, y, x]
+    // We normalize this to a standard [x, y, x, y] (0-1000) format for storage.
     const normalizedTools = detectedTools.map(tool => {
       const normalized = normalizeBox2d(tool.box_2d, orientation);
       return {
@@ -261,13 +265,7 @@ export function DetectedToolsViewer({
     }
   };
 
-  const updateLoadingState = (isLoading: boolean) => {
-    setLoading(isLoading);
-  }
 
-  const updateErrorState = (errorMessage: string | null) => {
-    setError(errorMessage);
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
