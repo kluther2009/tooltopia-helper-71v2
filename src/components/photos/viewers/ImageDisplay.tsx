@@ -22,6 +22,7 @@ interface ImageDisplayProps {
   onSelectTool: (tool: Tool) => void
   onSaveTool: (tool: Tool) => void
   onCancelEdit: () => void
+  onOrientationChange?: (orientation: 'landscape' | 'portrait' | 'square') => void
 }
 
 export function ImageDisplay({
@@ -32,13 +33,14 @@ export function ImageDisplay({
   coordinateSystem,
   onSelectTool,
   onSaveTool,
-  onCancelEdit
+  onCancelEdit,
+  onOrientationChange
 }: ImageDisplayProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
-  
+
   const {
     loading,
     error,
@@ -48,6 +50,12 @@ export function ImageDisplay({
     handleImageLoad,
     handleImageError
   } = useImageDimensions(imageRef, imageContainerRef)
+
+  useEffect(() => {
+    if (onOrientationChange) {
+      onOrientationChange(orientation);
+    }
+  }, [orientation, onOrientationChange]);
 
   const { convertCoordinates } = useToolCoordinates({
     imageDimensions,
@@ -61,12 +69,12 @@ export function ImageDisplay({
     if (selectedTool && !loading && scrollAreaRef.current && imageRef.current) {
       const coords = convertCoordinates(selectedTool.box_2d)
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
-      
+
       if (scrollContainer && imageRef.current) {
         const imgRect = imageRef.current.getBoundingClientRect()
         const centerX = imgRect.left + coords.xMin + (coords.width / 2)
         const centerY = imgRect.top + coords.yMin + (coords.height / 2)
-        
+
         // Calculate scroll position to center the bounding box
         scrollContainer.scrollTo({
           left: centerX - (scrollContainer.clientWidth / 2),
@@ -90,12 +98,12 @@ export function ImageDisplay({
 
   return (
     <ScrollArea className="h-full w-full rounded-md" ref={scrollAreaRef}>
-      <div 
-        className="relative w-full flex justify-center p-4" 
+      <div
+        className="relative w-full flex justify-center p-4"
         ref={imageContainerRef}
       >
         <div className="relative inline-block">
-          <img 
+          <img
             id="detected-image"
             ref={imageRef}
             src={imageUrl}
@@ -107,19 +115,19 @@ export function ImageDisplay({
               toast.error('Failed to load image');
             }}
           />
-          
+
           {!loading && !isEditing && detectedTools.map((tool, index) => {
             if (!tool.box_2d || tool.box_2d.length !== 4) {
               console.error('Invalid bounding box format for tool:', tool);
               return null;
             }
-            
+
             const isHighlighted = selectedTool ? selectedTool.label === tool.label : false;
             const isActive = isHighlighted && !isEditing;
             const coords = convertCoordinates(tool.box_2d);
-            
+
             return (
-              <ToolBoundingBox 
+              <ToolBoundingBox
                 key={index}
                 label={tool.label}
                 coords={coords}
@@ -137,7 +145,7 @@ export function ImageDisplay({
           )}
 
           {selectedTool && isEditing && (
-            <BoundingBoxEditor 
+            <BoundingBoxEditor
               imageRef={imageRef}
               selectedTool={selectedTool}
               orientation={orientation}

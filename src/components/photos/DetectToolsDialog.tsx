@@ -27,16 +27,16 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
 
   const ensureUniqueToolNames = (tools: any[]): any[] => {
     const nameCount: Record<string, number> = {};
-    
+
     return tools.map(tool => {
       const baseName = tool.label;
-      
+
       nameCount[baseName] = (nameCount[baseName] || 0) + 1;
-      
+
       if (nameCount[baseName] === 1) {
         return tool;
       }
-      
+
       const uniqueName = `${baseName} (${nameCount[baseName]})`;
       return { ...tool, label: uniqueName };
     });
@@ -45,7 +45,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const handlePhotoSelect = async (photo: LocationPhoto) => {
     setIsDetecting(true)
     setSelectedPhoto(photo)
-    
+
     try {
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('location-photos')
@@ -76,21 +76,21 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
       if (data.tools && data.tools.length > 0) {
         const uniqueNamedTools = ensureUniqueToolNames(data.tools);
         setDetectedTools(uniqueNamedTools)
-        
+
         const defaultCoordinateSystem: CoordinateSystem = {
           origin: 'top-left' as const,
           x_axis_direction: 'left-to-right' as const,
           y_axis_direction: 'top-to-bottom' as const
         };
-        
+
         const responseCoordinateSystem = data.coordinate_system || defaultCoordinateSystem;
-        
+
         const validatedCoordinateSystem: CoordinateSystem = {
           origin: validateOrigin(responseCoordinateSystem.origin),
           x_axis_direction: validateXAxisDirection(responseCoordinateSystem.x_axis_direction),
           y_axis_direction: validateYAxisDirection(responseCoordinateSystem.y_axis_direction)
         };
-        
+
         setCoordinateSystem(validatedCoordinateSystem)
         setShowConfirmation(true)
       } else {
@@ -108,12 +108,12 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     const validOrigins = ['top-left', 'top-right', 'bottom-left', 'bottom-right'] as const;
     return validOrigins.includes(origin as any) ? origin as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' : 'top-left';
   }
-  
+
   const validateXAxisDirection = (direction: any): 'left-to-right' | 'right-to-left' => {
     const validDirections = ['left-to-right', 'right-to-left'] as const;
     return validDirections.includes(direction as any) ? direction as 'left-to-right' | 'right-to-left' : 'left-to-right';
   }
-  
+
   const validateYAxisDirection = (direction: any): 'top-to-bottom' | 'bottom-to-top' => {
     const validDirections = ['top-to-bottom', 'bottom-to-top'] as const;
     return validDirections.includes(direction as any) ? direction as 'top-to-bottom' | 'bottom-to-top' : 'top-to-bottom';
@@ -122,27 +122,27 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
   const handleToolsConfirmed = async (tools: any[]) => {
     try {
       console.log('Saving detected tools:', tools);
-      
+
       if (selectedPhoto) {
         toast.success(`Saving ${tools.length} detected tools`);
-        
+
         // Process each tool and save its annotation
         for (const tool of tools) {
           console.log('Processing tool:', tool);
-          
+
           // Format coordinates to match expected format
           if (!tool.box_2d || tool.box_2d.length !== 4) {
             console.error('Invalid bounding box format for tool:', tool);
             continue;
           }
-          
+
           // Create/update tool record and save annotation
           await saveToolAnnotation(tool, selectedPhoto);
         }
-        
+
         toast.success('All tool annotations saved successfully');
       }
-      
+
       resetDetectionState();
       onClose();
     } catch (error) {
@@ -155,17 +155,17 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
     try {
       // First, check if the tool exists or needs to be created
       let toolId: string;
-      
+
       const { data: existingTools, error: toolQueryError } = await supabase
         .from('tools')
         .select('id')
         .eq('name', tool.label)
         .limit(1);
-      
+
       if (toolQueryError) {
         throw toolQueryError;
       }
-      
+
       if (existingTools && existingTools.length > 0) {
         toolId = existingTools[0].id;
         console.log(`Using existing tool: ${tool.label} (${toolId})`);
@@ -180,25 +180,26 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
           })
           .select('id')
           .single();
-        
+
         if (createToolError) {
           throw createToolError;
         }
-        
+
         toolId = newTool.id;
         console.log(`Created new tool: ${tool.label} (${toolId})`);
       }
-      
+
       // Now create the tool annotation
       // Get the bounding box coordinates from the tool
-      const [yMin, xMin, yMax, xMax] = tool.box_2d;
-      
+      // Expected format: [xMin, yMin, xMax, yMax] (standardized by DetectedToolsViewer)
+      const [xMin, yMin, xMax, yMax] = tool.box_2d;
+
       // Convert from 0-1000 scale to 0-1 scale (normalized coordinates)
       const normalizedX = xMin / 1000;
       const normalizedY = yMin / 1000;
       const normalizedWidth = (xMax - xMin) / 1000;
       const normalizedHeight = (yMax - yMin) / 1000;
-      
+
       // Store the coordinates in the database
       const coordinates = {
         x: normalizedX,
@@ -206,9 +207,9 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
         width: normalizedWidth,
         height: normalizedHeight
       };
-      
+
       console.log(`Saving annotation with coordinates:`, coordinates);
-      
+
       // Insert the annotation
       const { error: annotationError } = await supabase
         .from('tool_annotations')
@@ -217,11 +218,11 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
           photo_id: photo.id,
           coordinates
         });
-      
+
       if (annotationError) {
         throw annotationError;
       }
-      
+
       console.log(`Saved annotation for tool: ${tool.label}`);
     } catch (error) {
       console.error(`Error saving tool annotation for ${tool.label}:`, error);
@@ -252,7 +253,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
               <DialogTitle>Detect Tools in Photos</DialogTitle>
             </DialogHeader>
             <div className="mt-6">
-              <PhotoGrid 
+              <PhotoGrid
                 photos={photos}
                 onPhotoClick={handlePhotoSelect}
                 onDeleteClick={undefined}
@@ -267,7 +268,7 @@ export function DetectToolsDialog({ isOpen, onClose }: DetectToolsDialogProps) {
             <DialogHeader>
               <DialogTitle>Detect Tools in Photos</DialogTitle>
             </DialogHeader>
-            <PhotoGrid 
+            <PhotoGrid
               photos={photos}
               onPhotoClick={handlePhotoSelect}
               onDeleteClick={undefined}

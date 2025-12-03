@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useToolManagement } from "@/hooks/useToolManagement"
-import { CoordinateSystem } from "@/hooks/useToolCoordinates"
+import { CoordinateSystem, normalizeBox2d } from "@/hooks/useToolCoordinates"
 import { DetectedToolList } from "./list/DetectedToolList"
 import { ImageDisplay } from "./viewers/ImageDisplay"
 import { ViewerDialogFooter } from "./viewers/ViewerDialogFooter"
@@ -23,10 +23,10 @@ interface DetectedToolsViewerProps {
   coordinateSystem?: CoordinateSystem
 }
 
-export function DetectedToolsViewer({ 
-  imageUrl, 
-  detectedTools: initialDetectedTools, 
-  isOpen, 
+export function DetectedToolsViewer({
+  imageUrl,
+  detectedTools: initialDetectedTools,
+  isOpen,
   onClose,
   onConfirm,
   coordinateSystem: providedCoordinateSystem
@@ -39,12 +39,13 @@ export function DetectedToolsViewer({
   const { addTool } = useToolManagement()
   const [photoLocation, setPhotoLocation] = useState({ location: "", subLocation: "" })
   const [photoId, setPhotoId] = useState<string | null>(null)
-  
+
   const [coordinateSystem] = useState<CoordinateSystem>(providedCoordinateSystem || {
     origin: 'top-left',
     x_axis_direction: 'left-to-right',
     y_axis_direction: 'top-to-bottom'
   })
+  const [orientation, setOrientation] = useState<'landscape' | 'portrait' | 'square'>('landscape')
 
   useEffect(() => {
     if (isOpen) {
@@ -61,7 +62,7 @@ export function DetectedToolsViewer({
       // Try to extract the photo path from the URL
       // This assumes the URL is from Supabase storage
       const photoPath = extractPhotoPathFromUrl(imageUrl);
-      
+
       if (photoPath) {
         // Find the photo in the database
         const { data, error } = await supabase
@@ -69,11 +70,11 @@ export function DetectedToolsViewer({
           .select('id, location, sub_location')
           .eq('file_path', photoPath)
           .single();
-          
+
         if (data && !error) {
-          setPhotoLocation({ 
-            location: data.location || "", 
-            subLocation: data.sub_location || "" 
+          setPhotoLocation({
+            location: data.location || "",
+            subLocation: data.sub_location || ""
           });
           setPhotoId(data.id);
           console.log("Found photo location:", data.location, data.sub_location);
@@ -86,7 +87,7 @@ export function DetectedToolsViewer({
       console.error("Error fetching photo location:", error);
     }
   };
-  
+
   const extractPhotoPathFromUrl = (url: string): string | null => {
     try {
       // For signed URLs, extract the path
@@ -113,14 +114,14 @@ export function DetectedToolsViewer({
 
   const handleUpdateToolPosition = (updatedTool: Tool) => {
     // Update the tool's position in the UI without saving to database
-    const updatedTools = detectedTools.map(tool => 
+    const updatedTools = detectedTools.map(tool =>
       tool.label === updatedTool.label ? updatedTool : tool
     );
-    
+
     setDetectedTools(updatedTools);
     setSelectedTool(updatedTool);
     setIsEditing(false);
-    
+
     toast.success(`Updated position for "${updatedTool.label}"`);
   };
 
@@ -157,11 +158,12 @@ export function DetectedToolsViewer({
           toast.error("Tool saved but annotation could not be saved");
         } else if (photoId) {
           // Save the annotation with the tool ID and photo ID
+          const normalized = normalizeBox2d(tool.box_2d, orientation);
           const coordinates = {
-            x: tool.box_2d[0] / 1000, // Normalize coordinates
-            y: tool.box_2d[1] / 1000,
-            width: (tool.box_2d[2] - tool.box_2d[0]) / 1000,
-            height: (tool.box_2d[3] - tool.box_2d[1]) / 1000
+            x: normalized.xMin,
+            y: normalized.yMin,
+            width: normalized.width,
+            height: normalized.height
           };
 
           const { error: annotationError } = await supabase
@@ -182,20 +184,20 @@ export function DetectedToolsViewer({
         }
 
         toast.success(`Tool "${tool.label}" saved to your inventory`);
-        
+
         const updatedTools = detectedTools.filter(t => t.label !== tool.label);
         setDetectedTools(updatedTools);
         setSelectedTool(null);
         setIsEditing(false);
-        
+
         if (updatedTools.length === 0) {
           toast.success("All tools saved to inventory!");
           onClose();
         }
-        
+
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error("Error saving tool:", error);
@@ -205,33 +207,48 @@ export function DetectedToolsViewer({
   };
 
   const handleRenameTool = (oldLabel: string, newLabel: string) => {
-    const updatedTools = detectedTools.map(tool => 
+    const updatedTools = detectedTools.map(tool =>
       tool.label === oldLabel ? { ...tool, label: newLabel } : tool
     );
-    
+
     setDetectedTools(updatedTools);
-    
+
     if (selectedTool && selectedTool.label === oldLabel) {
       setSelectedTool({ ...selectedTool, label: newLabel });
     }
-    
+
     toast.success(`Renamed "${oldLabel}" to "${newLabel}"`);
   };
 
   const handleDeleteTool = (toolToDelete: Tool) => {
     const updatedTools = detectedTools.filter(tool => tool.label !== toolToDelete.label);
     setDetectedTools(updatedTools);
-    
+
     if (selectedTool && selectedTool.label === toolToDelete.label) {
       setSelectedTool(null);
       setIsEditing(false);
     }
-    
+
     toast.success(`Removed tool "${toolToDelete.label}"`);
   };
 
   const handleConfirm = () => {
-    onConfirm(detectedTools)
+    // Normalize all tools to [xMin, yMin, xMax, yMax] format (0-1000)
+    // This ensures consistent coordinates regardless of orientation
+    const normalizedTools = detectedTools.map(tool => {
+      const normalized = normalizeBox2d(tool.box_2d, orientation);
+      return {
+        ...tool,
+        box_2d: [
+          normalized.xMin * 1000,
+          normalized.yMin * 1000,
+          (normalized.xMin + normalized.width) * 1000,
+          (normalized.yMin + normalized.height) * 1000
+        ]
+      };
+    });
+
+    onConfirm(normalizedTools)
     toast.success("Tool detection data saved")
     onClose()
   }
@@ -260,10 +277,10 @@ export function DetectedToolsViewer({
             Detected Tools
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex h-[calc(90vh-120px)]">
           <div className="w-1/4 max-w-[250px] border-r">
-            <DetectedToolList 
+            <DetectedToolList
               tools={detectedTools}
               selectedTool={selectedTool}
               onSelectTool={handleSelectTool}
@@ -273,7 +290,7 @@ export function DetectedToolsViewer({
               onDeleteTool={handleDeleteTool}
             />
           </div>
-          
+
           <div className="flex-1 relative">
             <ImageDisplay
               imageUrl={imageUrl}
@@ -284,6 +301,7 @@ export function DetectedToolsViewer({
               onSelectTool={handleSelectTool}
               onSaveTool={handleUpdateToolPosition}
               onCancelEdit={handleCancelEdit}
+              onOrientationChange={setOrientation}
             />
           </div>
         </div>

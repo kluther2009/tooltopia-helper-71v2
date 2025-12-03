@@ -21,6 +21,36 @@ interface UseToolCoordinatesParams {
   coordinateSystem: CoordinateSystem;
 }
 
+export function normalizeBox2d(box2d: number[], orientation: 'landscape' | 'portrait' | 'square'): ConvertedCoordinates {
+  if (!box2d || box2d.length !== 4) {
+    console.error('Invalid bounding box format:', box2d);
+    return { xMin: 0, yMin: 0, width: 0, height: 0 };
+  }
+
+  let normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax;
+  
+  // For portrait images, API returns [x_min, y_min, x_max, y_max]
+  // For landscape/square, API returns [y_min, x_min, y_max, x_max]
+  if (orientation === 'portrait') {
+    // Directly use the coordinates as [x_min, y_min, x_max, y_max]
+    [normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax] = box2d.map(coord => coord / 1000);
+  } else {
+    // For landscape/square, use the original format [y_min, x_min, y_max, x_max]
+    const [yMin, xMin, yMax, xMax] = box2d;
+    normalizedXMin = xMin / 1000;
+    normalizedYMin = yMin / 1000;
+    normalizedXMax = xMax / 1000;
+    normalizedYMax = yMax / 1000;
+  }
+  
+  return {
+    xMin: normalizedXMin,
+    yMin: normalizedYMin,
+    width: normalizedXMax - normalizedXMin,
+    height: normalizedYMax - normalizedYMin
+  };
+}
+
 export function useToolCoordinates({
   imageDimensions,
   displayDimensions,
@@ -29,42 +59,13 @@ export function useToolCoordinates({
 }: UseToolCoordinatesParams) {
   
   const convertCoordinates = useCallback((box2d: number[]): ConvertedCoordinates => {
-    if (!box2d || box2d.length !== 4) {
-      console.error('Invalid bounding box format:', box2d);
-      return { xMin: 0, yMin: 0, width: 0, height: 0 };
-    }
-
-    let normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax;
-    
-    // For portrait images, API returns [x_min, y_min, x_max, y_max]
-    // For landscape/square, API returns [y_min, x_min, y_max, x_max]
-    if (orientation === 'portrait') {
-      // Directly use the coordinates as [x_min, y_min, x_max, y_max]
-      [normalizedXMin, normalizedYMin, normalizedXMax, normalizedYMax] = box2d.map(coord => coord / 1000);
-    } else {
-      // For landscape/square, use the original format [y_min, x_min, y_max, x_max]
-      const [yMin, xMin, yMax, xMax] = box2d;
-      normalizedXMin = xMin / 1000;
-      normalizedYMin = yMin / 1000;
-      normalizedXMax = xMax / 1000;
-      normalizedYMax = yMax / 1000;
-    }
-    
-    console.log('Processing coordinates for', orientation, 'image:', {
-      original: box2d,
-      normalized: { 
-        xMin: normalizedXMin, 
-        yMin: normalizedYMin, 
-        xMax: normalizedXMax, 
-        yMax: normalizedYMax 
-      }
-    });
+    const normalized = normalizeBox2d(box2d, orientation);
     
     // Convert normalized coordinates to pixel values
-    const pixelXMin = normalizedXMin * imageDimensions.width;
-    const pixelYMin = normalizedYMin * imageDimensions.height;
-    const pixelXMax = normalizedXMax * imageDimensions.width;
-    const pixelYMax = normalizedYMax * imageDimensions.height;
+    const pixelXMin = normalized.xMin * imageDimensions.width;
+    const pixelYMin = normalized.yMin * imageDimensions.height;
+    const pixelXMax = (normalized.xMin + normalized.width) * imageDimensions.width;
+    const pixelYMax = (normalized.yMin + normalized.height) * imageDimensions.height;
     
     // Scale to display dimensions
     const scaleX = displayDimensions.width / imageDimensions.width;
@@ -74,28 +75,6 @@ export function useToolCoordinates({
     const scaledYMin = pixelYMin * scaleY;
     const scaledWidth = (pixelXMax - pixelXMin) * scaleX;
     const scaledHeight = (pixelYMax - pixelYMin) * scaleY;
-    
-    console.log('Converted coordinates for', orientation, 'image:', {
-      originalBox2d: box2d,
-      normalized: { 
-        xMin: normalizedXMin, 
-        yMin: normalizedYMin, 
-        xMax: normalizedXMax, 
-        yMax: normalizedYMax 
-      },
-      pixels: { 
-        xMin: pixelXMin, 
-        yMin: pixelYMin, 
-        xMax: pixelXMax, 
-        yMax: pixelYMax 
-      },
-      scaled: { 
-        xMin: scaledXMin, 
-        yMin: scaledYMin, 
-        width: scaledWidth, 
-        height: scaledHeight 
-      }
-    });
     
     return {
       xMin: scaledXMin,
