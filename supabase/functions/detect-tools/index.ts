@@ -30,7 +30,7 @@ function extractJsonFromText(text: string): any {
         console.error('Failed to parse matched JSON:', e);
       }
     }
-    
+
     // Try to find coordinate system info separately
     const coordSystemMatch = text.match(/{[^}]*"origin"[^}]*}/);
     let coordinateSystem = null;
@@ -42,7 +42,7 @@ function extractJsonFromText(text: string): any {
         console.error('Failed to parse coordinate system info:', e);
       }
     }
-    
+
     // If still no valid JSON, try to extract individual tool objects
     const toolsArray = [];
     const toolMatches = text.matchAll(/{[^}]+}/g);
@@ -60,14 +60,14 @@ function extractJsonFromText(text: string): any {
         console.error('Failed to parse individual tool:', e);
       }
     }
-    
+
     if (toolsArray.length > 0) {
       return {
         tools: toolsArray,
         coordinate_system: coordinateSystem
       };
     }
-    
+
     throw new Error('No valid JSON found in response');
   }
 }
@@ -81,7 +81,7 @@ serve(async (req) => {
   try {
     const { imageUrl } = await req.json()
     console.log('Processing image URL:', imageUrl)
-    
+
     if (!imageUrl) {
       throw new Error('No image URL provided')
     }
@@ -94,7 +94,7 @@ serve(async (req) => {
 
     console.log('Initializing Gemini...')
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
     // Fetch and process image
     console.log('Fetching image...')
@@ -105,7 +105,7 @@ serve(async (req) => {
 
     const imageBuffer = await imgResponse.arrayBuffer()
     console.log('Image fetched, size:', imageBuffer.byteLength)
-    
+
     if (imageBuffer.byteLength === 0) {
       throw new Error('Image buffer is empty')
     }
@@ -134,7 +134,7 @@ serve(async (req) => {
 
     const response = await result.response
     const text = response.text()
-    
+
     // Log the full Gemini API response
     console.log('Gemini API Response:', JSON.stringify(result, null, 2))
     console.log('Raw response text:', text)
@@ -148,20 +148,20 @@ serve(async (req) => {
       },
       tools: []
     }
-    
+
     try {
       const extractedData = extractJsonFromText(text);
-      
+
       // Handle different formats that might be returned
       if (Array.isArray(extractedData)) {
         // If we got just an array of tools
         toolsData.tools = extractedData.filter(item => {
-          return item && 
-                 typeof item.label === 'string' && 
-                 Array.isArray(item.box_2d) && 
-                 item.box_2d.length === 4
+          return item &&
+            typeof item.label === 'string' &&
+            Array.isArray(item.box_2d) &&
+            item.box_2d.length === 4
         });
-        
+
         // Ensure coordinates are normalized to 0-1000 range
         toolsData.tools.forEach(tool => {
           if (tool.box_2d.some(coord => coord > 1000)) {
@@ -172,12 +172,12 @@ serve(async (req) => {
         // If we got the expected format with coordinate system and tools
         toolsData = extractedData;
         toolsData.tools = toolsData.tools.filter(item => {
-          return item && 
-                 typeof item.label === 'string' && 
-                 Array.isArray(item.box_2d) && 
-                 item.box_2d.length === 4
+          return item &&
+            typeof item.label === 'string' &&
+            Array.isArray(item.box_2d) &&
+            item.box_2d.length === 4
         });
-        
+
         // Ensure coordinates are normalized to 0-1000 range
         toolsData.tools.forEach(tool => {
           if (tool.box_2d.some(coord => coord > 1000)) {
@@ -187,7 +187,7 @@ serve(async (req) => {
       }
 
       console.log('Processed tools data:', toolsData)
-      
+
       // Log each tool's bounding box data
       toolsData.tools.forEach(tool => {
         console.log(`Tool "${tool.label}" bounding box:`, {
@@ -203,8 +203,8 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(toolsData),
-      { 
-        headers: { 
+      {
+        headers: {
           ...corsHeaders,
           'Content-Type': 'application/json'
         }
@@ -217,7 +217,7 @@ serve(async (req) => {
         error: error.message,
         details: error.stack
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       }
