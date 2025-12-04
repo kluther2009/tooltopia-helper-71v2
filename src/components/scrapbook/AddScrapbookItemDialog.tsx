@@ -20,7 +20,8 @@ interface AddScrapbookItemDialogProps {
 export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProps) {
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<'menu' | 'note'>('menu');
-    const [noteText, setNoteText] = useState("");
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
     const queryClient = useQueryClient();
 
     const addNoteMutation = useMutation({
@@ -44,9 +45,54 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
         },
     });
 
+    const addPhotoMutation = useMutation({
+        mutationFn: async ({ file, caption }: { file: File; caption: string }) => {
+            setIsUploading(true);
+            try {
+                // 1. Upload file to storage
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${projectId}/${crypto.randomUUID()}.${fileExt}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('scrapbook-media')
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                // 2. Get public URL
+                const { data: { publicUrl } } = supabase.storage
+                    .from('scrapbook-media')
+                    .getPublicUrl(fileName);
+
+                // 3. Create scrapbook item
+                const { error: dbError } = await supabase.from("scrapbook_items").insert({
+                    project_id: projectId,
+                    type: "photo",
+                    content: { caption },
+                    media_url: publicUrl,
+                });
+
+                if (dbError) throw dbError;
+            } finally {
+                setIsUploading(false);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["scrapbook", projectId] });
+            toast.success("Photo added to scrapbook");
+            setOpen(false);
+            resetState();
+        },
+        onError: (error) => {
+            console.error("Error adding photo:", error);
+            toast.error("Failed to add photo");
+        },
+    });
+
     const resetState = () => {
         setMode("menu");
         setNoteText("");
+        setPhotoFile(null);
     };
 
     const handleOpenChange = (newOpen: boolean) => {
@@ -57,6 +103,17 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
     const handleAddNote = () => {
         if (!noteText.trim()) return;
         addNoteMutation.mutate(noteText);
+    };
+
+    const handleAddPhoto = () => {
+        if (!photoFile) return;
+        addPhotoMutation.mutate({ file: photoFile, caption: noteText });
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setPhotoFile(e.target.files[0]);
+        }
     };
 
     return (
@@ -86,11 +143,11 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-24 flex flex-col gap-2 opacity-50 cursor-not-allowed"
-                            disabled
+                            className="h-24 flex flex-col gap-2 hover:bg-blue-100/10 hover:border-blue-500"
+                            onClick={() => setMode("photo")}
                         >
                             <ImageIcon className="h-8 w-8 text-blue-500" />
-                            <span>Photo (Coming Soon)</span>
+                            <span>Photo</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -125,6 +182,49 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                             </Button>
                             <Button onClick={handleAddNote} disabled={!noteText.trim() || addNoteMutation.isPending}>
                                 {addNoteMutation.isPending ? "Adding..." : "Add Note"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {mode === "photo" && (
+                    <div className="space-y-4">
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-zinc-700 rounded-lg p-6 hover:bg-zinc-900/50 transition-colors cursor-pointer relative">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={handleFileSelect}
+                            />
+                            {photoFile ? (
+                                <div className="text-center">
+                                    <p className="text-sm font-medium text-green-500">{photoFile.name}</p>
+                                    <p className="text-xs text-zinc-500">Click to change</p>
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    <ImageIcon className="h-8 w-8 text-zinc-500 mx-auto mb-2" />
+                                    <p className="text-sm text-zinc-400">Click to upload photo</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <Textarea
+                            placeholder="Add a caption (optional)..."
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            className="min-h-[80px]"
+                        />
+
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setMode("menu")}>
+                                Back
+                            </Button>
+                            <Button
+                                onClick={handleAddPhoto}
+                                disabled={!photoFile || isUploading}
+                            >
+                                {isUploading ? "Uploading..." : "Add Photo"}
                             </Button>
                         </div>
                     </div>
