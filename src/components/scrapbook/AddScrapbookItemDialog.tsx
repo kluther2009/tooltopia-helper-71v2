@@ -13,14 +13,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+
 interface AddScrapbookItemDialogProps {
     projectId: string;
 }
 
 export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProps) {
     const [open, setOpen] = useState(false);
-    const [mode, setMode] = useState<'menu' | 'note'>('menu');
+    const [mode, setMode] = useState<'menu' | 'note' | 'photo' | 'link'>('menu');
     const [noteText, setNoteText] = useState("");
+    const [linkUrl, setLinkUrl] = useState("");
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const queryClient = useQueryClient();
@@ -90,9 +92,31 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
         },
     });
 
+    const addLinkMutation = useMutation({
+        mutationFn: async ({ url, description }: { url: string; description: string }) => {
+            const { error } = await supabase.from("scrapbook_items").insert({
+                project_id: projectId,
+                type: "link",
+                content: { url, description, title: url }, // Basic implementation, could be enhanced with metadata fetching
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["scrapbook", projectId] });
+            toast.success("Link added to scrapbook");
+            setOpen(false);
+            resetState();
+        },
+        onError: (error) => {
+            console.error("Error adding link:", error);
+            toast.error("Failed to add link");
+        },
+    });
+
     const resetState = () => {
         setMode("menu");
         setNoteText("");
+        setLinkUrl("");
         setPhotoFile(null);
     };
 
@@ -109,6 +133,11 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
     const handleAddPhoto = () => {
         if (!photoFile) return;
         addPhotoMutation.mutate({ file: photoFile, caption: noteText });
+    };
+
+    const handleAddLink = () => {
+        if (!linkUrl.trim()) return;
+        addLinkMutation.mutate({ url: linkUrl, description: noteText });
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,11 +189,11 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-24 flex flex-col gap-2 opacity-50 cursor-not-allowed"
-                            disabled
+                            className="h-24 flex flex-col gap-2 hover:bg-green-100/10 hover:border-green-500"
+                            onClick={() => setMode("link")}
                         >
                             <LinkIcon className="h-8 w-8 text-green-500" />
-                            <span>Link (Coming Soon)</span>
+                            <span>Link</span>
                         </Button>
                     </div>
                 )}
@@ -226,6 +255,39 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                                 disabled={!photoFile || isUploading}
                             >
                                 {isUploading ? "Uploading..." : "Add Photo"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {mode === "link" && (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <input
+                                type="url"
+                                placeholder="Paste URL here (https://...)"
+                                value={linkUrl}
+                                onChange={(e) => setLinkUrl(e.target.value)}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+
+                        <Textarea
+                            placeholder="Add a description (optional)..."
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            className="min-h-[80px]"
+                        />
+
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setMode("menu")}>
+                                Back
+                            </Button>
+                            <Button
+                                onClick={handleAddLink}
+                                disabled={!linkUrl.trim() || addLinkMutation.isPending}
+                            >
+                                {addLinkMutation.isPending ? "Adding..." : "Add Link"}
                             </Button>
                         </div>
                     </div>

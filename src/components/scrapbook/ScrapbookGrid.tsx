@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrapbookItem } from "@/types/scrapbook";
 import { NoteCard } from "./NoteCard";
 import { PhotoCard } from "./PhotoCard";
+import { LinkCard } from "./LinkCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ScrapbookGridProps {
@@ -49,6 +50,7 @@ export function ScrapbookGrid({ projectId }: ScrapbookGridProps) {
                 <div key={item.id}>
                     {item.type === "note" && <NoteCard item={item} />}
                     {item.type === "photo" && <PhotoCard item={item} />}
+                    {item.type === "link" && <LinkCard item={item} />}
                 </div>
             ))}
         </div>
