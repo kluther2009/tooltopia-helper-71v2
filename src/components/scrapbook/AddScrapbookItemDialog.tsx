@@ -20,6 +20,7 @@ interface AddScrapbookItemDialogProps {
 export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProps) {
     const [open, setOpen] = useState(false);
     const [mode, setMode] = useState<'menu' | 'note'>('menu');
+    const [noteText, setNoteText] = useState("");
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const queryClient = useQueryClient();
