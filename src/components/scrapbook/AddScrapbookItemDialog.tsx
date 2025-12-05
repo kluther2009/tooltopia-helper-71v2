@@ -79,14 +79,29 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                     .getPublicUrl(fileName);
 
                 // 3. Create scrapbook item
-                const { error: dbError } = await supabase.from("scrapbook_items").insert({
-                    project_id: projectId,
-                    type: "photo",
-                    content: { caption },
-                    media_url: publicUrl,
-                });
+                const { data: newItem, error: dbError } = await supabase
+                    .from("scrapbook_items")
+                    .insert({
+                        project_id: projectId,
+                        type: "photo",
+                        content: { caption },
+                        media_url: publicUrl,
+                    })
+                    .select()
+                    .single();
 
                 if (dbError) throw dbError;
+
+                // 4. Trigger AI Analysis (Fire and forget)
+                supabase.functions.invoke('analyze-media', {
+                    body: {
+                        mediaUrl: publicUrl,
+                        mediaType: 'photo',
+                        itemId: newItem.id,
+                        projectId
+                    }
+                }).catch(err => console.error("AI Analysis launch failed:", err));
+
             } finally {
                 setIsUploading(false);
             }
@@ -140,14 +155,29 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                     .from('scrapbook-media')
                     .getPublicUrl(fileName);
 
-                const { error: dbError } = await supabase.from("scrapbook_items").insert({
-                    project_id: projectId,
-                    type: "voice",
-                    content: { caption },
-                    media_url: publicUrl,
-                });
+                const { data: newItem, error: dbError } = await supabase
+                    .from("scrapbook_items")
+                    .insert({
+                        project_id: projectId,
+                        type: "voice",
+                        content: { caption },
+                        media_url: publicUrl,
+                    })
+                    .select()
+                    .single();
 
                 if (dbError) throw dbError;
+
+                // Trigger AI Analysis for Voice
+                supabase.functions.invoke('analyze-media', {
+                    body: {
+                        mediaUrl: publicUrl,
+                        mediaType: 'voice',
+                        itemId: newItem.id,
+                        projectId
+                    }
+                }).catch(err => console.error("AI Analysis launch failed:", err));
+
             } finally {
                 setIsUploading(false);
             }

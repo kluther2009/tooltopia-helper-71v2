@@ -16,14 +16,25 @@ export interface NoteContent {
     is_action_item?: boolean;
 }
 
+export interface AiData {
+    description?: string;
+    ocr_text?: string;
+    transcription?: string;
+    action_items?: string[];
+    confidence?: number;
+    tags?: string[];
+}
+
 export interface PhotoContent {
     ocr_text?: string;
     detected_objects?: string[];
+    ai_data?: AiData;
 }
 
 export interface VoiceContent {
     transcription?: string;
     duration_sec?: number;
+    ai_data?: AiData;
 }
 
 export interface LinkContent {

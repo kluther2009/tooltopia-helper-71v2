@@ -58,7 +58,12 @@ export default function ProjectDetails() {
         <ProjectCard project={project} />
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-white">Project Scrapbook</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">Project Scrapbook</h2>
+          </div>
+
+          <BrainSearchBar projectId={project.id} />
+
           <ScrapbookGrid projectId={project.id} />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { ScrapbookItem } from "@/types/scrapbook";
+import { ScrapbookItem, VoiceContent } from "@/types/scrapbook";
 import { formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ interface VoiceCardProps {
 }
 
 export function VoiceCard({ item }: VoiceCardProps) {
-    const content = item.content as { caption?: string; duration?: number };
+    const content = item.content as VoiceContent & { caption?: string; duration?: number };
     const queryClient = useQueryClient();
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -59,13 +59,15 @@ export function VoiceCard({ item }: VoiceCardProps) {
         setIsPlaying(!isPlaying);
     };
 
+    const aiData = content.ai_data;
+
     return (
         <Card className="p-4 bg-red-100/10 border-red-500/50 hover:border-red-500 transition-colors group relative">
             <div className="flex items-center gap-3 mb-3">
                 <Button
                     variant="outline"
                     size="icon"
-                    className="h-10 w-10 rounded-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                    className="h-10 w-10 shrink-0 rounded-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                     onClick={togglePlay}
                 >
                     {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
@@ -81,7 +83,24 @@ export function VoiceCard({ item }: VoiceCardProps) {
             </div>
 
             {content.caption && (
-                <p className="text-sm text-zinc-200 line-clamp-2 mb-2">{content.caption}</p>
+                <p className="text-sm text-zinc-200 line-clamp-2 mb-2 font-medium">{content.caption}</p>
+            )}
+
+            {aiData?.transcription && (
+                <div className="mb-3 p-2 bg-black/20 rounded text-xs text-zinc-300 italic">
+                    "{aiData.transcription}"
+                </div>
+            )}
+
+            {aiData?.action_items && (
+                <div className="mb-2 space-y-1">
+                    {aiData.action_items.map((action, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
+                            <span className="text-red-400 mt-0.5">☐</span>
+                            <span>{action}</span>
+                        </div>
+                    ))}
+                </div>
             )}
 
             <div className="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-700/50">
