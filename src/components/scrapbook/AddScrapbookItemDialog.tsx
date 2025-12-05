@@ -7,11 +7,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, StickyNote, Image as ImageIcon, Mic, Link as LinkIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+
+
 
 
 interface AddScrapbookItemDialogProps {
@@ -20,11 +23,19 @@ interface AddScrapbookItemDialogProps {
 
 export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProps) {
     const [open, setOpen] = useState(false);
-    const [mode, setMode] = useState<'menu' | 'note' | 'photo' | 'link'>('menu');
+    const [mode, setMode] = useState<'menu' | 'note' | 'photo' | 'link' | 'voice'>('menu');
     const [noteText, setNoteText] = useState("");
     const [linkUrl, setLinkUrl] = useState("");
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+
+    // Voice recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
     const queryClient = useQueryClient();
 
     const addNoteMutation = useMutation({
@@ -113,11 +124,60 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
         },
     });
 
+    const addVoiceMutation = useMutation({
+        mutationFn: async ({ blob, caption }: { blob: Blob; caption: string }) => {
+            setIsUploading(true);
+            try {
+                const fileName = `${projectId}/${crypto.randomUUID()}.webm`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('scrapbook-media')
+                    .upload(fileName, blob);
+
+                if (uploadError) throw uploadError;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('scrapbook-media')
+                    .getPublicUrl(fileName);
+
+                const { error: dbError } = await supabase.from("scrapbook_items").insert({
+                    project_id: projectId,
+                    type: "voice",
+                    content: { caption },
+                    media_url: publicUrl,
+                });
+
+                if (dbError) throw dbError;
+            } finally {
+                setIsUploading(false);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["scrapbook", projectId] });
+            toast.success("Voice note added");
+            setOpen(false);
+            resetState();
+        },
+        onError: (error) => {
+            console.error("Error adding voice note:", error);
+            toast.error("Failed to add voice note");
+        },
+    });
+
     const resetState = () => {
         setMode("menu");
         setNoteText("");
         setLinkUrl("");
         setPhotoFile(null);
+        setAudioBlob(null);
+        setRecordingTime(0);
+        setIsRecording(false);
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stop();
+        }
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
     };
 
     const handleOpenChange = (newOpen: boolean) => {
@@ -140,10 +200,60 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
         addLinkMutation.mutate({ url: linkUrl, description: noteText });
     };
 
+    const handleAddVoice = () => {
+        if (!audioBlob) return;
+        addVoiceMutation.mutate({ blob: audioBlob, caption: noteText });
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            const chunks: BlobPart[] = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: "audio/webm" });
+                setAudioBlob(blob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+
+            timerRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+        } catch (err) {
+            console.error("Error accessing microphone:", err);
+            toast.error("Could not access microphone");
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        }
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setPhotoFile(e.target.files[0]);
         }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -181,11 +291,11 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-24 flex flex-col gap-2 opacity-50 cursor-not-allowed"
-                            disabled
+                            className="h-24 flex flex-col gap-2 hover:bg-red-100/10 hover:border-red-500"
+                            onClick={() => setMode("voice")}
                         >
                             <Mic className="h-8 w-8 text-red-500" />
-                            <span>Voice (Coming Soon)</span>
+                            <span>Voice</span>
                         </Button>
                         <Button
                             variant="outline"
@@ -288,6 +398,69 @@ export function AddScrapbookItemDialog({ projectId }: AddScrapbookItemDialogProp
                                 disabled={!linkUrl.trim() || addLinkMutation.isPending}
                             >
                                 {addLinkMutation.isPending ? "Adding..." : "Add Link"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {mode === "voice" && (
+                    <div className="space-y-4">
+                        <div className="flex flex-col items-center justify-center py-8 gap-4">
+                            <div className={`text-4xl font-mono font-bold ${isRecording ? 'text-red-500 animate-pulse' : 'text-zinc-400'}`}>
+                                {formatTime(recordingTime)}
+                            </div>
+
+                            {!isRecording && !audioBlob && (
+                                <Button
+                                    size="lg"
+                                    className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 shadow-lg"
+                                    onClick={startRecording}
+                                >
+                                    <Mic className="h-8 w-8 text-white" />
+                                </Button>
+                            )}
+
+                            {isRecording && (
+                                <Button
+                                    size="lg"
+                                    className="h-16 w-16 rounded-full bg-zinc-800 hover:bg-zinc-700 border-2 border-red-500"
+                                    onClick={stopRecording}
+                                >
+                                    <div className="h-6 w-6 bg-red-500 rounded-sm" />
+                                </Button>
+                            )}
+
+                            {audioBlob && !isRecording && (
+                                <div className="flex gap-4">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setAudioBlob(null);
+                                            setRecordingTime(0);
+                                        }}
+                                    >
+                                        Record Again
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+
+                        <Textarea
+                            placeholder="Add a caption (optional)..."
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            className="min-h-[80px]"
+                        />
+
+                        <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setMode("menu")}>
+                                Back
+                            </Button>
+                            <Button
+                                onClick={handleAddVoice}
+                                disabled={!audioBlob || isUploading}
+                            >
+                                {isUploading ? "Uploading..." : "Add Voice Note"}
                             </Button>
                         </div>
                     </div>

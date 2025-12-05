@@ -4,6 +4,7 @@ import { ScrapbookItem } from "@/types/scrapbook";
 import { NoteCard } from "./NoteCard";
 import { PhotoCard } from "./PhotoCard";
 import { LinkCard } from "./LinkCard";
+import { VoiceCard } from "./VoiceCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ScrapbookGridProps {
@@ -51,6 +52,7 @@ export function ScrapbookGrid({ projectId }: ScrapbookGridProps) {
                     {item.type === "note" && <NoteCard item={item} />}
                     {item.type === "photo" && <PhotoCard item={item} />}
                     {item.type === "link" && <LinkCard item={item} />}
+                    {item.type === "voice" && <VoiceCard item={item} />}
                 </div>
             ))}
         </div>
