@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { Project } from "@/types/projects";
 import { ScrapbookGrid } from "@/components/scrapbook/ScrapbookGrid";
 import { AddScrapbookItemDialog } from "@/components/scrapbook/AddScrapbookItemDialog";
+import { BrainSearchBar } from "@/components/scrapbook/BrainSearchBar";
 
 export default function ProjectDetails() {
   const { projectId } = useParams();
